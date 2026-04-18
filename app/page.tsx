@@ -17,6 +17,12 @@ type Input = {
   mobileHome: boolean;
 };
 
+type EvalResult = {
+  eligible: boolean;
+  score?: number;
+  reason?: string;
+};
+
 function isSC(zip: string) {
   return zip.startsWith("29");
 }
@@ -49,7 +55,7 @@ function isWestOf17SC(zip: string) {
   return !eastOf17Prefixes.some((p) => zip.startsWith(p));
 }
 
-function evaluateAmericanIntegrity(input: Input) {
+function evaluateAmericanIntegrity(input: Input): EvalResult {
   const state = getState(input.zip);
 
   if (!["SC", "GA", "NC"].includes(state)) {
@@ -94,7 +100,7 @@ function evaluateAmericanIntegrity(input: Input) {
   return { eligible: false, reason: "Not eligible" };
 }
 
-function evaluateUniversal(input: Input) {
+function evaluateUniversal(input: Input): EvalResult {
   const state = getState(input.zip);
 
   if (!["SC", "GA", "NC"].includes(state)) {
@@ -109,13 +115,12 @@ function evaluateUniversal(input: Input) {
 
   if (input.hasSolar) score += 1;
   if (input.buildYear >= 2015) score += 1;
-
   if (state === "NC" && input.buildYear >= 2015) score += 1;
 
   return { eligible: true, score };
 }
 
-function evaluateFrontline(input: Input) {
+function evaluateFrontline(input: Input): EvalResult {
   const state = getState(input.zip);
 
   if (!["GA", "NC"].includes(state)) {
@@ -131,7 +136,7 @@ function evaluateFrontline(input: Input) {
   return { eligible: true, score };
 }
 
-function evaluateHOA(input: Input) {
+function evaluateHOA(input: Input): EvalResult {
   const state = getState(input.zip);
 
   if (state !== "SC") {
@@ -148,7 +153,7 @@ function evaluateHOA(input: Input) {
   return { eligible: true, score };
 }
 
-function evaluateOrion180(input: Input) {
+function evaluateOrion180(input: Input): EvalResult {
   const state = getState(input.zip);
 
   if (state !== "SC") {
@@ -162,7 +167,7 @@ function evaluateOrion180(input: Input) {
   return { eligible: true, score: 7 };
 }
 
-function evaluateHeritage(input: Input) {
+function evaluateHeritage(input: Input): EvalResult {
   const state = getState(input.zip);
 
   if (state !== "SC") {
@@ -175,7 +180,7 @@ function evaluateHeritage(input: Input) {
   return { eligible: true, score };
 }
 
-function evaluateTowerHill(input: Input) {
+function evaluateTowerHill(input: Input): EvalResult {
   const state = getState(input.zip);
 
   if (state !== "SC") {
@@ -193,7 +198,7 @@ function evaluateTowerHill(input: Input) {
   return { eligible: true, score: 8 };
 }
 
-function evaluateAspera(input: Input) {
+function evaluateAspera(input: Input): EvalResult {
   const state = getState(input.zip);
 
   if (state !== "SC") {
@@ -207,7 +212,7 @@ function evaluateAspera(input: Input) {
   return { eligible: true, score: 5 };
 }
 
-const carriers = [
+const carriers: { label: string; evaluate: (input: Input) => EvalResult }[] = [
   { label: "American Integrity", evaluate: evaluateAmericanIntegrity },
   { label: "Universal", evaluate: evaluateUniversal },
   { label: "Frontline", evaluate: evaluateFrontline },
@@ -234,13 +239,13 @@ function evaluate(input: Input): Result[] {
       return {
         label: carrier.label,
         tier: "Do Not Quote",
-        reasons: [res.reason]
+        reasons: [res.reason ?? "Not eligible"]
       };
     }
 
     let tier = "Backup";
-    if ((res.score || 0) >= 9) tier = "Best Bet";
-    else if ((res.score || 0) >= 7) tier = "Competitive";
+    if ((res.score ?? 0) >= 9) tier = "Best Bet";
+    else if ((res.score ?? 0) >= 7) tier = "Competitive";
 
     return {
       label: carrier.label,
@@ -251,7 +256,7 @@ function evaluate(input: Input): Result[] {
 
   return results
     .filter((r) => r.tier !== "Do Not Quote")
-    .sort((a, b) => (b.score || 0) - (a.score || 0));
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 }
 
 export default function App() {
