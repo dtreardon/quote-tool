@@ -9,147 +9,276 @@ type Result = {
   reasons?: string[];
 };
 
-function isCoastalZIP(zip: string) {
-  const coastalZips = ["294", "295"];
-  return coastalZips.some((z) => zip.startsWith(z));
-}
-
-function isUpstateZIP(zip: string) {
-  const upstateZips = ["296"];
-  return upstateZips.some((z) => zip.startsWith(z));
-}
-
-function isWestOfI95(zip: string) {
-  return !isCoastalZIP(zip);
-}
-
-const rules = {
-  AmericanIntegrity: {
-    label: "American Integrity",
-    minYear: 2005,
-    maxRoofAge: 10,
-    requiresWestOfI95: true,
-    baseScore: 6,
-    boosts: { newerHome: 2, newRoof: 2 }
-  },
-  HomeownersOfAmerica: {
-    label: "Homeowners of America",
-    minYear: 2005,
-    maxRoofAge: 15,
-    requiresCoastal: true,
-    baseScore: 6,
-    boosts: { newerHome: 2, coastal: 2 }
-  },
-  Heritage: {
-    label: "Heritage",
-    minYear: 1970,
-    maxRoofAge: 10,
-    baseScore: 5,
-    boosts: { newRoof: 2 }
-  },
-  Orion180: {
-    label: "Orion180",
-    minYear: 1970,
-    maxRoofAge: 20,
-    baseScore: 7,
-    boosts: { newerHome: 2, coastal: 3 }
-  },
-  Universal: {
-    label: "Universal",
-    minYear: 1970,
-    maxRoofAge: 20,
-    blocksUpstate: true,
-    baseScore: 5,
-    boosts: { smallHome: 2, solar: 2 }
-  }
+type Input = {
+  zip: string;
+  buildYear: number;
+  roofYear: number;
+  hasSolar: boolean;
+  mobileHome: boolean;
 };
 
-function evaluate(input: any): Result[] {
-  const results: Result[] = [];
+function isSC(zip: string) {
+  return zip.startsWith("29");
+}
 
-  const coastal = isCoastalZIP(input.zip);
-  const upstate = isUpstateZIP(input.zip);
-  const westOfI95 = isWestOfI95(input.zip);
+function isGA(zip: string) {
+  return zip.startsWith("30") || zip.startsWith("31");
+}
 
-  Object.values(rules).forEach((r: any) => {
-    let eligible = true;
-    let reasons: string[] = [];
+function isNC(zip: string) {
+  return zip.startsWith("27") || zip.startsWith("28");
+}
 
-    if (input.yearBuilt < r.minYear) {
-      eligible = false;
-      reasons.push("Year too old");
+function getState(zip: string) {
+  if (isSC(zip)) return "SC";
+  if (isGA(zip)) return "GA";
+  if (isNC(zip)) return "NC";
+  return "OTHER";
+}
+
+function isBarrierIsland(zip: string) {
+  return ["31522"].includes(zip);
+}
+
+function isCharlestonArea(zip: string) {
+  return zip.startsWith("294");
+}
+
+function isWestOf17SC(zip: string) {
+  const eastOf17Prefixes = ["294", "295"];
+  return !eastOf17Prefixes.some((p) => zip.startsWith(p));
+}
+
+function evaluateAmericanIntegrity(input: Input) {
+  const state = getState(input.zip);
+
+  if (!["SC", "GA", "NC"].includes(state)) {
+    return { eligible: false, reason: "Wrong state" };
+  }
+
+  if (isBarrierIsland(input.zip)) {
+    return { eligible: false, reason: "Barrier island" };
+  }
+
+  if (input.hasSolar) {
+    return { eligible: false, reason: "No solar" };
+  }
+
+  if (state === "SC") {
+    if (isCharlestonArea(input.zip)) {
+      if (input.buildYear < 2014) {
+        return { eligible: false, reason: "Charleston area must be 2014+" };
+      }
+      return { eligible: true, score: 9 };
     }
 
-    if (input.roofAge > r.maxRoofAge) {
-      eligible = false;
-      reasons.push("Roof too old");
+    if (input.buildYear < 1901) {
+      return { eligible: false, reason: "Must be 1901+" };
     }
 
-    if (r.requiresWestOfI95 && !westOfI95) {
-      eligible = false;
-      reasons.push("Not west of I-95");
+    return { eligible: true, score: 8 };
+  }
+
+  if (state === "GA" || state === "NC") {
+    if (input.buildYear < 2023) {
+      return { eligible: false, reason: "GA/NC must be 2023+" };
     }
 
-    if (r.requiresCoastal && !coastal) {
-      eligible = false;
-      reasons.push("Not coastal ZIP");
+    if (state === "NC") {
+      return { eligible: true, score: 7 };
     }
 
-    if (r.blocksUpstate && upstate) {
-      eligible = false;
-      reasons.push("Closed in upstate");
+    return { eligible: true, score: 8 };
+  }
+
+  return { eligible: false, reason: "Not eligible" };
+}
+
+function evaluateUniversal(input: Input) {
+  const state = getState(input.zip);
+
+  if (!["SC", "GA", "NC"].includes(state)) {
+    return { eligible: false, reason: "Wrong state" };
+  }
+
+  if (state === "GA" && isBarrierIsland(input.zip)) {
+    return { eligible: false, reason: "Closed coastal GA" };
+  }
+
+  let score = 7;
+
+  if (input.hasSolar) score += 1;
+  if (input.buildYear >= 2015) score += 1;
+
+  if (state === "NC" && input.buildYear >= 2015) score += 1;
+
+  return { eligible: true, score };
+}
+
+function evaluateFrontline(input: Input) {
+  const state = getState(input.zip);
+
+  if (!["GA", "NC"].includes(state)) {
+    return { eligible: false, reason: "GA and NC only" };
+  }
+
+  let score = 9;
+
+  if (state === "GA") score = 10;
+  if (state === "NC" && input.buildYear < 2000) score = 10;
+  if (input.hasSolar) score += 1;
+
+  return { eligible: true, score };
+}
+
+function evaluateHOA(input: Input) {
+  const state = getState(input.zip);
+
+  if (state !== "SC") {
+    return { eligible: false, reason: "SC only" };
+  }
+
+  if (input.hasSolar) {
+    return { eligible: false, reason: "No solar" };
+  }
+
+  let score = 7;
+  if (input.buildYear < 1995) score = 6;
+
+  return { eligible: true, score };
+}
+
+function evaluateOrion180(input: Input) {
+  const state = getState(input.zip);
+
+  if (state !== "SC") {
+    return { eligible: false, reason: "SC only" };
+  }
+
+  if (input.hasSolar) {
+    return { eligible: false, reason: "No solar" };
+  }
+
+  return { eligible: true, score: 7 };
+}
+
+function evaluateHeritage(input: Input) {
+  const state = getState(input.zip);
+
+  if (state !== "SC") {
+    return { eligible: false, reason: "SC only" };
+  }
+
+  let score = 6;
+  if (input.hasSolar) score += 1;
+
+  return { eligible: true, score };
+}
+
+function evaluateTowerHill(input: Input) {
+  const state = getState(input.zip);
+
+  if (state !== "SC") {
+    return { eligible: false, reason: "SC only" };
+  }
+
+  if (!isWestOf17SC(input.zip)) {
+    return { eligible: false, reason: "Must be west of 17" };
+  }
+
+  if (input.hasSolar) {
+    return { eligible: false, reason: "No solar" };
+  }
+
+  return { eligible: true, score: 8 };
+}
+
+function evaluateAspera(input: Input) {
+  const state = getState(input.zip);
+
+  if (state !== "SC") {
+    return { eligible: false, reason: "SC only" };
+  }
+
+  if (input.hasSolar) {
+    return { eligible: false, reason: "No solar" };
+  }
+
+  return { eligible: true, score: 5 };
+}
+
+const carriers = [
+  { label: "American Integrity", evaluate: evaluateAmericanIntegrity },
+  { label: "Universal", evaluate: evaluateUniversal },
+  { label: "Frontline", evaluate: evaluateFrontline },
+  { label: "Homeowners of America", evaluate: evaluateHOA },
+  { label: "Orion180", evaluate: evaluateOrion180 },
+  { label: "Heritage", evaluate: evaluateHeritage },
+  { label: "Tower Hill", evaluate: evaluateTowerHill },
+  { label: "Aspera", evaluate: evaluateAspera }
+];
+
+function evaluate(input: Input): Result[] {
+  let availableCarriers = carriers;
+
+  if (input.mobileHome) {
+    availableCarriers = carriers.filter(
+      (c) => c.label === "Tower Hill" || c.label === "Aspera"
+    );
+  }
+
+  const results: Result[] = availableCarriers.map((carrier) => {
+    const res = carrier.evaluate(input);
+
+    if (!res.eligible) {
+      return {
+        label: carrier.label,
+        tier: "Do Not Quote",
+        reasons: [res.reason]
+      };
     }
-
-    if (!eligible) {
-      results.push({ label: r.label, tier: "Do Not Quote", reasons });
-      return;
-    }
-
-    let score = r.baseScore;
-
-    if (input.yearBuilt > 2015 && r.boosts.newerHome) score += r.boosts.newerHome;
-    if (input.roofAge < 5 && r.boosts.newRoof) score += r.boosts.newRoof;
-    if (coastal && r.boosts.coastal) score += r.boosts.coastal;
-    if (input.hasSolar && r.boosts.solar) score += r.boosts.solar;
-    if (input.smallHome && r.boosts.smallHome) score += r.boosts.smallHome;
 
     let tier = "Backup";
-    if (score >= 9) tier = "Best Bet";
-    else if (score >= 7) tier = "Competitive";
+    if ((res.score || 0) >= 9) tier = "Best Bet";
+    else if ((res.score || 0) >= 7) tier = "Competitive";
 
-    results.push({ label: r.label, tier, score });
+    return {
+      label: carrier.label,
+      tier,
+      score: res.score
+    };
   });
 
-  return results.sort((a, b) => (b.score || 0) - (a.score || 0));
+  return results
+    .filter((r) => r.tier !== "Do Not Quote")
+    .sort((a, b) => (b.score || 0) - (a.score || 0));
 }
 
 export default function App() {
   const [form, setForm] = useState({
     zip: "",
-    yearBuilt: "",
-    roofAge: "",
+    buildYear: "",
+    roofYear: "",
     hasSolar: false,
-    smallHome: false,
+    mobileHome: false,
     top3Only: true
   });
 
   const [results, setResults] = useState<Result[] | null>(null);
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     let evaluated = evaluate({
-      zip: form.zip,
-      yearBuilt: Number(form.yearBuilt),
-      roofAge: Number(form.roofAge),
+      zip: form.zip.trim(),
+      buildYear: Number(form.buildYear),
+      roofYear: Number(form.roofYear),
       hasSolar: form.hasSolar,
-      smallHome: form.smallHome
+      mobileHome: form.mobileHome
     });
 
     if (form.top3Only) {
-      evaluated = evaluated
-        .filter((r) => r.tier !== "Do Not Quote")
-        .slice(0, 3);
+      evaluated = evaluated.slice(0, 3);
     }
 
     setResults(evaluated);
@@ -169,18 +298,18 @@ export default function App() {
 
         <input
           className="w-full p-2 border rounded"
-          placeholder="Year Built"
+          placeholder="Build Year"
           type="number"
-          value={form.yearBuilt}
-          onChange={(e) => setForm({ ...form, yearBuilt: e.target.value })}
+          value={form.buildYear}
+          onChange={(e) => setForm({ ...form, buildYear: e.target.value })}
         />
 
         <input
           className="w-full p-2 border rounded"
-          placeholder="Roof Age"
+          placeholder="Roof Year"
           type="number"
-          value={form.roofAge}
-          onChange={(e) => setForm({ ...form, roofAge: e.target.value })}
+          value={form.roofYear}
+          onChange={(e) => setForm({ ...form, roofYear: e.target.value })}
         />
 
         <label className="flex items-center space-x-2">
@@ -195,10 +324,10 @@ export default function App() {
         <label className="flex items-center space-x-2">
           <input
             type="checkbox"
-            checked={form.smallHome}
-            onChange={(e) => setForm({ ...form, smallHome: e.target.checked })}
+            checked={form.mobileHome}
+            onChange={(e) => setForm({ ...form, mobileHome: e.target.checked })}
           />
-          <span>Small / Low Coverage Home</span>
+          <span>Mobile Home</span>
         </label>
 
         <label className="flex items-center space-x-2">
@@ -217,17 +346,23 @@ export default function App() {
 
       {results && (
         <div className="mt-6 space-y-2">
-          {results.map((r, i) => (
-            <div key={i} className="p-3 border rounded">
-              <strong>{r.label}</strong>: {r.tier}
-              {r.score && <div className="text-sm">Score: {r.score}</div>}
-              {r.reasons && (
-                <div className="text-sm text-red-500">
-                  {r.reasons.join(", ")}
-                </div>
-              )}
-            </div>
-          ))}
+          {results.length === 0 ? (
+            <div className="p-3 border rounded">No eligible carriers found.</div>
+          ) : (
+            results.map((r, i) => (
+              <div key={i} className="p-3 border rounded">
+                <strong>{r.label}</strong>: {r.tier}
+                {r.score !== undefined && (
+                  <div className="text-sm">Score: {r.score}</div>
+                )}
+                {r.reasons && (
+                  <div className="text-sm text-red-500">
+                    {r.reasons.join(", ")}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>
