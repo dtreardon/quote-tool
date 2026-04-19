@@ -359,7 +359,7 @@ export default function Page() {
     const params = new URLSearchParams({
       center: `${form.lat},${form.lng}`,
       zoom: "20",
-      size: "1200x600",
+      size: "1200x800",
       scale: "2",
       maptype: "satellite",
       markers: `color:red|${form.lat},${form.lng}`,
@@ -419,180 +419,189 @@ export default function Page() {
             <h1 className="text-2xl font-bold text-gray-900">Homeowners Carrier Guide</h1>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] lg:items-start">
-            <div className="space-y-6">
-              <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border bg-white p-5 shadow-sm">
-                <div>
-                  <input
-                    ref={inputRef}
-                    className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500"
-                    placeholder="Enter property address"
-                    value={form.address}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        address: e.target.value,
-                        zip: "",
-                        city: "",
-                        state: "",
-                        distanceToCoast: null,
-                        lat: null,
-                        lng: null,
-                      }))
-                    }
-                  />
-                  <div className="mt-2 text-xs text-gray-500">
-                    {status === "missing-key" && "Add your Google Maps API key"}
-                    {status === "error" && "Google Maps could not be loaded"}
-                    {status === "ready" && "Start typing and select an address from the dropdown"}
-                  </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-stretch">
+            <div className="h-full">
+              <form onSubmit={handleSubmit} className="flex h-full flex-col space-y-4 rounded-2xl border bg-white p-5 shadow-sm">
+              <div>
+                <input
+                  ref={inputRef}
+                  className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500"
+                  placeholder="Enter property address"
+                  value={form.address}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      address: e.target.value,
+                      zip: "",
+                      city: "",
+                      state: "",
+                      distanceToCoast: null,
+                      lat: null,
+                      lng: null,
+                    }))
+                  }
+                />
+                <div className="mt-2 text-xs text-gray-500">
+                  {status === "missing-key" && "Add your Google Maps API key"}
+                  {status === "error" && "Google Maps could not be loaded"}
+                  {status === "ready" && "Start typing and select an address from the dropdown"}
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <input
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
-                    placeholder="ZIP"
-                    value={form.zip}
-                    readOnly
-                  />
-                  <input
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
-                    placeholder="City"
-                    value={form.city}
-                    readOnly
-                  />
-                  <input
-                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
-                    placeholder="State"
-                    value={form.state}
-                    readOnly
-                  />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <input
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
+                  placeholder="ZIP"
+                  value={form.zip}
+                  readOnly
+                />
+                <input
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
+                  placeholder="City"
+                  value={form.city}
+                  readOnly
+                />
+                <input
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
+                  placeholder="State"
+                  value={form.state}
+                  readOnly
+                />
+              </div>
+
+              {form.distanceToCoast !== null && (
+                <div className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-gray-800">
+                  Distance to coast: <strong>{form.distanceToCoast} miles</strong>
                 </div>
+              )}
 
-                {form.distanceToCoast !== null && (
-                  <div className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-gray-800">
-                    Distance to coast: <strong>{form.distanceToCoast} miles</strong>
-                  </div>
-                )}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <input
+                  className="w-full rounded-lg border border-gray-300 p-3"
+                  placeholder="Build Year"
+                  type="number"
+                  value={form.buildYear}
+                  onChange={(e) => setForm({ ...form, buildYear: e.target.value })}
+                />
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <input
-                    className="w-full rounded-lg border border-gray-300 p-3"
-                    placeholder="Build Year"
-                    type="number"
-                    value={form.buildYear}
-                    onChange={(e) => setForm({ ...form, buildYear: e.target.value })}
-                  />
+                <input
+                  className="w-full rounded-lg border border-gray-300 p-3"
+                  placeholder="Roof Year"
+                  type="number"
+                  value={form.roofYear}
+                  onChange={(e) => setForm({ ...form, roofYear: e.target.value })}
+                />
+              </div>
 
-                  <input
-                    className="w-full rounded-lg border border-gray-300 p-3"
-                    placeholder="Roof Year"
-                    type="number"
-                    value={form.roofYear}
-                    onChange={(e) => setForm({ ...form, roofYear: e.target.value })}
-                  />
+              {roofAge !== null && !Number.isNaN(roofAge) && (
+                <div className="text-xs text-gray-500">
+                  Estimated roof age: {roofAge} years
                 </div>
+              )}
 
-                {roofAge !== null && !Number.isNaN(roofAge) && (
-                  <div className="text-xs text-gray-500">
-                    Estimated roof age: {roofAge} years
-                  </div>
-                )}
+              <div className="grid gap-2 sm:grid-cols-3">
+                <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.hasSolar}
+                    onChange={(e) => setForm({ ...form, hasSolar: e.target.checked })}
+                  />
+                  <span>Solar</span>
+                </label>
 
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={form.hasSolar}
-                      onChange={(e) => setForm({ ...form, hasSolar: e.target.checked })}
-                    />
-                    <span>Solar</span>
-                  </label>
+                <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.mobileHome}
+                    onChange={(e) => setForm({ ...form, mobileHome: e.target.checked })}
+                  />
+                  <span>Mobile Home</span>
+                </label>
 
-                  <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={form.mobileHome}
-                      onChange={(e) => setForm({ ...form, mobileHome: e.target.checked })}
-                    />
-                    <span>Mobile Home</span>
-                  </label>
+                <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.top3Only}
+                    onChange={(e) => setForm({ ...form, top3Only: e.target.checked })}
+                  />
+                  <span>Top 3 Only</span>
+                </label>
+              </div>
 
-                  <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={form.top3Only}
-                      onChange={(e) => setForm({ ...form, top3Only: e.target.checked })}
-                    />
-                    <span>Top 3 Only</span>
-                  </label>
-                </div>
+              {error && <div className="text-sm text-red-600">{error}</div>}
 
-                {error && <div className="text-sm text-red-600">{error}</div>}
-
-                <button className="rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700">
-                  Find Carriers
-                </button>
+              <button className="rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700 self-start">
+                Find Carriers
+              </button>
               </form>
+            </div>
 
-              {staticMapUrl && (
-                <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-                  <div className="border-b px-5 py-3">
-                    <h2 className="text-sm font-semibold text-gray-900">Property view</h2>
-                  </div>
-                  <div className="aspect-[16/9] bg-gray-100">
-                    <img
-                      src={staticMapUrl}
-                      alt="Satellite view of selected property"
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
+            <div className="h-full">
+              <div className="flex h-full flex-col overflow-hidden rounded-2xl border bg-white shadow-sm">
+              <div className="border-b px-5 py-3">
+                <h2 className="text-sm font-semibold text-gray-900">Property view</h2>
+              </div>
+
+              {staticMapUrl ? (
+                <div className="aspect-[4/3] bg-gray-100">
+                  <img
+                    src={staticMapUrl}
+                    alt="Satellite view of selected property"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
+              ) : (
+                <div className="flex aspect-[4/3] items-center justify-center bg-gray-50 p-6 text-center text-sm text-gray-500">
+                  Satellite preview will appear after selecting an address.
+                </div>
+              )}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-gray-900">Results</h2>
+              {results && (
+                <span className="text-sm text-gray-500">
+                  {results.length} option{results.length === 1 ? "" : "s"}
+                </span>
               )}
             </div>
 
-            <div className="lg:sticky lg:top-6">
-              <div className="rounded-2xl border bg-white p-5 shadow-sm min-h-[220px]">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold text-gray-900">Results</h2>
-                  {results && <span className="text-sm text-gray-500">{results.length} option{results.length === 1 ? "" : "s"}</span>}
-                </div>
-
-                {!results ? (
-                  <div className="rounded-xl border border-dashed border-gray-300 p-6 text-sm text-gray-500">
-                    Enter the property details and select <strong>Find Carriers</strong> to see eligible options.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {results.map((r, i) => (
-                      <div
-                        key={i}
-                        className={`rounded-xl border p-4 ${
-                          r.isBrokerFallback ? "border-gray-300 bg-gray-50" : "border-gray-200 bg-white"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-semibold text-gray-900">{r.label}</div>
-                            {r.isBrokerFallback ? (
-                              <div className="mt-1 text-sm text-gray-700">Submit for quotes</div>
-                            ) : (
-                              <div className="mt-1 text-sm text-gray-700">{r.tier}</div>
-                            )}
-                          </div>
-
-                          {!r.isBrokerFallback && (
-                            <div className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
-                              Score: {r.score}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+            {!results ? (
+              <div className="rounded-xl border border-dashed border-gray-300 p-6 text-sm text-gray-500">
+                Enter the property details and select <strong>Find Carriers</strong> to see eligible options.
               </div>
-            </div>
+            ) : (
+              <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                {results.map((r, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-xl border p-4 ${
+                      r.isBrokerFallback ? "border-gray-300 bg-gray-50" : "border-gray-200 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-semibold text-gray-900">{r.label}</div>
+                        {r.isBrokerFallback ? (
+                          <div className="mt-1 text-sm text-gray-700">Submit for quotes</div>
+                        ) : (
+                          <div className="mt-1 text-sm text-gray-700">{r.tier}</div>
+                        )}
+                      </div>
+
+                      {!r.isBrokerFallback && (
+                        <div className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
+                          Score: {r.score}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
