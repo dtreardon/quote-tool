@@ -11,6 +11,7 @@ export const frontline_ga = {
       roofType, // "composition" | "architectural" | "tile" | "metal" | "flat"
       policyType, // "HO" | "DP"
       mobileHome,
+      zip,
     } = input;
 
     const currentYear = new Date().getFullYear();
@@ -68,6 +69,14 @@ export const frontline_ga = {
     const reasons: string[] = [];
 
     reasons.push("Highly competitive pricing in GA");
+
+    if (distanceToCoast <= 25) {
+      reasons.push("Best option in coastal GA");
+    } else if (distanceToCoast <= 50) {
+      reasons.push("Very strong in near-inland GA");
+    } else {
+      reasons.push("Strong inland GA option");
+    }
 
     if (age <= 2) {
       reasons.push("Slightly weaker on brand new construction");

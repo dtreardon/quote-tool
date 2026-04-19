@@ -11,6 +11,7 @@ export const orion180_sc = {
       policyType, // "HO" | "DP"
       mobileHome,
       barrierIsland,
+      hasSolar,
     } = input;
 
     const currentYear = new Date().getFullYear();
@@ -27,7 +28,7 @@ export const orion180_sc = {
       return { eligible: false, reason: "Invalid policy type" };
     }
 
-    // --- Geographic (Coastal Only) ---
+    // --- Geographic ---
     if (distanceToCoast > 45) {
       return { eligible: false, reason: "Outside coastal eligibility (>45 miles)" };
     }
@@ -41,12 +42,16 @@ export const orion180_sc = {
       return { eligible: false, reason: "Barrier island restrictions" };
     }
 
+    if (hasSolar) {
+      return { eligible: false, reason: "Solar not eligible" };
+    }
+
     // --- Build ---
     if (buildYear < 1900) {
       return { eligible: false, reason: "Built prior to 1900" };
     }
 
-    // --- Base Score (DTC) ---
+    // --- Base Score ---
     let baseScore = 0;
 
     if (distanceToCoast <= 5) baseScore = 9;
@@ -86,18 +91,12 @@ export const orion180_sc = {
       reasons.push("Older roof likely ACV settlement");
     }
 
-    // --- DP Specific ---
-    if (policyType === "DP") {
-      if (age > 30) {
-        reasons.push("Limited water damage coverage ($10k)");
-      }
+    if (policyType === "DP" && age > 30) {
+      reasons.push("Limited water damage coverage ($10k)");
     }
 
-    // --- HO Specific ---
-    if (policyType === "HO") {
-      if (age > 30) {
-        reasons.push("Limited water damage coverage on older homes");
-      }
+    if (policyType === "HO" && age > 30) {
+      reasons.push("Limited water damage coverage on older homes");
     }
 
     return {

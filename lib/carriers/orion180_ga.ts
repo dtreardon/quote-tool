@@ -10,6 +10,7 @@ export const orion180_ga = {
       roofYear,
       policyType, // "HO"
       mobileHome,
+      hasSolar,
     } = input;
 
     const currentYear = new Date().getFullYear();
@@ -34,6 +35,10 @@ export const orion180_ga = {
     // --- Disqualifiers ---
     if (mobileHome) {
       return { eligible: false, reason: "Mobile homes not eligible" };
+    }
+
+    if (hasSolar) {
+      return { eligible: false, reason: "Solar not eligible" };
     }
 
     // --- Build ---
