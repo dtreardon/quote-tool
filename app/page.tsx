@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import coastline from "../data/coastline.json";
 import { point, pointToLineDistance } from "@turf/turf";
@@ -358,20 +359,33 @@ export default function Page() {
   }
 
   return (
-    <div className="p-6 max-w-xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold mb-2">Quote Tool</h1>
-        <p className="text-sm text-gray-600">
-          Search the property address and the tool will pull the ZIP automatically.
-        </p>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="w-full bg-white border-b">
+        <div className="max-w-3xl mx-auto px-6 py-4 flex justify-center">
+          <div className="relative h-14 w-64">
+            <Image
+              src="/logo.png"
+              alt="Robinson & Associates logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="flex-1">
+        <div className="p-6 max-w-xl mx-auto space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold">Homeowners Carrier Guide</h1>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <input
             ref={inputRef}
             className="w-full p-2 border rounded"
-            placeholder="Property address"
+            placeholder="Enter property address"
             value={form.address}
 onChange={(e) =>
   setForm((prev) => ({
@@ -474,20 +488,28 @@ onChange={(e) =>
         </button>
       </form>
 
-      {results && (
-        <div className="mt-6 space-y-2">
-          {results.length === 0 ? (
-            <div className="p-3 border rounded">No eligible carriers found.</div>
-          ) : (
-            results.map((r, i) => (
-              <div key={i} className="p-3 border rounded">
-                <strong>{r.label}</strong> — {r.tier}
-                <div className="text-sm">Score: {r.score}</div>
-              </div>
-            ))
+          {results && (
+            <div className="mt-6 space-y-2">
+              {results.length === 0 ? (
+                <div className="p-3 border rounded bg-white">No eligible carriers found.</div>
+              ) : (
+                results.map((r, i) => (
+                  <div key={i} className="p-3 border rounded bg-white">
+                    <strong>{r.label}</strong> — {r.tier}
+                    <div className="text-sm">Score: {r.score}</div>
+                  </div>
+                ))
+              )}
+            </div>
           )}
         </div>
-      )}
+      </div>
+
+      <div className="border-t bg-white">
+        <div className="max-w-3xl mx-auto px-6 py-4 text-center text-xs text-gray-500">
+          © 2026 Reardon Insurance, LLC
+        </div>
+      </div>
     </div>
   );
 }
