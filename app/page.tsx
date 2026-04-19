@@ -5,11 +5,31 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import coastline from "../data/coastline.json";
 import { point, pointToLineDistance } from "@turf/turf";
 
+import { americanintegrity } from "../lib/carriers/americanintegrity";
+import { homeownersofamerica } from "../lib/carriers/homeownersofamerica";
+import { heritage } from "../lib/carriers/heritage";
+import { orion180_ga } from "../lib/carriers/orion180_ga";
+import { orion180_sc } from "../lib/carriers/orion180_sc";
+import { frontline_sc } from "../lib/carriers/frontline_sc";
+import { frontline_ga } from "../lib/carriers/frontline_ga";
+import { frontline_nc } from "../lib/carriers/frontline_nc";
+
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+
+const carrierRegistry = [
+  americanintegrity,
+  homeownersofamerica,
+  heritage,
+  orion180_ga,
+  orion180_sc,
+  frontline_sc,
+  frontline_ga,
+  frontline_nc,
+];
 
 function getAddressComponent(place: any, type: string) {
   const components = place?.address_components || [];
-  return components.find((c: any) => c.types?.includes(type))?.long_name || "";
+  return components.find((c: any) => c.types?.includes(type))?.short_name || "";
 }
 
 function loadGoogleMaps(apiKey: string) {
@@ -45,182 +65,33 @@ function isBarrierIsland(zip: string) {
   return ["31522"].includes(zip);
 }
 
-function isSC(zip: string) {
-  return zip.startsWith("29");
+function scoreToTier(score?: number) {
+  if (score == null) return "Backup";
+  if (score >= 9) return "Best";
+  if (score >= 7) return "Competitive";
+  return "Backup";
 }
 
-function isGA(zip: string) {
-  return zip.startsWith("30") || zip.startsWith("31");
-}
-
-function isNC(zip: string) {
-  return zip.startsWith("27");
-}
-
-function isFL(zip: string) {
-  return zip.startsWith("32") || zip.startsWith("33") || zip.startsWith("34");
-}
-
-function isCharlestonArea(zip: string) {
-  return ["294", "29401", "29403", "29407"].some((z) => zip.startsWith(z));
-}
-
-const carriers = {
-  AmericanIntegrity: {
-    label: "American Integrity",
-    evaluate(input: any) {
-      const { zip, buildYear, distanceToCoast } = input;
-
-      if (isBarrierIsland(zip)) {
-        return { eligible: false };
-      }
-
-      if (distanceToCoast != null && distanceToCoast <= 1) {
-        return { eligible: false };
-      }
-
-      if (isGA(zip) || isNC(zip)) {
-        if (buildYear < 2023) {
-          return { eligible: false };
-        }
-        return { eligible: true, score: 9 };
-      }
-
-      if (isSC(zip)) {
-        if (isCharlestonArea(zip)) {
-          if (buildYear < 2014) {
-            return { eligible: false };
-          }
-        } else if (buildYear < 1901) {
-          return { eligible: false };
-        }
-
-        return { eligible: true, score: 8 };
-      }
-
-      return { eligible: false };
-    },
-  },
-
-  HomeownersOfAmerica: {
-    label: "Homeowners of America",
-    evaluate(input: any) {
-      const { zip, distanceToCoast } = input;
-
-      if (!isSC(zip) && !isGA(zip) && !isNC(zip) && !isFL(zip)) {
-        return { eligible: false };
-      }
-
-      if (distanceToCoast != null && distanceToCoast <= 0.5) {
-        return { eligible: false };
-      }
-
-      return { eligible: true, score: 7 };
-    },
-  },
-
-  Heritage: {
-    label: "Heritage",
-    evaluate(input: any) {
-      if (input.buildYear < 1970) {
-        return { eligible: false };
-      }
-
-      if (input.distanceToCoast != null && input.distanceToCoast <= 2) {
-        return { eligible: false };
-      }
-
-      return { eligible: true, score: 6 };
-    },
-  },
-
-  Orion180: {
-    label: "Orion180",
-    evaluate(input: any) {
-      if (!isSC(input.zip)) {
-        return { eligible: false };
-      }
-
-      if (input.distanceToCoast != null && input.distanceToCoast <= 1) {
-        return { eligible: false };
-      }
-
-      return { eligible: true, score: 7 };
-    },
-  },
-
-  Universal: {
-    label: "Universal",
-    evaluate(input: any) {
-      if (isBarrierIsland(input.zip)) {
-        return { eligible: false };
-      }
-
-      if (input.distanceToCoast != null && input.distanceToCoast <= 1) {
-        return { eligible: false };
-      }
-
-      if (isGA(input.zip)) {
-        if (input.coastalGA) {
-          return { eligible: false };
-        }
-        return { eligible: true, score: 8 };
-      }
-
-      if (isNC(input.zip)) {
-        return { eligible: true, score: 8 };
-      }
-
-      if (isSC(input.zip)) {
-        if (input.buildYear >= 2015) {
-          return { eligible: true, score: 8 };
-        }
-        return { eligible: true, score: 7 };
-      }
-
-      return { eligible: false };
-    },
-  },
-
-  Frontline: {
-    label: "Frontline",
-    evaluate(input: any) {
-      if (input.distanceToCoast != null && input.distanceToCoast <= 1) {
-        return { eligible: false };
-      }
-
-      if (isGA(input.zip)) {
-        return { eligible: true, score: 10 };
-      }
-
-      if (isNC(input.zip)) {
-        return { eligible: true, score: input.buildYear < 2000 ? 9 : 8 };
-      }
-
-      return { eligible: false };
-    },
-  },
-};
-
-function evaluate(input: any) {
-  const eligibleCarriers = Object.values(carriers)
+function evaluateCarriers(input: any) {
+  const eligibleCarriers = carrierRegistry
     .map((carrier: any) => {
-      const res = carrier.evaluate(input);
-      if (!res.eligible) return null;
+      const result = carrier.evaluate(input);
 
-      let tier = "Backup";
-      if (res.score >= 9) tier = "Best";
-      else if (res.score >= 7) tier = "Competitive";
+      if (!result?.eligible) {
+        return null;
+      }
 
       return {
         label: carrier.label,
-        tier,
-        score: res.score,
+        key: carrier.key,
+        tier: scoreToTier(result.score),
+        score: result.score,
+        reason: result.reason,
         isBrokerFallback: false,
       };
     })
     .filter(Boolean)
-    .sort((a: any, b: any) => b.score - a.score);
+    .sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0));
 
   const limitedCarriers = input.top3Only
     ? eligibleCarriers.slice(0, 3)
@@ -232,6 +103,7 @@ function evaluate(input: any) {
           ...limitedCarriers,
           {
             label: "Brokers",
+            reason: "Submit for quotes",
             isBrokerFallback: true,
           },
         ]
@@ -240,7 +112,7 @@ function evaluate(input: any) {
   return withBrokerFallback.sort((a: any, b: any) => {
     if (a.isBrokerFallback) return 1;
     if (b.isBrokerFallback) return -1;
-    return b.score - a.score;
+    return (b.score ?? 0) - (a.score ?? 0);
   });
 }
 
@@ -255,6 +127,8 @@ export default function Page() {
     state: "",
     buildYear: "",
     roofYear: "",
+    policyType: "HO",
+    roofType: "architectural",
     hasSolar: false,
     mobileHome: false,
     top3Only: true,
@@ -383,15 +257,28 @@ export default function Page() {
       return;
     }
 
-    const evaluated = evaluate({
+    if (!form.buildYear) {
+      setError("Enter a build year.");
+      return;
+    }
+
+    if (!form.roofYear) {
+      setError("Enter a roof year.");
+      return;
+    }
+
+    const evaluated = evaluateCarriers({
       zip: form.zip,
+      state: form.state,
       buildYear: Number(form.buildYear),
       roofYear: Number(form.roofYear),
+      roofType: form.roofType,
+      policyType: form.policyType,
       hasSolar: form.hasSolar,
       mobileHome: form.mobileHome,
       top3Only: form.top3Only,
       distanceToCoast: form.distanceToCoast,
-      coastalGA: isGA(form.zip) && (form.distanceToCoast ?? 999) <= 10,
+      barrierIsland: isBarrierIsland(form.zip),
     });
 
     setResults(evaluated);
@@ -421,140 +308,166 @@ export default function Page() {
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 items-stretch">
             <div className="h-full">
-              <form onSubmit={handleSubmit} className="flex h-full flex-col space-y-4 rounded-2xl border bg-white p-5 shadow-sm">
-              <div>
-                <input
-                  ref={inputRef}
-                  className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500"
-                  placeholder="Enter property address"
-                  value={form.address}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      address: e.target.value,
-                      zip: "",
-                      city: "",
-                      state: "",
-                      distanceToCoast: null,
-                      lat: null,
-                      lng: null,
-                    }))
-                  }
-                />
-                <div className="mt-2 text-xs text-gray-500">
-                  {status === "missing-key" && "Add your Google Maps API key"}
-                  {status === "error" && "Google Maps could not be loaded"}
-                  {status === "ready" && "Start typing and select an address from the dropdown"}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <input
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
-                  placeholder="ZIP"
-                  value={form.zip}
-                  readOnly
-                />
-                <input
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
-                  placeholder="City"
-                  value={form.city}
-                  readOnly
-                />
-                <input
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
-                  placeholder="State"
-                  value={form.state}
-                  readOnly
-                />
-              </div>
-
-              {form.distanceToCoast !== null && (
-                <div className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-gray-800">
-                  Distance to coast: <strong>{form.distanceToCoast} miles</strong>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <input
-                  className="w-full rounded-lg border border-gray-300 p-3"
-                  placeholder="Build Year"
-                  type="number"
-                  value={form.buildYear}
-                  onChange={(e) => setForm({ ...form, buildYear: e.target.value })}
-                />
-
-                <input
-                  className="w-full rounded-lg border border-gray-300 p-3"
-                  placeholder="Roof Year"
-                  type="number"
-                  value={form.roofYear}
-                  onChange={(e) => setForm({ ...form, roofYear: e.target.value })}
-                />
-              </div>
-
-              {roofAge !== null && !Number.isNaN(roofAge) && (
-                <div className="text-xs text-gray-500">
-                  Estimated roof age: {roofAge} years
-                </div>
-              )}
-
-              <div className="grid gap-2 sm:grid-cols-3">
-                <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
+              <form
+                onSubmit={handleSubmit}
+                className="flex h-full flex-col space-y-4 rounded-2xl border bg-white p-5 shadow-sm"
+              >
+                <div>
                   <input
-                    type="checkbox"
-                    checked={form.hasSolar}
-                    onChange={(e) => setForm({ ...form, hasSolar: e.target.checked })}
+                    ref={inputRef}
+                    className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500"
+                    placeholder="Enter property address"
+                    value={form.address}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        address: e.target.value,
+                        zip: "",
+                        city: "",
+                        state: "",
+                        distanceToCoast: null,
+                        lat: null,
+                        lng: null,
+                      }))
+                    }
                   />
-                  <span>Solar</span>
-                </label>
+                  <div className="mt-2 text-xs text-gray-500">
+                    {status === "missing-key" && "Add your Google Maps API key"}
+                    {status === "error" && "Google Maps could not be loaded"}
+                    {status === "ready" && "Start typing and select an address from the dropdown"}
+                  </div>
+                </div>
 
-                <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <input
-                    type="checkbox"
-                    checked={form.mobileHome}
-                    onChange={(e) => setForm({ ...form, mobileHome: e.target.checked })}
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
+                    placeholder="ZIP"
+                    value={form.zip}
+                    readOnly
                   />
-                  <span>Mobile Home</span>
-                </label>
-
-                <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
                   <input
-                    type="checkbox"
-                    checked={form.top3Only}
-                    onChange={(e) => setForm({ ...form, top3Only: e.target.checked })}
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
+                    placeholder="City"
+                    value={form.city}
+                    readOnly
                   />
-                  <span>Top 3 Only</span>
-                </label>
-              </div>
+                  <input
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 p-3"
+                    placeholder="State"
+                    value={form.state}
+                    readOnly
+                  />
+                </div>
 
-              {error && <div className="text-sm text-red-600">{error}</div>}
+                {form.distanceToCoast !== null && (
+                  <div className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-gray-800">
+                    Distance to coast: <strong>{form.distanceToCoast} miles</strong>
+                  </div>
+                )}
 
-              <button className="rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700 self-start">
-                Find Carriers
-              </button>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <select
+                    className="w-full rounded-lg border border-gray-300 p-3 bg-white"
+                    value={form.policyType}
+                    onChange={(e) => setForm({ ...form, policyType: e.target.value })}
+                  >
+                    <option value="HO">HO</option>
+                    <option value="DP">DP</option>
+                  </select>
+
+                  <select
+                    className="w-full rounded-lg border border-gray-300 p-3 bg-white"
+                    value={form.roofType}
+                    onChange={(e) => setForm({ ...form, roofType: e.target.value })}
+                  >
+                    <option value="architectural">Architectural Shingle</option>
+                    <option value="composition">Composition Shingle</option>
+                    <option value="metal">Metal</option>
+                    <option value="tile">Tile</option>
+                    <option value="flat">Flat</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <input
+                    className="w-full rounded-lg border border-gray-300 p-3"
+                    placeholder="Build Year"
+                    type="number"
+                    value={form.buildYear}
+                    onChange={(e) => setForm({ ...form, buildYear: e.target.value })}
+                  />
+
+                  <input
+                    className="w-full rounded-lg border border-gray-300 p-3"
+                    placeholder="Roof Year"
+                    type="number"
+                    value={form.roofYear}
+                    onChange={(e) => setForm({ ...form, roofYear: e.target.value })}
+                  />
+                                  </div>
+
+                {roofAge !== null && !Number.isNaN(roofAge) && (
+                  <div className="text-xs text-gray-500">
+                    Estimated roof age: {roofAge} years
+                  </div>
+                )}
+
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.hasSolar}
+                      onChange={(e) => setForm({ ...form, hasSolar: e.target.checked })}
+                    />
+                    <span>Solar</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.mobileHome}
+                      onChange={(e) => setForm({ ...form, mobileHome: e.target.checked })}
+                    />
+                    <span>Mobile Home</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.top3Only}
+                      onChange={(e) => setForm({ ...form, top3Only: e.target.checked })}
+                    />
+                    <span>Top 3 Only</span>
+                  </label>
+                </div>
+
+                {error && <div className="text-sm text-red-600">{error}</div>}
+
+                <button className="rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700 self-start">
+                  Find Carriers
+                </button>
               </form>
             </div>
 
             <div className="h-full">
               <div className="flex h-full flex-col overflow-hidden rounded-2xl border bg-white shadow-sm">
-              <div className="border-b px-5 py-3">
-                <h2 className="text-sm font-semibold text-gray-900">Property view</h2>
-              </div>
+                <div className="border-b px-5 py-3">
+                  <h2 className="text-sm font-semibold text-gray-900">Property view</h2>
+                </div>
 
-              {staticMapUrl ? (
-                <div className="aspect-[4/3] bg-gray-100">
-                  <img
-                    src={staticMapUrl}
-                    alt="Satellite view of selected property"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex aspect-[4/3] items-center justify-center bg-gray-50 p-6 text-center text-sm text-gray-500">
-                  Satellite preview will appear after selecting an address.
-                </div>
-              )}
+                {staticMapUrl ? (
+                  <div className="aspect-[4/3] bg-gray-100">
+                    <img
+                      src={staticMapUrl}
+                      alt="Satellite view of selected property"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex aspect-[4/3] items-center justify-center bg-gray-50 p-6 text-center text-sm text-gray-500">
+                    Satellite preview will appear after selecting an address.
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -588,7 +501,10 @@ export default function Page() {
                         {r.isBrokerFallback ? (
                           <div className="mt-1 text-sm text-gray-700">Submit for quotes</div>
                         ) : (
-                          <div className="mt-1 text-sm text-gray-700">{r.tier}</div>
+                          <>
+                            <div className="mt-1 text-sm text-gray-700">{r.tier}</div>
+                            <div className="mt-2 text-xs text-gray-500">{r.reason}</div>
+                          </>
                         )}
                       </div>
 
