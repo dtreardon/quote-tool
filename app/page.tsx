@@ -372,7 +372,17 @@ export default function Page() {
             ref={inputRef}
             className="w-full p-2 border rounded"
             placeholder="Property address"
-            defaultValue={form.address}
+            value={form.address}
+onChange={(e) =>
+  setForm((prev) => ({
+    ...prev,
+    address: e.target.value,
+    zip: "",
+    city: "",
+    state: "",
+    distanceToCoast: null,
+  }))
+}
           />
           <div className="text-xs text-gray-500 mt-1">
             {status === "missing-key" && "Add your Google Maps API key"}
