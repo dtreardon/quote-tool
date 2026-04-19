@@ -8,11 +8,17 @@ import { point, pointToLineDistance } from "@turf/turf";
 import { americanintegrity } from "../lib/carriers/americanintegrity";
 import { homeownersofamerica } from "../lib/carriers/homeownersofamerica";
 import { heritage } from "../lib/carriers/heritage";
-import { orion180_ga } from "../lib/carriers/orion180_ga";
-import { orion180_sc } from "../lib/carriers/orion180_sc";
-import { frontline_sc } from "../lib/carriers/frontline_sc";
 import { frontline_ga } from "../lib/carriers/frontline_ga";
 import { frontline_nc } from "../lib/carriers/frontline_nc";
+import { frontline_sc } from "../lib/carriers/frontline_sc";
+import { orion180_ga } from "../lib/carriers/orion180_ga";
+import { orion180_sc } from "../lib/carriers/orion180_sc";
+
+// --- Universal imports
+import { universal_ga } from "../lib/carriers/universal_ga";
+import { universal_nc } from "../lib/carriers/universal_nc";
+import { universal_fl } from "../lib/carriers/universal_fl";
+import { universal_sc } from "../lib/carriers/universal_sc";
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
@@ -25,6 +31,10 @@ const carrierRegistry = [
   frontline_sc,
   frontline_ga,
   frontline_nc,
+  universal_fl,
+  universal_ga,
+  universal_sc,
+  universal_nc,
 ];
 
 function getAddressComponent(place: any, type: string) {
