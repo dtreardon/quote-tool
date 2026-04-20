@@ -58,11 +58,11 @@ export const orion180_sc = {
     else if (distanceToCoast <= 20) baseScore = 8;
     else baseScore = 7;
 
-    // --- Age Penalty ---
-    let agePenalty = 0;
+    // --- Age Adjustment ---
+    let ageAdjustment = 0;
 
-    if (age > 30) agePenalty = 1;
-    if (age > 50) agePenalty = 2;
+    if (age > 40) ageAdjustment = 2;
+    else if (age > 20) ageAdjustment = 1;
 
     // --- Roof Penalty ---
     let roofPenalty = 0;
@@ -70,13 +70,7 @@ export const orion180_sc = {
     if (roofAge > 30) roofPenalty = 2;
     else if (roofAge > 20) roofPenalty = 1;
 
-    // --- Market Fit Adjustment ---
-    let marketAdjustment = 0;
-
-if (age > 40) marketAdjustment = -2;
-else if (age > 20) marketAdjustment = -1;
-
-    let score = baseScore - agePenalty - roofPenalty + marketAdjustment;
+    let score = baseScore - ageAdjustment - roofPenalty;
 
     // --- Floor ---
     if (score < 5) score = 5;
@@ -86,17 +80,13 @@ else if (age > 20) marketAdjustment = -1;
 
     reasons.push(`Coastal pricing tier (${baseScore})`);
 
-    if (agePenalty > 0) {
-      reasons.push(`Age penalty applied (-${agePenalty})`);
+    if (ageAdjustment > 0) {
+      reasons.push(`Older home adjustment (-${ageAdjustment})`);
     }
 
     if (roofPenalty > 0) {
       reasons.push(`Roof age penalty applied (-${roofPenalty})`);
       reasons.push("Older roof likely ACV settlement");
-    }
-
-    if (marketAdjustment < 0) {
-      reasons.push("Less competitive on older homes vs admitted markets");
     }
 
     if (policyType === "DP" && age > 30) {
