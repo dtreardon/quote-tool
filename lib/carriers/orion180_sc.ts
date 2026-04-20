@@ -61,16 +61,13 @@ export const orion180_sc = {
     // --- Age Penalty ---
     let agePenalty = 0;
 
-    if (age > 30) agePenalty = 2;
-    else if (age > 10) agePenalty = 1;
+    if (age > 30) agePenalty = 1;
 
     // --- Roof Penalty ---
     let roofPenalty = 0;
 
-    if (roofAge > 30) roofPenalty = 4;
-    else if (roofAge > 20) roofPenalty = 3;
-    else if (roofAge > 10) roofPenalty = 2;
-    else if (roofAge > 5) roofPenalty = 1;
+    if (roofAge > 30) roofPenalty = 2;
+    else if (roofAge > 20) roofPenalty = 1;
 
     let score = baseScore - agePenalty - roofPenalty;
 
