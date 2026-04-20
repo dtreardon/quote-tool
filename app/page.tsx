@@ -38,6 +38,7 @@ const carrierRegistry = [
   universal_sc,
   universal_nc,
   msi,
+  brokers,
 ];
 
 function getAddressComponent(place: any, type: string) {
