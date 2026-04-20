@@ -14,37 +14,56 @@ export const universal_sc = {
     } = input;
 
     const currentYear = new Date().getFullYear();
+    const age = currentYear - buildYear;
     const roofAge = currentYear - roofYear;
 
+    // --- State ---
     if (state !== "SC") {
       return { eligible: false, reason: "State not eligible" };
     }
 
+    // --- Policy Type ---
     if (policyType !== "HO") {
       return { eligible: false, reason: "Only HO eligible" };
     }
 
+    // --- Disqualifiers ---
     if (mobileHome) {
       return { eligible: false, reason: "Mobile homes not eligible" };
     }
 
-    if (hasSolar) {
-      return { eligible: true, reason: "Solar allowed" };
-    }
-
+    // --- Roof ---
     if (roofAge > 25) {
       return { eligible: false, reason: "Roof over 25 years" };
     }
 
-    const age = currentYear - buildYear;
-    let score = 0;
-
-    if (age <= 5) score = 7;
-    else if (age <= 20) score = 6;
-    else score = 5;
-
+    // --- Base Score ---
+    let score = 6;
     const reasons: string[] = [];
-    reasons.push("Universal SC — competitive on older/lower value homes");
+
+    reasons.push("Universal SC — strong fit for older/lower value homes");
+
+    // --- Older Home Boost ---
+    if (age > 35) {
+      score += 1;
+      reasons.push("Older home sweet spot");
+    }
+
+    // --- Coastal Pressure ---
+    if (distanceToCoast != null && distanceToCoast <= 15) {
+      score -= 1;
+      reasons.push("Some coastal pricing pressure");
+    }
+
+    // --- Newer Home Adjustment ---
+    if (age <= 10) {
+      score -= 1;
+      reasons.push("Less targeted for newer homes");
+    }
+
+    // --- Floor / Ceiling ---
+    if (score > 10) score = 10;
+    if (score < 5) score = 5;
 
     return {
       eligible: true,
