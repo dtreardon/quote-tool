@@ -8,9 +8,10 @@ export const heritage = {
       distanceToCoast,
       buildYear,
       roofYear,
+      policyType,
       mobileHome,
       barrierIsland,
-      roofType,
+      hasSolar,
     } = input;
 
     const currentYear = new Date().getFullYear();
@@ -22,63 +23,54 @@ export const heritage = {
       return { eligible: false, reason: "State not eligible" };
     }
 
+    // --- Policy Type ---
+    if (policyType !== "HO") {
+      return { eligible: false, reason: "Only HO eligible" };
+    }
+
     // --- Disqualifiers ---
     if (mobileHome) {
       return { eligible: false, reason: "Mobile homes not eligible" };
     }
 
     if (barrierIsland) {
-      return { eligible: false, reason: "Barrier island not eligible" };
+      return { eligible: false, reason: "Barrier island restrictions" };
     }
 
-    if (age > 100) {
-      return { eligible: false, reason: "Over 100 years old" };
+    if (hasSolar) {
+      return { eligible: false, reason: "Solar not eligible" };
     }
 
     // --- Roof ---
-    if (roofType === "flat") {
-      return { eligible: false, reason: "Flat roofs not eligible" };
-    }
-
     if (roofAge > 10) {
-      return { eligible: false, reason: "Roof must be 10 years old or newer" };
+      return { eligible: false, reason: "Roof over 10 years" };
     }
 
-    // --- Base Score (DTC) ---
+    // --- Base Score ---
     let baseScore = 0;
 
-    if (distanceToCoast <= 5) baseScore = 6;
-    else if (distanceToCoast <= 15) baseScore = 7;
-    else if (distanceToCoast <= 30) baseScore = 8;
-    else baseScore = 9;
+    if (distanceToCoast <= 5) baseScore = 8;
+    else if (distanceToCoast <= 20) baseScore = 7;
+    else baseScore = 6;
 
-    // --- Age Penalty ---
-    let penalty = 0;
+    // --- Light Age Penalty ---
+    let agePenalty = 0;
 
-    if (age > 10) {
-      penalty = Math.floor((age - 10) / 15) + 1;
-    }
+    if (age > 40) agePenalty = 1;
 
-    let score = baseScore - penalty;
+    let score = baseScore - agePenalty;
 
-    // --- Floor ---
+    // --- Floor / Ceiling ---
     if (score < 5) score = 5;
+    if (score > 10) score = 10;
 
     // --- Reasons ---
     const reasons: string[] = [];
 
     reasons.push(`Distance to coast pricing tier (${baseScore})`);
 
-    if (penalty > 0) {
-      reasons.push(`Age penalty applied (-${penalty})`);
-    }
-
-    if (age > 50) {
-      reasons.push("Modified functional replacement cost applies");
-    }
-
-    if (buildYear <= 1949) {
-      reasons.push("Requires evidence of updates for older home");
+    if (agePenalty > 0) {
+      reasons.push(`Age penalty applied (-${agePenalty})`);
     }
 
     return {

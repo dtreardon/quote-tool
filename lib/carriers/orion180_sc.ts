@@ -15,7 +15,6 @@ export const orion180_sc = {
     } = input;
 
     const currentYear = new Date().getFullYear();
-    const age = currentYear - buildYear;
     const roofAge = currentYear - roofYear;
 
     // --- State ---
@@ -58,11 +57,10 @@ export const orion180_sc = {
     else if (distanceToCoast <= 20) baseScore = 8;
     else baseScore = 7;
 
-    // --- Age Adjustment ---
-    let ageAdjustment = 0;
+    // --- Build Adjustment ---
+    let buildAdjustment = 0;
 
-    if (age > 40) ageAdjustment = 2;
-    else if (age > 20) ageAdjustment = 1;
+    if (buildYear >= 2006) buildAdjustment = 1;
 
     // --- Roof Penalty ---
     let roofPenalty = 0;
@@ -70,18 +68,19 @@ export const orion180_sc = {
     if (roofAge > 30) roofPenalty = 2;
     else if (roofAge > 20) roofPenalty = 1;
 
-    let score = baseScore - ageAdjustment - roofPenalty;
+    let score = baseScore + buildAdjustment - roofPenalty;
 
-    // --- Floor ---
+    // --- Floor / Ceiling ---
     if (score < 5) score = 5;
+    if (score > 10) score = 10;
 
     // --- Reasons ---
     const reasons: string[] = [];
 
     reasons.push(`Coastal pricing tier (${baseScore})`);
 
-    if (ageAdjustment > 0) {
-      reasons.push(`Older home adjustment (-${ageAdjustment})`);
+    if (buildAdjustment > 0) {
+      reasons.push("Newer build discount");
     }
 
     if (roofPenalty > 0) {
@@ -89,12 +88,12 @@ export const orion180_sc = {
       reasons.push("Older roof likely ACV settlement");
     }
 
-    if (policyType === "DP" && age > 30) {
+    if (policyType === "DP" && roofAge > 20) {
       reasons.push("Limited water damage coverage ($10k)");
     }
 
-    if (policyType === "HO" && age > 30) {
-      reasons.push("Limited water damage coverage on older homes");
+    if (policyType === "HO" && roofAge > 20) {
+      reasons.push("Limited water damage coverage on older roofs");
     }
 
     return {
