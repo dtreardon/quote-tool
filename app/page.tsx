@@ -13,8 +13,8 @@ import { frontline_nc } from "../lib/carriers/frontline_nc";
 import { frontline_sc } from "../lib/carriers/frontline_sc";
 import { orion180_ga } from "../lib/carriers/orion180_ga";
 import { orion180_sc } from "../lib/carriers/orion180_sc";
-import { msi } from "../lib/carriers/msi";
 import { brokers } from "../lib/carriers/brokers";
+import { msi } from "../lib/carriers/msi";
 
 // --- Universal imports
 import { universal_ga } from "../lib/carriers/universal_ga";
@@ -261,6 +261,13 @@ export default function Page() {
     return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`;
   }, [form.lat, form.lng]);
 
+  const zillowUrl = useMemo(() => {
+    if (!form.address) return "";
+    return `https://www.zillow.com/homes/${form.address
+      .replace(/,/g, "")
+      .replace(/\s+/g, "-")}_rb/`;
+  }, [form.address]);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -349,6 +356,32 @@ export default function Page() {
                       }))
                     }
                   />
+
+                  {form.address && zillowUrl && (
+                    <a
+                      href={zillowUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline mt-2"
+                    >
+                      View property details (Zillow)
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M14 3h7m0 0v7m0-7L10 14"
+                        />
+                      </svg>
+                    </a>
+                  )}
+
                   <div className="mt-2 text-xs text-gray-500">
                     {status === "missing-key" && "Add your Google Maps API key"}
                     {status === "error" && "Google Maps could not be loaded"}
@@ -422,7 +455,7 @@ export default function Page() {
                     value={form.roofYear}
                     onChange={(e) => setForm({ ...form, roofYear: e.target.value })}
                   />
-                                  </div>
+                </div>
 
                 {roofAge !== null && !Number.isNaN(roofAge) && (
                   <div className="text-xs text-gray-500">
