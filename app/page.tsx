@@ -110,8 +110,12 @@ function evaluateCarriers(input: any) {
     ? eligibleCarriers.slice(0, 3)
     : eligibleCarriers;
 
+  const hasBrokerCarrier = limitedCarriers.some(
+    (carrier: any) => carrier.key === "brokers"
+  );
+
   const withBrokerFallback =
-    limitedCarriers.length < 3
+    limitedCarriers.length < 3 && !hasBrokerCarrier
       ? [
           ...limitedCarriers,
           {
