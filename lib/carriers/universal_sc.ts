@@ -49,8 +49,8 @@ export const universal_sc = {
       reasons.push("Older home sweet spot");
     }
 
-    // --- Coastal Pressure ---
-    if (distanceToCoast != null && distanceToCoast <= 15) {
+    // --- Coastal Pressure (ONLY ≤ 5 miles) ---
+    if (distanceToCoast != null && distanceToCoast <= 5) {
       score -= 1;
       reasons.push("Some coastal pricing pressure");
     }
