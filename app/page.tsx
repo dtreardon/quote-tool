@@ -15,6 +15,9 @@ import { orion180_ga } from "../lib/carriers/orion180_ga";
 import { orion180_sc } from "../lib/carriers/orion180_sc";
 import { brokers } from "../lib/carriers/brokers";
 import { msi } from "../lib/carriers/msi";
+import { towerhill } from "../lib/carriers/towerhill";
+import { oceanharbor } from "../lib/carriers/oceanharbor";
+import { aspera } from "../lib/carriers/aspera";
 
 // --- Universal imports
 import { universal_ga } from "../lib/carriers/universal_ga";
@@ -38,6 +41,9 @@ const carrierRegistry = [
   universal_sc,
   universal_nc,
   msi,
+  towerhill,
+  oceanharbor,
+  aspera,
   brokers,
 ];
 
@@ -101,6 +107,7 @@ function evaluateCarriers(input: any) {
         tier: scoreToTier(result.score),
         score: result.score,
         reason: result.reason,
+        alerts: result.alerts || [],
         isBrokerFallback: false,
       };
     })
@@ -555,6 +562,20 @@ export default function Page() {
                           <>
                             <div className="mt-1 text-sm text-gray-700">{r.tier}</div>
                             <div className="mt-2 text-xs text-gray-500">{r.reason}</div>
+
+{r.alerts && r.alerts.length > 0 && (
+  <div className="mt-2 space-y-1">
+    {r.alerts.map((alert: string, idx: number) => (
+      <div
+        key={idx}
+        className="flex items-start gap-2 rounded-md border border-yellow-200 bg-yellow-50 px-2 py-1 text-xs text-yellow-800"
+      >
+        <span>⚠️</span>
+        <span>{alert}</span>
+      </div>
+    ))}
+  </div>
+)}
                           </>
                         )}
                       </div>
