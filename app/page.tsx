@@ -363,6 +363,8 @@ if (!form.roofYear) {
                         zip: "",
                         city: "",
                         state: "",
+                        buildYear: "",
+                        roofYear: "",
                         distanceToCoast: null,
                         lat: null,
                         lng: null,
@@ -461,16 +463,11 @@ if (!form.roofYear) {
   onChange={(e) => {
     const newBuildYear = e.target.value;
 
-    setForm((prev) => {
-      const shouldSyncRoof =
-        prev.roofYear === "" || prev.roofYear === prev.buildYear;
-
-      return {
-        ...prev,
-        buildYear: newBuildYear,
-        roofYear: shouldSyncRoof ? newBuildYear : prev.roofYear,
-      };
-    });
+    setForm((prev) => ({
+      ...prev,
+      buildYear: newBuildYear,
+      roofYear: newBuildYear,
+    }));
   }}
 />
 
