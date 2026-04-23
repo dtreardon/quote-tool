@@ -454,18 +454,25 @@ if (!form.roofYear) {
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <input
-                    className="w-full rounded-lg border border-gray-300 p-3"
-                    placeholder="Build Year"
-                    type="number"
-                    value={form.buildYear}
-                    onChange={(e) =>
-  setForm((prev) => ({
-    ...prev,
-    buildYear: e.target.value,
-    roofYear: prev.roofYear || e.target.value,
-  }))
-}
-                  />
+  className="w-full rounded-lg border border-gray-300 p-3"
+  placeholder="Build Year"
+  type="number"
+  value={form.buildYear}
+  onChange={(e) => {
+    const newBuildYear = e.target.value;
+
+    setForm((prev) => {
+      const shouldSyncRoof =
+        prev.roofYear === "" || prev.roofYear === prev.buildYear;
+
+      return {
+        ...prev,
+        buildYear: newBuildYear,
+        roofYear: shouldSyncRoof ? newBuildYear : prev.roofYear,
+      };
+    });
+  }}
+/>
 
                   <input
                     className="w-full rounded-lg border border-gray-300 p-3"
