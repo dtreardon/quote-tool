@@ -150,6 +150,7 @@ export default function Page() {
     zip: "",
     city: "",
     state: "",
+    county: "",
     buildYear: "",
     roofYear: "",
     policyType: "HO",
@@ -226,6 +227,8 @@ export default function Page() {
       const zip = getAddressComponent(place, "postal_code");
       const city = getAddressComponent(place, "locality");
       const state = getAddressComponent(place, "administrative_area_level_1");
+const countyRaw = getAddressComponent(place, "administrative_area_level_2");
+const county = countyRaw.replace(" County", "");
 
       setForm((prev) => ({
         ...prev,
@@ -233,6 +236,7 @@ export default function Page() {
         zip,
         city,
         state,
+        county,
         distanceToCoast: Number(distance.toFixed(2)),
         lat,
         lng,
@@ -298,13 +302,19 @@ export default function Page() {
       setError("Enter a roof year.");
       return;
     }
+if (!form.roofYear) {
+  setForm((prev) => ({
+    ...prev,
+    roofYear: prev.buildYear,
+  }));
+}
 
     const evaluated = evaluateCarriers({
       zip: form.zip,
       state: form.state,
+      county: form.county,
       buildYear: Number(form.buildYear),
-      roofYear: Number(form.roofYear),
-      roofType: form.roofType,
+      roofYear: Number(form.roofYear || form.buildYear),      roofType: form.roofType,
       policyType: form.policyType,
       hasSolar: form.hasSolar,
       mobileHome: form.mobileHome,
@@ -419,7 +429,7 @@ export default function Page() {
 
                 {form.distanceToCoast !== null && (
                   <div className="rounded-lg bg-blue-50 px-3 py-2 text-sm text-gray-800">
-                    Distance to coast: <strong>{form.distanceToCoast} miles</strong>
+                    Distance to coast: <strong>{form.distanceToCoast} miles</strong> | County: <strong>{form.county}</strong>
                   </div>
                 )}
 

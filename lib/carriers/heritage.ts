@@ -53,9 +53,8 @@ export const heritage = {
     else if (distanceToCoast <= 20) baseScore = 7;
     else baseScore = 6;
 
-    // --- Light Age Penalty ---
+    // --- Age Penalty ---
     let agePenalty = 0;
-
     if (age > 40) agePenalty = 1;
 
     let score = baseScore - agePenalty;
@@ -64,8 +63,9 @@ export const heritage = {
     if (score < 5) score = 5;
     if (score > 10) score = 10;
 
-    // --- Reasons ---
+    // --- Reasons & Alerts ---
     const reasons: string[] = [];
+    const alerts: string[] = [];
 
     reasons.push(`Distance to coast pricing tier (${baseScore})`);
 
@@ -73,10 +73,18 @@ export const heritage = {
       reasons.push(`Age penalty applied (-${agePenalty})`);
     }
 
+    // --- Alerts ---
+    if (buildYear <= 1949) {
+      alerts.push(
+        "Evidence of updates required (Electrical, Plumbing, HVAC, Roof) – must be submitted prior to binding"
+      );
+    }
+
     return {
       eligible: true,
       score,
       reason: reasons.join(" | "),
+      alerts,
     };
   },
 };

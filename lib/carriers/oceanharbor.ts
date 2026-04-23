@@ -7,11 +7,13 @@ export const oceanharbor = {
       state,
       distanceToCoast,
       buildYear,
+      roofYear,
       mobileHome,
     } = input;
 
     const currentYear = new Date().getFullYear();
     const age = currentYear - buildYear;
+    const roofAge = roofYear ? currentYear - roofYear : null;
 
     // --- State ---
     if (!["GA", "SC"].includes(state)) {
@@ -36,13 +38,12 @@ export const oceanharbor = {
     // --- Base Score ---
     let baseScore = 0;
 
-    if (distanceToCoast < 15) baseScore = 10;      // wins by default
-    else if (distanceToCoast < 50) baseScore = 8;  // one point above Tower Hill
-    else baseScore = 6;                            // slight inland penalty
+    if (distanceToCoast < 15) baseScore = 10;
+    else if (distanceToCoast < 50) baseScore = 8;
+    else baseScore = 6;
 
     // --- Build Adjustment ---
     let buildAdjustment = 0;
-
     if (age <= 5) buildAdjustment = 1;
 
     let score = baseScore + buildAdjustment;
@@ -65,6 +66,11 @@ export const oceanharbor = {
 
     if (buildAdjustment > 0) {
       reasons.push("Newer mobile home bump");
+    }
+
+    // --- Roof Alert ---
+    if (roofAge !== null && roofAge > 15) {
+      alerts.push("Roof over 15 years – may require replacement or underwriting approval");
     }
 
     return {

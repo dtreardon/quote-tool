@@ -5,6 +5,7 @@ export const universal_sc = {
   evaluate(input: any) {
     const {
       state,
+      county,
       distanceToCoast,
       buildYear,
       roofYear,
@@ -16,6 +17,18 @@ export const universal_sc = {
     const currentYear = new Date().getFullYear();
     const age = currentYear - buildYear;
     const roofAge = currentYear - roofYear;
+
+    // --- Coastal Counties ---
+    const coastalCounties = [
+      "Charleston",
+      "Berkeley",
+      "Dorchester",
+      "Beaufort",
+      "Jasper",
+      "Horry",
+      "Georgetown",
+      "Colleton",
+    ];
 
     // --- State ---
     if (state !== "SC") {
@@ -32,9 +45,30 @@ export const universal_sc = {
       return { eligible: false, reason: "Mobile homes not eligible" };
     }
 
+    if (hasSolar) {
+      return { eligible: false, reason: "Solar not eligible" };
+    }
+
     // --- Roof ---
     if (roofAge > 25) {
       return { eligible: false, reason: "Roof over 25 years" };
+    }
+
+    // --- Build Year Rules ---
+    const isCoastalCounty = coastalCounties.includes(county);
+
+    if (isCoastalCounty && buildYear < 2003) {
+      return {
+        eligible: false,
+        reason: "Build year must be 2003 or newer in coastal counties",
+      };
+    }
+
+    if (!isCoastalCounty && buildYear < 1950) {
+      return {
+        eligible: false,
+        reason: "Build year must be 1950 or newer",
+      };
     }
 
     // --- Base Score ---
@@ -49,7 +83,7 @@ export const universal_sc = {
       reasons.push("Older home sweet spot");
     }
 
-    // --- Coastal Pressure (ONLY ≤ 5 miles) ---
+    // --- Coastal Pressure ---
     if (distanceToCoast != null && distanceToCoast <= 5) {
       score -= 1;
       reasons.push("Some coastal pricing pressure");
@@ -69,6 +103,7 @@ export const universal_sc = {
       eligible: true,
       score,
       reason: reasons.join(" | "),
+      alerts: [],
     };
   },
 };

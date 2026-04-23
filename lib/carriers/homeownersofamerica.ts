@@ -8,6 +8,7 @@ export const homeownersofamerica = {
       distanceToCoast,
       buildYear,
       policyType, // "HO" | "DP"
+      mobileHome,
     } = input;
 
     const currentYear = new Date().getFullYear();
@@ -16,6 +17,11 @@ export const homeownersofamerica = {
     // --- State ---
     if (state !== "SC") {
       return { eligible: false, reason: "State not eligible" };
+    }
+
+    // --- Mobile Home ---
+    if (mobileHome) {
+      return { eligible: false, reason: "Mobile homes not eligible" };
     }
 
     // --- Policy Type ---
@@ -49,13 +55,18 @@ export const homeownersofamerica = {
     else if (age <= 50) score = 6;
     else score = 5;
 
-    // --- Reasons ---
+    // --- Reasons & Alerts ---
     const reasons: string[] = [];
+    const alerts: string[] = [];
 
+    // Alerts (eligibility-impacting)
     if (age > 50) {
-      reasons.push("Requires updates / underwriting review");
+      alerts.push(
+        "Proof of updates required (Electrical, Plumbing, HVAC, Roof) – underwriting review required prior to binding"
+      );
     }
 
+    // Reasons (non-eligibility)
     if (policyType === "DP") {
       if (age > 40) {
         reasons.push("Limited water damage coverage ($10k default)");
@@ -70,6 +81,7 @@ export const homeownersofamerica = {
       eligible: true,
       score,
       reason: reasons.length ? reasons.join(" | ") : "Eligible",
+      alerts,
     };
   },
 };
