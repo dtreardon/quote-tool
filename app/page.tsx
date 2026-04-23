@@ -298,10 +298,6 @@ const county = countyRaw.replace(" County", "");
       return;
     }
 
-    if (!form.roofYear) {
-      setError("Enter a roof year.");
-      return;
-    }
 if (!form.roofYear) {
   setForm((prev) => ({
     ...prev,
@@ -462,7 +458,13 @@ if (!form.roofYear) {
                     placeholder="Build Year"
                     type="number"
                     value={form.buildYear}
-                    onChange={(e) => setForm({ ...form, buildYear: e.target.value })}
+                    onChange={(e) =>
+  setForm((prev) => ({
+    ...prev,
+    buildYear: e.target.value,
+    roofYear: prev.roofYear || e.target.value,
+  }))
+}
                   />
 
                   <input
