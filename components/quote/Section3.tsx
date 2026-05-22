@@ -61,16 +61,18 @@ export function Section3() {
           miles_coast: Number(dist.toFixed(2)).toString(),
         })
 
-        void fetch(`/api/property-details?${new URLSearchParams({ street, city, state, zip })}`)
-          .then(r => r.ok ? r.json() : {})
-          .then((data: Record<string, string>) => {
-            const keys = Object.keys(data)
-            if (keys.length) {
-              update(data as Partial<typeof form>)
-              flash(keys)
-            }
-          })
-          .catch(() => {})
+        try {
+          void fetch(`/api/property-details?${new URLSearchParams({ street, city, state, zip })}`)
+            .then(r => r.ok ? r.json() : {})
+            .then((data: Record<string, string>) => {
+              const keys = Object.keys(data)
+              if (keys.length) {
+                update(data as Partial<typeof form>)
+                flash(keys)
+              }
+            })
+            .catch(() => {})
+        } catch { /* ignore */ }
       })
       autocompleteRef.current = ac
     }).catch(() => {})
