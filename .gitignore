@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# source reference files (not part of the Next.js app)
+robinson_ho_quote_v2.23.html
+Robinson_Quote_Sheet_Project_Summary_v2.23.md
+build_v223.js

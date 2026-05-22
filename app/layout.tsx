@@ -1,33 +1,43 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Libre_Baskerville, Source_Sans_3 } from 'next/font/google'
+import Image from 'next/image'
+import './globals.css'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const sourceSans = Source_Sans_3({
+  subsets: ['latin'],
+  weight: ['300', '400', '600', '700'],
+  variable: '--font-source-sans',
+})
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const libreBaskerville = Libre_Baskerville({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-libre-baskerville',
+})
 
 export const metadata: Metadata = {
-  title: "Homeowners Carrier Guide",
-  description: "Carrier eligibility and recommendation tool",
-};
+  title: 'Quote Sheet — Robinson & Associates',
+  description: 'Homeowners & Flood Insurance Quote Sheet',
+}
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={`${sourceSans.variable} ${libreBaskerville.variable}`}>
+      <body className="min-h-screen bg-cream font-sans antialiased">
+        <header className="bg-navy sticky top-0 z-50 shadow-lg print:hidden">
+          <div className="max-w-[980px] mx-auto px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Image src="/logo-blue.png" alt="Robinson & Associates" height={56} width={140} className="object-contain" priority />
+            </div>
+            <div className="text-right font-serif whitespace-nowrap">
+              <strong className="text-white text-sm">Homeowners &amp; Flood Insurance Quote Sheet</strong>
+            </div>
+          </div>
+          <div style={{ height: '3px', background: 'linear-gradient(90deg, #c8922a, #e8b44a, #c8922a)' }} />
+        </header>
+        {children}
+      </body>
     </html>
-  );
+  )
 }
