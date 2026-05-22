@@ -164,6 +164,7 @@ export interface FormState {
   flood_type: string
   flood_cov_dwelling: string
   flood_cov_contents: string
+  flood_quotes: QuoteData[]
 }
 
 export const INITIAL_INSURED: InsuredData = {
@@ -286,4 +287,5 @@ export const INITIAL_FORM: FormState = {
   flood_type: '',
   flood_cov_dwelling: '',
   flood_cov_contents: '',
+  flood_quotes: [{ uid: 1, carrier: '', premium: '' }],
 }

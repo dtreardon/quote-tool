@@ -15,7 +15,7 @@ export function Banner() {
           className="rounded border border-white/30 bg-white/15 text-white pl-2.5 pr-7 py-[7px] text-sm focus:outline-none focus:ring-2 focus:ring-gold w-36 [&>option]:bg-navy [&>option]:text-white"
         >
           <option value="">Select…</option>
-          {['HO','DP','Condo','Renters','MH'].map(t => <option key={t}>{t}</option>)}
+          {['HO','DP','Condo','Renters','MH','Mono Flood'].map(t => <option key={t}>{t}</option>)}
         </select>
       </div>
 
@@ -56,7 +56,7 @@ export function Banner() {
                 value={v}
                 checked={form.flood_quote === v}
                 onChange={() => update({ flood_quote: v })}
-                className="w-5 h-5 accent-gold"
+                className="w-5 h-5"
               />
               {v === 'yes' ? 'Yes' : 'No'}
             </label>

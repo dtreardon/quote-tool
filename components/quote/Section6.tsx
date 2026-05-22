@@ -143,9 +143,19 @@ function DedField({
         <input
           value={value}
           onChange={e => onChange(e.target.value)}
+          onBlur={() => {
+            if (mode === '$') {
+              const stripped = value.replace(/[,$\s]/g, '')
+              const n = parseInt(stripped, 10)
+              if (!isNaN(n) && n > 0) onChange(n.toLocaleString('en-US'))
+            }
+          }}
           className="flex-1 min-w-0 rounded border border-[#d0cdc8] px-2.5 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold transition-colors"
         />
-        <DedToggle mode={mode} onModeChange={onModeChange} />
+        <DedToggle mode={mode} onModeChange={m => {
+          if (m === '%' && mode === '$') onChange(value.replace(/,/g, ''))
+          onModeChange(m)
+        }} />
       </div>
       {pctHint && (
         <div className="text-[11px] font-semibold text-gold italic">{pctHint}</div>
@@ -181,7 +191,6 @@ export function Section6() {
             onChange={v => update({ cov_liability: v })}
             onExpand={() => update({ cov_liability: expandLiability(form.cov_liability) })}
             options={LIABILITY_OPTIONS}
-            placeholder="1, 3, 5, 10…"
             flash={f('cov_liability')}
           />
         </Field>
@@ -191,7 +200,6 @@ export function Section6() {
             onChange={v => update({ cov_med_payments: v })}
             onExpand={() => update({ cov_med_payments: expandMedPay(form.cov_med_payments) })}
             options={MED_PAY_OPTIONS}
-            placeholder="1, 3, 5, 10…"
           />
         </Field>
         <div className="flex-1 min-w-44">

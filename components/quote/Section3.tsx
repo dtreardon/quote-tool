@@ -8,36 +8,7 @@ import { StateSelect } from '../ui/StateSelect'
 import { point, pointToLineDistance } from '@turf/turf'
 import coastline from '@/data/coastline.json'
 import { loadGoogleMaps, getPlaceComponent, streetFromPlace, type AcInstance, type GoogleWindow } from '@/lib/googleMaps'
-import type { FormState } from '@/app/types/form'
-
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
-
-function parsePlacePropertyDetails(text: string): Partial<FormState> {
-  const out: Partial<FormState> = {}
-  if (!text) return out
-
-  const beds = text.match(/(\d+)\s*-?\s*bed(?:room)?s?/i)
-  if (beds) out.beds = beds[1]
-
-  const baths = text.match(/(\d+(?:\.\d+)?)\s*-?\s*(?:full\s+)?bath(?:room)?s?/i)
-  if (baths) {
-    const n = parseFloat(baths[1])
-    out.full_baths = String(Math.floor(n))
-    if (n - Math.floor(n) > 0) out.half_baths = '1'
-  }
-
-  const sqft = text.match(/([\d,]+)\s*sq(?:uare)?\.?\s*f(?:t|eet)/i)
-  if (sqft) out.sqft = sqft[1].replace(/,/g, '')
-
-  const yearBuilt = text.match(/(?:built|constructed)\s+(?:in\s+)?(\d{4})/i)
-    ?? text.match(/\byear\s+built\s*[:\-]?\s*(\d{4})/i)
-  if (yearBuilt) out.year_built = yearBuilt[1]
-
-  const stories = text.match(/(\d+)\s*-?\s*stor(?:y|ies)/i)
-  if (stories) out.num_stories = stories[1]
-
-  return out
-}
 
 export function Section3() {
   const { form, update, flashFields, flash } = useQuoteForm()
@@ -54,7 +25,7 @@ export function Section3() {
       const ac = new google.maps.places.Autocomplete(inputRef.current!, {
         types: ['address'],
         componentRestrictions: { country: 'us' },
-        fields: ['address_components', 'geometry', 'editorial_summary'],
+        fields: ['address_components', 'geometry'],
       })
       ;(ac as AcInstance).addListener('place_changed', () => {
         const place = (ac as AcInstance).getPlace()
@@ -90,14 +61,16 @@ export function Section3() {
           miles_coast: Number(dist.toFixed(2)).toString(),
         })
 
-        // Try to extract property details from Places editorial_summary (best-effort)
-        const summary = (place.editorial_summary as { overview?: string } | undefined)?.overview ?? ''
-        const propDetails = parsePlacePropertyDetails(summary)
-        const detailKeys = Object.keys(propDetails) as (keyof FormState)[]
-        if (detailKeys.length) {
-          update(propDetails)
-          flash(detailKeys as string[])
-        }
+        void fetch(`/api/property-details?${new URLSearchParams({ street, city, state, zip })}`)
+          .then(r => r.ok ? r.json() : {})
+          .then((data: Record<string, string>) => {
+            const keys = Object.keys(data)
+            if (keys.length) {
+              update(data as Partial<typeof form>)
+              flash(keys)
+            }
+          })
+          .catch(() => {})
       })
       autocompleteRef.current = ac
     }).catch(() => {})
@@ -158,7 +131,7 @@ export function Section3() {
               View on Zillow
             </a>
             <a
-              href="https://msc.fema.gov/portal/home"
+              href={`https://msc.fema.gov/portal/search?address=${encodeURIComponent(fullAddress)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="px-2.5 py-1 text-[12px] font-semibold border border-[#d0cdc8] rounded text-navy bg-white hover:bg-[#f0ede8] transition-colors"

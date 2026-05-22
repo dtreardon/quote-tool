@@ -25,7 +25,7 @@ export function ActionBar({ onClear }: ActionBarProps) {
       <div className="flex flex-col gap-0.5">
         <span className="text-white/60 text-xs">
           Robinson &amp; Associates — Homeowners &amp; Flood Quote Sheet{' '}
-          <span className="text-[11px] ml-2" style={{ color: '#e8b44a' }}>v2.23</span>
+          <span className="text-[11px] ml-2" style={{ color: '#e8b44a' }}>v3.0</span>
         </span>
         <span className="text-white/40 text-[11px]">© 2026 Reardon Insurance, LLC. All rights reserved.</span>
       </div>

@@ -31,7 +31,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Image src="/logo-blue.png" alt="Robinson & Associates" height={56} width={140} className="object-contain" priority />
             </div>
             <div className="text-right font-serif whitespace-nowrap">
-              <strong className="text-white text-sm">Homeowners &amp; Flood Insurance Quote Sheet</strong>
+              <div className="flex flex-col items-end gap-0.5">
+                <strong className="text-white text-sm leading-tight">Homeowners &amp; Flood</strong>
+                <span className="text-white/70 text-xs tracking-wide">Quote Sheet</span>
+              </div>
             </div>
           </div>
           <div style={{ height: '3px', background: 'linear-gradient(90deg, #c8922a, #e8b44a, #c8922a)' }} />

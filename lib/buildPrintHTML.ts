@@ -86,6 +86,13 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
       </div>
     </div>` : ''
 
+  const floodQuoteRows = (form.flood_quotes ?? []).map((q, idx) => `
+    <div class="quote-item">
+      <div class="quote-num">${idx + 1}</div>
+      <div class="quote-carrier">${q.carrier}</div>
+      <div class="quote-premium">${q.premium ? '$' + q.premium : ''}</div>
+    </div>`).join('')
+
   const floodSection = hasFlood ? `
     <div class="section">
       <div class="section-head">FLOOD INFORMATION</div>
@@ -98,6 +105,10 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
       <div class="info-row">
         <div class="info-card"><div class="card-label">Dwelling Cov</div><div class="card-value">${covFmt(form.flood_cov_dwelling)}</div></div>
         <div class="info-card"><div class="card-label">Contents Cov</div><div class="card-value">${covFmt(form.flood_cov_contents)}</div></div>
+      </div>
+      <div class="section-head" style="margin-top:4px">Flood Quoted Through / Premium</div>
+      <div class="cov-box">
+        ${floodQuoteRows}
       </div>
     </div>` : ''
 
@@ -361,7 +372,7 @@ ${showOtherAddresses ? `
 </div><!-- /two-col -->
 
 <div class="footer">
-  <span>Robinson &amp; Associates &mdash; CONFIDENTIAL &mdash; For Internal Use Only &nbsp;|&nbsp; v2.23 &nbsp;|&nbsp; &copy; 2026 Reardon Insurance, LLC</span>
+  <span>Robinson &amp; Associates &mdash; CONFIDENTIAL &mdash; For Internal Use Only &nbsp;|&nbsp; v3.0 &nbsp;|&nbsp; &copy; 2026 Reardon Insurance, LLC</span>
   <span class="filename">Suggested: ${suggested}.pdf</span>
 </div>
 
