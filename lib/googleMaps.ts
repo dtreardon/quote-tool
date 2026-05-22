@@ -17,7 +17,21 @@ export function loadGoogleMaps(apiKey: string): Promise<unknown> {
   const g = w['google'] as { maps?: { places?: unknown } } | undefined
   if (g?.maps?.places) return Promise.resolve(g)
   const existing = document.querySelector('script[data-google-maps="true"]')
-  if (existing) return new Promise(r => setTimeout(() => r(w['google']), 200))
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      const check = setInterval(() => {
+        const g = (window as unknown as Record<string, unknown>)['google'] as { maps?: { places?: unknown } } | undefined
+        if (g?.maps?.places) {
+          clearInterval(check)
+          resolve(g)
+        }
+      }, 50)
+      setTimeout(() => {
+        clearInterval(check)
+        reject(new Error('Google Maps load timeout'))
+      }, 10000)
+    })
+  }
   return new Promise((resolve, reject) => {
     const s = document.createElement('script')
     s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
