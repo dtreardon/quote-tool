@@ -25,7 +25,13 @@ export default function QuoteForm({ autofillEnabled = false }: { autofillEnabled
   const [flashFields, setFlashFields] = useState<Set<string>>(new Set())
 
   const update = useCallback((partial: Partial<FormState>) => {
-    setForm(prev => ({ ...prev, ...partial }))
+    setForm(prev => {
+      const next = { ...prev, ...partial }
+      if (partial.year_built && !prev.reno_roof && !('reno_roof' in partial)) {
+        next.reno_roof = partial.year_built
+      }
+      return next
+    })
   }, [])
 
   const flash = useCallback((fields: string[]) => {
