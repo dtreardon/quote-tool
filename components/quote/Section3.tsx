@@ -75,28 +75,34 @@ export function Section3() {
         } catch { /* ignore */ }
 
         try {
+          console.log('[FEMA] Fetching flood data', { lat, lng })
           void fetch('/api/fema-flood', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lat, lng }),
           })
-            .then(r => r.ok ? r.json() : null)
+            .then(r => {
+              console.log('[FEMA] Response status:', r.status, r.ok)
+              return r.ok ? r.json() : null
+            })
             .then((data) => {
+              console.log('[FEMA] Response data:', data)
               if (!data) return
               const updates: Record<string, string> = {}
-              if (data.floodZone)  updates.flood_zone             = data.floodZone
-              if (data.bfe != null) updates.bfe                   = data.bfe
-              if (data.firmPanel)  updates.firm_panel             = data.firmPanel
-              if (data.firmEffDate) updates.firm_eff_date         = data.firmEffDate
+              if (data.floodZone)       updates.flood_zone             = data.floodZone
+              if (data.bfe != null)     updates.bfe                    = data.bfe
+              if (data.firmPanel)       updates.firm_panel             = data.firmPanel
+              if (data.firmEffDate)     updates.firm_eff_date          = data.firmEffDate
               if (data.zoneDescription) updates.flood_zone_description = data.zoneDescription
+              console.log('[FEMA] Applying updates:', updates)
               const keys = Object.keys(updates)
               if (keys.length) {
                 update(updates as Partial<typeof form>)
                 flash(keys)
               }
             })
-            .catch(() => {})
-        } catch { /* ignore */ }
+            .catch((err) => { console.error('[FEMA] Fetch error:', err) })
+        } catch (err) { console.error('[FEMA] Outer error:', err) }
       })
       autocompleteRef.current = ac
     }).catch(() => {})

@@ -7,6 +7,7 @@ const NULL_RESULT = {
 export async function POST(req: NextRequest) {
   try {
     const { lat, lng } = await req.json()
+    console.log('[FEMA API] Request received:', { lat, lng })
     if (lat == null || lng == null) return NextResponse.json(NULL_RESULT)
 
     const params = new URLSearchParams({
@@ -19,13 +20,14 @@ export async function POST(req: NextRequest) {
       f: 'json',
     })
 
-    const res = await fetch(
-      `https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query?${params}`,
-      { next: { revalidate: 86400 } }
-    )
+    const url = `https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query?${params}`
+    console.log('[FEMA API] Querying FEMA:', url)
+    const res = await fetch(url, { next: { revalidate: 86400 } })
+    console.log('[FEMA API] FEMA response status:', res.status, res.ok)
     if (!res.ok) return NextResponse.json(NULL_RESULT)
 
     const data = await res.json()
+    console.log('[FEMA API] Feature count:', data?.features?.length, '| First feature:', JSON.stringify(data?.features?.[0]?.attributes))
     const feature = data?.features?.[0]
     if (!feature) return NextResponse.json(NULL_RESULT)
 
@@ -40,8 +42,11 @@ export async function POST(req: NextRequest) {
       : null
     const zoneDescription: string | null = a.ZONE_SUBTY || null
 
-    return NextResponse.json({ floodZone, bfe, firmPanel, firmEffDate, zoneDescription })
-  } catch {
+    const result = { floodZone, bfe, firmPanel, firmEffDate, zoneDescription }
+    console.log('[FEMA API] Returning:', result)
+    return NextResponse.json(result)
+  } catch (err) {
+    console.error('[FEMA API] Error:', err)
     return NextResponse.json(NULL_RESULT)
   }
 }
