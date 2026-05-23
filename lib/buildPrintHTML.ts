@@ -376,7 +376,7 @@ ${showOtherAddresses ? `
 </div><!-- /two-col -->
 
 <div class="footer">
-  <span>Robinson &amp; Associates &mdash; CONFIDENTIAL &mdash; For Internal Use Only &nbsp;|&nbsp; v3.0 &nbsp;|&nbsp; &copy; 2026 Reardon Insurance, LLC</span>
+  <span>QuoteSheetPRO is a product of Reardon Insurance, LLC &copy; 2026 &mdash; All Rights Reserved</span>
   <span class="filename">Suggested: ${suggested}.pdf</span>
 </div>
 

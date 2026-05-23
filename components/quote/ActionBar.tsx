@@ -27,7 +27,7 @@ export function ActionBar({ onClear }: ActionBarProps) {
           Robinson &amp; Associates — Homeowners &amp; Flood Quote Sheet{' '}
           <span className="text-[11px] ml-2" style={{ color: '#e8b44a' }}>v3.1</span>
         </span>
-        <span className="text-white/40 text-[11px]">© 2026 Reardon Insurance, LLC. All rights reserved.</span>
+        <span className="text-white/40 text-[11px]">QuoteSheetPRO is a product of Reardon Insurance, LLC © 2026 — All Rights Reserved</span>
       </div>
       <div className="flex gap-2">
         <button
