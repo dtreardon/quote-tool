@@ -13,16 +13,15 @@ const STATES = [
 interface StateSelectProps {
   value: string
   onChange: (v: string) => void
-  flash?: boolean
   className?: string
 }
 
-export function StateSelect({ value, onChange, flash, className = '' }: StateSelectProps) {
+export function StateSelect({ value, onChange, className = '' }: StateSelectProps) {
   return (
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className={`${selectCls(flash)} uppercase ${className}`}
+      className={`${selectCls()} uppercase ${className}`}
     >
       <option value="">--</option>
       {STATES.map(s => (

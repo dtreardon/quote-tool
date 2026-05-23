@@ -10,8 +10,8 @@ import { calcMilesToCoast, runPropertyLookups } from '@/lib/addressEnrichment'
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
 
 export function Section3() {
-  const { form, update, flashFields, flash } = useQuoteForm()
-  const f = (key: string) => flashFields.has(key)
+  const { form, update, autofilledFields, markAutofilled } = useQuoteForm()
+  const a = (key: string) => autofilledFields.has(key)
   const inputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<unknown>(null)
   const [showSatellite, setShowSatellite] = useState(false)
@@ -52,7 +52,7 @@ export function Section3() {
           miles_coast: Number(dist.toFixed(2)).toString(),
         })
 
-        runPropertyLookups(lat, lng, street, city, state, zip, update, flash)
+        runPropertyLookups(lat, lng, street, city, state, zip, update, markAutofilled)
       })
       autocompleteRef.current = ac
     }).catch(() => {})
@@ -72,25 +72,25 @@ export function Section3() {
           </p>
         )}
         <div className="flex gap-3.5 flex-wrap">
-          <Field label="Street Address" className="flex-[3] min-w-48">
+          <Field label="Street Address" className="flex-[3] min-w-48" autofilled={a('prop_street')}>
             <input
               ref={inputRef}
               value={form.prop_street}
               onChange={e => update({ prop_street: e.target.value, prop_zip: '', prop_city: '', prop_state: '', prop_county: '', prop_lat: null, prop_lng: null })}
-              className={inputCls(f('prop_street'))}
+              className={inputCls()}
               placeholder={GOOGLE_MAPS_API_KEY ? 'Start typing to search…' : ''}
             />
           </Field>
-          <Field label="City" className="flex-[2] min-w-32">
-            <input value={form.prop_city} onChange={e => update({ prop_city: e.target.value })} className={inputCls(f('prop_city'))} />
+          <Field label="City" className="flex-[2] min-w-32" autofilled={a('prop_city')}>
+            <input value={form.prop_city} onChange={e => update({ prop_city: e.target.value })} className={inputCls()} />
           </Field>
-          <Field label="State" className="w-[60px]">
-            <StateSelect value={form.prop_state} onChange={v => update({ prop_state: v })} flash={f('prop_state')} />
+          <Field label="State" className="w-[60px]" autofilled={a('prop_state')}>
+            <StateSelect value={form.prop_state} onChange={v => update({ prop_state: v })} />
           </Field>
-          <Field label="ZIP" className="w-20">
-            <input value={form.prop_zip} onChange={e => update({ prop_zip: e.target.value })} maxLength={10} className={inputCls(f('prop_zip'))} />
+          <Field label="ZIP" className="w-20" autofilled={a('prop_zip')}>
+            <input value={form.prop_zip} onChange={e => update({ prop_zip: e.target.value })} maxLength={10} className={inputCls()} />
           </Field>
-          <Field label="County" className="w-36">
+          <Field label="County" className="w-36" autofilled={a('prop_county')}>
             <input value={form.prop_county} onChange={e => update({ prop_county: e.target.value })} placeholder="Auto-filled" className={`${inputCls()} bg-gray-50`} />
           </Field>
         </div>

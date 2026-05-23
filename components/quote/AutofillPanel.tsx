@@ -10,11 +10,11 @@ import { calcMilesToCoast, runPropertyLookups } from '@/lib/addressEnrichment'
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
 
 interface AutofillPanelProps {
-  onFlash: (fields: string[]) => void
+  onAutofill: (fields: string[]) => void
   autofillEnabled?: boolean
 }
 
-export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPanelProps) {
+export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillPanelProps) {
   const { form, update } = useQuoteForm()
   const [file, setFile] = useState<File | null>(null)
   const [pasteText, setPasteText] = useState('')
@@ -155,7 +155,7 @@ export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPane
       }
 
       update(updates)
-      if (flashKeys.length > 0) onFlash(flashKeys)
+      if (flashKeys.length > 0) onAutofill(flashKeys)
 
       const n = flashKeys.length + (insuredsChanged ? 1 : 0)
       setStatus(`Auto-filled ${n} field${n !== 1 ? 's' : ''}.`)
@@ -193,8 +193,8 @@ export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPane
               miles_coast: Number(dist.toFixed(2)).toString(),
               ...(county ? { prop_county: county } : {}),
             })
-            onFlash(['miles_coast', ...(county ? ['prop_county'] : [])])
-            runPropertyLookups(lat, lng, street, city, state, zip, update, onFlash)
+            onAutofill(['miles_coast', ...(county ? ['prop_county'] : [])])
+            runPropertyLookups(lat, lng, street, city, state, zip, update, onAutofill)
           })
         }).catch(() => {})
       }

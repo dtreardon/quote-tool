@@ -14,8 +14,8 @@ function blankFloodQuote(): QuoteData {
 }
 
 export function Section10() {
-  const { form, update, flashFields } = useQuoteForm()
-  const f = (key: string) => flashFields.has(key)
+  const { form, update, autofilledFields } = useQuoteForm()
+  const a = (key: string) => autofilledFields.has(key)
 
   function addFloodQuote() {
     update({ flood_quotes: [...form.flood_quotes, blankFloodQuote()] })
@@ -33,20 +33,20 @@ export function Section10() {
     <SectionCard number={10} title="Flood Information">
       {/* Row 1: Flood Zone, BFE, Elevation Certificate, Flood Type */}
       <div className="flex gap-3.5 flex-wrap mb-3">
-        <Field label="Flood Zone" className="w-28">
+        <Field label="Flood Zone" className="w-28" autofilled={a('flood_zone')}>
           <input
             value={form.flood_zone}
             onChange={e => update({ flood_zone: e.target.value })}
             placeholder="Auto-filled"
-            className={`${inputCls(f('flood_zone'))} bg-gray-50`}
+            className={`${inputCls()} bg-gray-50`}
           />
         </Field>
-        <Field label="BFE" className="w-24">
+        <Field label="BFE" className="w-24" autofilled={a('bfe')}>
           <input
             value={form.bfe}
             onChange={e => update({ bfe: e.target.value })}
             placeholder="Auto-filled"
-            className={`${inputCls(f('bfe'))} bg-gray-50`}
+            className={`${inputCls()} bg-gray-50`}
           />
         </Field>
         <Field label="Elevation Certificate?">
@@ -64,28 +64,28 @@ export function Section10() {
 
       {/* Row 2: FIRM Panel, FIRM Effective Date, Zone Description (screen-only) */}
       <div className="flex gap-3.5 flex-wrap mb-3">
-        <Field label="FIRM Panel" className="flex-1 min-w-36">
+        <Field label="FIRM Panel" className="flex-1 min-w-36" autofilled={a('firm_panel')}>
           <input
             value={form.firm_panel}
             onChange={e => update({ firm_panel: e.target.value })}
             placeholder="Auto-filled"
-            className={`${inputCls(f('firm_panel'))} bg-gray-50`}
+            className={`${inputCls()} bg-gray-50`}
           />
         </Field>
-        <Field label="FIRM Eff. Date" className="flex-1 min-w-36">
+        <Field label="FIRM Eff. Date" className="flex-1 min-w-36" autofilled={a('firm_eff_date')}>
           <input
             value={form.firm_eff_date}
             onChange={e => update({ firm_eff_date: e.target.value })}
             placeholder="Auto-filled"
-            className={`${inputCls(f('firm_eff_date'))} bg-gray-50`}
+            className={`${inputCls()} bg-gray-50`}
           />
         </Field>
-        <Field label="Zone Description" className="flex-[2] min-w-48 print:hidden">
+        <Field label="Zone Description" className="flex-[2] min-w-48 print:hidden" autofilled={a('flood_zone_description')}>
           <input
             value={form.flood_zone_description}
             onChange={e => update({ flood_zone_description: e.target.value })}
             placeholder="Auto-filled (screen only)"
-            className={`${inputCls(f('flood_zone_description'))} bg-gray-50`}
+            className={`${inputCls()} bg-gray-50`}
           />
         </Field>
       </div>

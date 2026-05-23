@@ -24,14 +24,14 @@ export function runPropertyLookups(
   state: string,
   zip: string,
   update: (partial: Partial<FormState>) => void,
-  flash: (keys: string[]) => void
+  markAutofilled: (keys: string[]) => void
 ) {
   try {
     void fetch(`/api/property-details?${new URLSearchParams({ street, city, state, zip })}`)
       .then(r => r.ok ? r.json() : {})
       .then((data: Record<string, string>) => {
         const keys = Object.keys(data)
-        if (keys.length) { update(data as Partial<FormState>); flash(keys) }
+        if (keys.length) { update(data as Partial<FormState>); markAutofilled(keys) }
       })
       .catch(() => {})
   } catch { /* ignore */ }
@@ -53,7 +53,7 @@ export function runPropertyLookups(
           flood_zone_description: data.zoneDescription ?? '',
         }
         update(updates as Partial<FormState>)
-        flash(Object.entries(updates).filter(([, v]) => v !== '').map(([k]) => k))
+        markAutofilled(Object.entries(updates).filter(([, v]) => v !== '').map(([k]) => k))
       })
       .catch(() => {})
   } catch { /* ignore */ }

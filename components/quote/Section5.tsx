@@ -6,31 +6,31 @@ import { Field, inputCls, selectCls } from '../ui/Field'
 import { YesNo } from '../ui/RadioGroup'
 
 export function Section5() {
-  const { form, update, flashFields } = useQuoteForm()
-  const f = (key: string) => flashFields.has(key)
+  const { form, update, autofilledFields } = useQuoteForm()
+  const a = (key: string) => autofilledFields.has(key)
   const isMH = form.policy_type === 'MH'
 
   return (
     <SectionCard number={5} title="Property Details">
       {/* Row 1: Basic stats */}
       <div className="flex gap-3.5 flex-wrap mb-3">
-        <Field label="Year Built" className="w-24">
-          <input value={form.year_built} onChange={e => update({ year_built: e.target.value })} placeholder="YYYY" className={inputCls(f('year_built'))} />
+        <Field label="Year Built" className="w-24" autofilled={a('year_built')}>
+          <input value={form.year_built} onChange={e => update({ year_built: e.target.value })} placeholder="YYYY" className={inputCls()} />
         </Field>
-        <Field label="# Stories" className="w-20">
-          <input type="number" min={1} value={form.num_stories} onChange={e => update({ num_stories: e.target.value })} className={inputCls(f('num_stories'))} />
+        <Field label="# Stories" className="w-20" autofilled={a('num_stories')}>
+          <input type="number" min={1} value={form.num_stories} onChange={e => update({ num_stories: e.target.value })} className={inputCls()} />
         </Field>
-        <Field label="Sq Footage" className="w-28">
-          <input value={form.sqft} onChange={e => update({ sqft: e.target.value })} className={inputCls(f('sqft'))} />
+        <Field label="Sq Footage" className="w-28" autofilled={a('sqft')}>
+          <input value={form.sqft} onChange={e => update({ sqft: e.target.value })} className={inputCls()} />
         </Field>
-        <Field label="Beds" className="w-16">
-          <input type="number" min={0} value={form.beds} onChange={e => update({ beds: e.target.value })} className={inputCls(f('beds'))} />
+        <Field label="Beds" className="w-16" autofilled={a('beds')}>
+          <input type="number" min={0} value={form.beds} onChange={e => update({ beds: e.target.value })} className={inputCls()} />
         </Field>
-        <Field label="Full Baths" className="w-20">
-          <input type="number" min={0} value={form.full_baths} onChange={e => update({ full_baths: e.target.value })} className={inputCls(f('full_baths'))} />
+        <Field label="Full Baths" className="w-20" autofilled={a('full_baths')}>
+          <input type="number" min={0} value={form.full_baths} onChange={e => update({ full_baths: e.target.value })} className={inputCls()} />
         </Field>
-        <Field label="Half Baths" className="w-20">
-          <input type="number" min={0} value={form.half_baths} onChange={e => update({ half_baths: e.target.value })} className={inputCls(f('half_baths'))} />
+        <Field label="Half Baths" className="w-20" autofilled={a('half_baths')}>
+          <input type="number" min={0} value={form.half_baths} onChange={e => update({ half_baths: e.target.value })} className={inputCls()} />
         </Field>
       </div>
 

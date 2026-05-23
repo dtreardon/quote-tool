@@ -2,9 +2,10 @@
 
 import { useQuoteForm } from './QuoteFormContext'
 import { selectCls } from '../ui/Field'
+import { AutofillBadge } from '../ui/AutofillBadge'
 
 export function Banner() {
-  const { form, update } = useQuoteForm()
+  const { form, update, autofilledFields } = useQuoteForm()
   return (
     <div className="bg-navy rounded-md mb-[18px] px-5 py-4 flex gap-5 flex-wrap items-end print:hidden" style={{ boxShadow: '0 2px 12px rgba(51,78,133,0.10)' }}>
       <div className="flex flex-col gap-1">
@@ -21,14 +22,17 @@ export function Banner() {
 
       <div className="flex flex-col gap-1">
         <label className="text-[12px] font-semibold text-white/70 uppercase tracking-[0.05em]">Occupancy</label>
-        <select
-          value={form.occupancy}
-          onChange={e => update({ occupancy: e.target.value })}
-          className="rounded border border-white/30 bg-white/15 text-white pl-2.5 pr-7 py-[7px] text-sm focus:outline-none focus:ring-2 focus:ring-gold w-44 [&>option]:bg-navy [&>option]:text-white"
-        >
-          <option value="">Select…</option>
-          {['Primary','Secondary','Rental – Long-term','Rental – Short-term'].map(o => <option key={o}>{o}</option>)}
-        </select>
+        <div className="flex items-center gap-1">
+          <select
+            value={form.occupancy}
+            onChange={e => update({ occupancy: e.target.value })}
+            className="rounded border border-white/30 bg-white/15 text-white pl-2.5 pr-7 py-[7px] text-sm focus:outline-none focus:ring-2 focus:ring-gold w-44 [&>option]:bg-navy [&>option]:text-white"
+          >
+            <option value="">Select…</option>
+            {['Primary','Secondary','Rental – Long-term','Rental – Short-term'].map(o => <option key={o}>{o}</option>)}
+          </select>
+          {autofilledFields.has('occupancy') && <AutofillBadge className="text-white/50 hover:text-white" />}
+        </div>
       </div>
 
       {form.occupancy === 'Rental – Short-term' && (

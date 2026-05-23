@@ -5,7 +5,8 @@ import { SectionCard } from '../ui/SectionCard'
 import { Field, inputCls } from '../ui/Field'
 
 export function Section8() {
-  const { form, update, flashFields } = useQuoteForm()
+  const { form, update, autofilledFields } = useQuoteForm()
+  const a = (key: string) => autofilledFields.has(key)
 
   return (
     <SectionCard number={8} title="Location & Rating Info">
@@ -57,7 +58,7 @@ export function Section8() {
           )}
         </Field>
 
-        <Field label="Miles to Coast" className="w-36">
+        <Field label="Miles to Coast" className="w-36" autofilled={a('miles_coast')}>
           <input
             value={form.miles_coast}
             onChange={e => update({ miles_coast: e.target.value })}

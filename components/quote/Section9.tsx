@@ -214,7 +214,7 @@ export function Section9() {
               <input
                 value={q.carrier}
                 onChange={e => updateQuote(q.uid, { carrier: e.target.value })}
-                className={inputCls(flashedUids.has(q.uid))}
+                className={inputCls()}
               />
             </Field>
             <Field label="Annual Premium" className="flex-[2] min-w-36">

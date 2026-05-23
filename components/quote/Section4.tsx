@@ -10,8 +10,8 @@ import { loadGoogleMaps, getPlaceComponent, streetFromPlace, type AcInstance, ty
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
 
 export function Section4() {
-  const { form, update, flashFields } = useQuoteForm()
-  const f = (key: string) => flashFields.has(key)
+  const { form, update, autofilledFields } = useQuoteForm()
+  const a = (key: string) => autofilledFields.has(key)
 
   const mailInputRef = useRef<HTMLInputElement>(null)
   const mailAcRef   = useRef<unknown>(null)
@@ -87,38 +87,37 @@ export function Section4() {
         </label>
       </div>
       <div className="flex gap-3.5 flex-wrap mb-4">
-        <Field label="Street Address" className="flex-[3] min-w-48">
+        <Field label="Street Address" className="flex-[3] min-w-48" autofilled={a('mail_street')}>
           <input
             ref={mailInputRef}
             value={form.mail_street}
             onChange={e => update({ mail_street: e.target.value })}
             disabled={form.mail_same_as_subject}
             placeholder={GOOGLE_MAPS_API_KEY ? 'Start typing to search…' : ''}
-            className={`${inputCls(f('mail_street'))} disabled:bg-gray-100 disabled:text-gray-400`}
+            className={`${inputCls()} disabled:bg-gray-100 disabled:text-gray-400`}
           />
         </Field>
-        <Field label="City" className="flex-[2] min-w-32">
+        <Field label="City" className="flex-[2] min-w-32" autofilled={a('mail_city')}>
           <input
             value={form.mail_city}
             onChange={e => update({ mail_city: e.target.value })}
             disabled={form.mail_same_as_subject}
-            className={`${inputCls(f('mail_city'))} disabled:bg-gray-100 disabled:text-gray-400`}
+            className={`${inputCls()} disabled:bg-gray-100 disabled:text-gray-400`}
           />
         </Field>
-        <Field label="State" className="w-[60px]">
+        <Field label="State" className="w-[60px]" autofilled={a('mail_state')}>
           <StateSelect
             value={form.mail_state}
             onChange={v => update({ mail_state: v })}
-            flash={f('mail_state')}
           />
         </Field>
-        <Field label="ZIP" className="w-20">
+        <Field label="ZIP" className="w-20" autofilled={a('mail_zip')}>
           <input
             value={form.mail_zip}
             onChange={e => update({ mail_zip: e.target.value })}
             maxLength={10}
             disabled={form.mail_same_as_subject}
-            className={`${inputCls(f('mail_zip'))} disabled:bg-gray-100 disabled:text-gray-400`}
+            className={`${inputCls()} disabled:bg-gray-100 disabled:text-gray-400`}
           />
         </Field>
       </div>
@@ -126,7 +125,7 @@ export function Section4() {
       <hr className="border-[#d0cdc8] mb-3" />
       <div className="mb-2 text-[11px] font-bold text-[#666] uppercase tracking-[0.05em]">Previous / Current Address</div>
       <div className="flex gap-3.5 flex-wrap">
-        <Field label="Street Address" className="flex-[3] min-w-48">
+        <Field label="Street Address" className="flex-[3] min-w-48" autofilled={a('prev_street')}>
           <input
             ref={prevInputRef}
             value={form.prev_street}
@@ -135,13 +134,13 @@ export function Section4() {
             className={inputCls()}
           />
         </Field>
-        <Field label="City" className="flex-[2] min-w-32">
+        <Field label="City" className="flex-[2] min-w-32" autofilled={a('prev_city')}>
           <input value={form.prev_city} onChange={e => update({ prev_city: e.target.value })} className={inputCls()} />
         </Field>
-        <Field label="State" className="w-[60px]">
+        <Field label="State" className="w-[60px]" autofilled={a('prev_state')}>
           <StateSelect value={form.prev_state} onChange={v => update({ prev_state: v })} />
         </Field>
-        <Field label="ZIP" className="w-20">
+        <Field label="ZIP" className="w-20" autofilled={a('prev_zip')}>
           <input value={form.prev_zip} onChange={e => update({ prev_zip: e.target.value })} maxLength={10} className={inputCls()} />
         </Field>
       </div>

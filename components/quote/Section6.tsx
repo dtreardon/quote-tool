@@ -11,21 +11,18 @@ const LIABILITY_OPTIONS = ['100,000', '300,000', '500,000', '1,000,000']
 const MED_PAY_OPTIONS  = ['1,000', '3,000', '5,000', '10,000']
 
 function CovInput({
-  value, onChange, onExpand, options, placeholder, flash,
+  value, onChange, onExpand, options, placeholder,
 }: {
   value: string
   onChange: (v: string) => void
   onExpand: () => void
   options: string[]
   placeholder?: string
-  flash?: boolean
 }) {
   const [open, setOpen] = useState(false)
-  const border = flash ? 'border-amber-300' : 'border-[#d0cdc8]'
-  const bg     = flash ? 'bg-amber-50'      : 'bg-white'
   return (
     <div className="relative">
-      <div className={`flex items-stretch rounded border overflow-hidden ${border}`}>
+      <div className={`flex items-stretch rounded border overflow-hidden border-[#d0cdc8]`}>
         <span className="inline-flex items-center px-2 bg-[#f0ede8] border-r border-[#d0cdc8] text-[#666] text-[13px] font-semibold select-none flex-shrink-0">
           $
         </span>
@@ -35,7 +32,7 @@ function CovInput({
           onFocus={() => setOpen(true)}
           onBlur={() => { onExpand(); setOpen(false) }}
           placeholder={placeholder}
-          className={`flex-1 min-w-0 px-2.5 py-[7px] text-sm focus:outline-none ${bg}`}
+          className={`flex-1 min-w-0 px-2.5 py-[7px] text-sm focus:outline-none bg-white`}
         />
         <button
           type="button"
@@ -165,14 +162,13 @@ function DedField({
 }
 
 export function Section6() {
-  const { form, update, flashFields } = useQuoteForm()
-  const f = (key: string) => flashFields.has(key)
+  const { form, update } = useQuoteForm()
 
   return (
     <SectionCard number={6} title="Desired Coverage Amounts">
       <div className="flex gap-3.5 flex-wrap mb-3">
         <Field label="Dwelling (Cov A)" className="flex-1 min-w-36">
-          <DollarInput value={form.cov_dwelling} onChange={v => update({ cov_dwelling: v })} flash={f('cov_dwelling')} />
+          <DollarInput value={form.cov_dwelling} onChange={v => update({ cov_dwelling: v })} />
         </Field>
         <Field label="Other Structures (Cov B)" className="flex-1 min-w-36">
           <DollarInput value={form.cov_other_structures} onChange={v => update({ cov_other_structures: v })} />
@@ -191,7 +187,6 @@ export function Section6() {
             onChange={v => update({ cov_liability: v })}
             onExpand={() => update({ cov_liability: expandLiability(form.cov_liability) })}
             options={LIABILITY_OPTIONS}
-            flash={f('cov_liability')}
           />
         </Field>
         <Field label="Medical Payments (Cov F)" className="flex-1 min-w-36">
