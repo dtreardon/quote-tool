@@ -106,7 +106,7 @@ export function applyExtractedData(
         relationship: '',
         phone:        ci.phone  ?? '',
         email:        ci.email  ?? '',
-        showContact:  false,
+        showContact:  !!(ci.phone || ci.email),
       }
       autoFields.forEach(f => { if (ins[f]) flashKeys.push(`ins_${uid}_${f}`) })
       return ins
