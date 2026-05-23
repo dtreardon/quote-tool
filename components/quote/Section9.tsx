@@ -24,9 +24,10 @@ export function Section9() {
 
   const [eligible, setEligible]       = useState<EligibleCarrier[]>([])
   const [ineligible, setIneligible]   = useState<IneligibleCarrier[]>([])
-  const [hasRun, setHasRun]           = useState(false)
-  const [showAll, setShowAll]         = useState(false)
-  const [quoteScores, setQuoteScores] = useState<Map<number, number>>(new Map())
+  const [hasRun, setHasRun]                   = useState(false)
+  const [showAll, setShowAll]                 = useState(false)
+  const [showIneligible, setShowIneligible]   = useState(false)
+  const [quoteScores, setQuoteScores]         = useState<Map<number, number>>(new Map())
   const [flashedUids, setFlashedUids] = useState<Set<number>>(new Set())
 
   const missing: string[] = []
@@ -88,7 +89,9 @@ export function Section9() {
     update({ quotes: form.quotes.map(q => q.uid === uid ? { ...q, ...patch } : q) })
   }
 
-  const displayEligible = showAll ? eligible : eligible.slice(0, 3)
+  const displayEligible     = showAll ? eligible : eligible.slice(0, 3)
+  const visibleIneligible   = ineligible.filter(c => c.reason !== 'State not eligible')
+  const brokersFallback     = eligible.length < 3 && !eligible.some(c => c.key === 'brokers')
 
   return (
     <SectionCard number={9} title="Quoted Through / Premium">
@@ -120,14 +123,16 @@ export function Section9() {
             <span className="text-[11px] font-bold text-navy uppercase tracking-[0.05em]">
               Eligible ({eligible.length})
             </span>
-            {eligible.length > 3 && (
-              <button
-                onClick={() => setShowAll(v => !v)}
-                className="text-[11px] font-bold text-navy hover:underline"
-              >
-                {showAll ? 'Top 3 ▲' : `Show All ${eligible.length} ▾`}
-              </button>
-            )}
+            <button
+              onClick={() => setShowAll(v => !v)}
+              className={`text-[11px] font-bold px-2 py-0.5 rounded transition-colors ${
+                !showAll
+                  ? 'bg-navy text-white'
+                  : 'text-navy border border-navy hover:bg-[#f0ede8]'
+              }`}
+            >
+              Top 3 Only
+            </button>
           </div>
 
           {eligible.length === 0 ? (
@@ -154,15 +159,34 @@ export function Section9() {
             ))
           )}
 
-          {/* Ineligible */}
-          {ineligible.length > 0 && (
-            <>
-              <div className="px-4 py-2 bg-[#f8f7f5] border-t border-[#d0cdc8]">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.05em]">
-                  Ineligible ({ineligible.length})
-                </span>
+          {/* Brokers fallback */}
+          {brokersFallback && (
+            <div className="flex items-start gap-3 px-4 py-2.5 border-b border-[#ede9e3] bg-white">
+              <span
+                className="flex-shrink-0 mt-0.5 text-[11px] font-bold rounded px-1.5 py-0.5 bg-gray-100 text-gray-400 border border-gray-200"
+                style={{ minWidth: 36, textAlign: 'center' }}
+              >
+                —
+              </span>
+              <div>
+                <div className="text-[13px] font-bold text-navy leading-tight">Brokers</div>
+                <div className="text-[11px] text-gray-500 leading-snug mt-0.5 italic">Quote for price</div>
               </div>
-              {ineligible.map(c => (
+            </div>
+          )}
+
+          {/* Ineligible (collapsible, state-only carriers hidden) */}
+          {visibleIneligible.length > 0 && (
+            <>
+              <button
+                onClick={() => setShowIneligible(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-2 bg-[#f8f7f5] border-t border-[#d0cdc8] hover:bg-[#f0ede8] transition-colors"
+              >
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.05em]">
+                  {showIneligible ? `Hide Ineligible ▲` : `Show Ineligible (${visibleIneligible.length}) ▾`}
+                </span>
+              </button>
+              {showIneligible && visibleIneligible.map(c => (
                 <div key={c.key} className="flex items-center gap-3 px-4 py-1.5 border-b border-[#ede9e3] last:border-0">
                   <span
                     className="flex-shrink-0 text-[11px] font-bold rounded px-1.5 py-0.5 bg-gray-100 text-gray-400 border border-gray-200"
