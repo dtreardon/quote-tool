@@ -19,6 +19,13 @@ export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPane
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Normalize suffix to match the exact dropdown option values in Section 2
+  function normalizeSuffix(raw: string | null | undefined): string | null {
+    if (!raw) return null
+    const clean = raw.replace(/\.$/, '').trim()
+    return ['Jr', 'Sr', 'II', 'III', 'IV'].includes(clean) ? clean : null
+  }
+
   async function runAutofill() {
     if (!file && !pasteText.trim()) {
       setStatus('Upload a file or paste text first.')
@@ -87,7 +94,8 @@ export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPane
       if (x.primary_first     != null) primaryPatch.first  = x.primary_first
       if (x.primary_middle    != null) primaryPatch.middle = x.primary_middle
       if (x.primary_last      != null) primaryPatch.last   = x.primary_last
-      if (x.primary_suffix    != null) primaryPatch.suffix = x.primary_suffix
+      const ps = normalizeSuffix(x.primary_suffix)
+      if (ps != null) primaryPatch.suffix = ps
       if (x.primary_dob       != null) primaryPatch.dob    = x.primary_dob
       if (x.primary_ssn_last4 != null) primaryPatch.ssn    = x.primary_ssn_last4
       if (x.primary_phone     != null) primaryPatch.phone  = x.primary_phone
@@ -107,7 +115,7 @@ export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPane
           first:        ci.first        ?? '',
           middle:       ci.middle       ?? '',
           last:         ci.last         ?? '',
-          suffix:       ci.suffix       ?? '',
+          suffix:       normalizeSuffix(ci.suffix) ?? '',
           dob:          ci.dob          ?? '',
           ssn:          ci.ssn_last4    ?? '',
           marital:      '',
