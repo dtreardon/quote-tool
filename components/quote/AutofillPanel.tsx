@@ -87,6 +87,7 @@ export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPane
       if (x.primary_first     != null) primaryPatch.first  = x.primary_first
       if (x.primary_middle    != null) primaryPatch.middle = x.primary_middle
       if (x.primary_last      != null) primaryPatch.last   = x.primary_last
+      if (x.primary_suffix    != null) primaryPatch.suffix = x.primary_suffix
       if (x.primary_dob       != null) primaryPatch.dob    = x.primary_dob
       if (x.primary_ssn_last4 != null) primaryPatch.ssn    = x.primary_ssn_last4
       if (x.primary_phone     != null) primaryPatch.phone  = x.primary_phone
@@ -106,7 +107,7 @@ export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPane
           first:        ci.first        ?? '',
           middle:       ci.middle       ?? '',
           last:         ci.last         ?? '',
-          suffix:       '',
+          suffix:       ci.suffix       ?? '',
           dob:          ci.dob          ?? '',
           ssn:          ci.ssn_last4    ?? '',
           marital:      '',

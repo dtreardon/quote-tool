@@ -12,6 +12,7 @@ Return this exact JSON structure:
   "primary_first": null,
   "primary_middle": null,
   "primary_last": null,
+  "primary_suffix": null,
   "primary_dob": null,
   "primary_ssn_last4": null,
   "primary_phone": null,
@@ -36,7 +37,8 @@ Return this exact JSON structure:
   "mortgagee_zip": null
 }
 
-For co_insureds, return an array of objects: [{ "first": null, "middle": null, "last": null, "dob": null, "ssn_last4": null }]
+For co_insureds, return an array of objects: [{ "first": null, "middle": null, "last": null, "suffix": null, "dob": null, "ssn_last4": null }]
+For name suffixes (Sr., Jr., II, III, IV, etc.): always place them in the suffix field — never include them in first_name, middle, or last. The last name field should contain only the family name with no suffix appended.
 For referred_by_name and referred_by_company: if this is an email, extract the sender's name and company from the From: line or email signature.
 For occupancy: return one of "Primary", "Secondary", "Rental Long-term", "Rental Short-term", or null.
 For dates: return in MM/DD/YYYY format.
