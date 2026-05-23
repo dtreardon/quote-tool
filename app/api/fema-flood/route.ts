@@ -6,6 +6,21 @@ const NULL_RESULT = {
 
 const BASE = 'https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer'
 
+// ZONE_SUBTY is only populated by FEMA for Zone X variants; all other zones need a lookup
+const ZONE_DESCRIPTIONS: Record<string, string> = {
+  'AE':         '1% Annual Chance Flood Hazard',
+  'AO':         '1% Annual Chance Shallow Flooding',
+  'AH':         '1% Annual Chance Shallow Flooding',
+  'A':          '1% Annual Chance Flood Hazard',
+  'A99':        '1% Annual Chance Flood Hazard (Protected by Levee)',
+  'AR':         'Flood Hazard Area Returning to Natural State',
+  'VE':         'Coastal High Hazard Area',
+  'V':          'Coastal Flood Hazard Area',
+  'X':          'Minimal Flood Hazard',
+  'D':          'Undetermined Flood Hazard',
+  'OPEN WATER': 'Open Water',
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { lat, lng } = await req.json()
@@ -44,7 +59,7 @@ export async function POST(req: NextRequest) {
     const floodZone: string | null = a.FLD_ZONE ?? null
     const bfeRaw = a.STATIC_BFE
     const bfe = (!bfeRaw || bfeRaw <= 0 || floodZone === 'X') ? 'N/A' : String(bfeRaw)
-    const zoneDescription: string | null = a.ZONE_SUBTY || null
+    const zoneDescription: string | null = a.ZONE_SUBTY || ZONE_DESCRIPTIONS[floodZone ?? ''] || null
 
     let firmPanel: string | null = null
     let firmEffDate: string | null = null
