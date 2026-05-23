@@ -75,32 +75,26 @@ export function Section3() {
         } catch { /* ignore */ }
 
         try {
-          console.log('[FEMA] Fetching flood data', { lat, lng })
           void fetch('/api/fema-flood', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lat, lng }),
           })
-            .then(r => {
-              console.log('[FEMA] Response status:', r.status, r.ok)
-              return r.ok ? r.json() : null
-            })
+            .then(r => r.ok ? r.json() : null)
             .then((data) => {
-              console.log('[FEMA] Response data:', data)
               if (!data || data.floodZone == null) return
               const updates: Record<string, string> = {
                 flood_zone:             data.floodZone,
-                bfe:                    data.bfe            ?? '',
-                firm_panel:             data.firmPanel      ?? '',
-                firm_eff_date:          data.firmEffDate    ?? '',
+                bfe:                    data.bfe             ?? '',
+                firm_panel:             data.firmPanel       ?? '',
+                firm_eff_date:          data.firmEffDate     ?? '',
                 flood_zone_description: data.zoneDescription ?? '',
               }
-              console.log('[FEMA] Applying updates:', updates)
               update(updates as Partial<typeof form>)
               flash(Object.entries(updates).filter(([, v]) => v !== '').map(([k]) => k))
             })
-            .catch((err) => { console.error('[FEMA] Fetch error:', err) })
-        } catch (err) { console.error('[FEMA] Outer error:', err) }
+            .catch(() => {})
+        } catch { /* ignore */ }
       })
       autocompleteRef.current = ac
     }).catch(() => {})

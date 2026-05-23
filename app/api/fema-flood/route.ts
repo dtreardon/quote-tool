@@ -24,7 +24,6 @@ const ZONE_DESCRIPTIONS: Record<string, string> = {
 export async function POST(req: NextRequest) {
   try {
     const { lat, lng } = await req.json()
-    console.log('[FEMA API] Request received:', { lat, lng })
     if (lat == null || lng == null) return NextResponse.json(NULL_RESULT)
 
     const commonParams = new URLSearchParams({
@@ -47,12 +46,10 @@ export async function POST(req: NextRequest) {
       fetch(`${BASE}/3/query?${panelParams}`,  { next: { revalidate: 86400 } }),
     ])
 
-    console.log('[FEMA API] Layer 28 status:', zoneRes.status, '| Layer 3 status:', panelRes.status)
     if (!zoneRes.ok) return NextResponse.json(NULL_RESULT)
 
     const zoneData = await zoneRes.json()
     const zoneFeature = zoneData?.features?.[0]
-    console.log('[FEMA API] Zone feature:', JSON.stringify(zoneFeature?.attributes))
     if (!zoneFeature) return NextResponse.json(NULL_RESULT)
 
     const a = zoneFeature.attributes
@@ -66,7 +63,6 @@ export async function POST(req: NextRequest) {
     if (panelRes.ok) {
       const panelData = await panelRes.json()
       const panelFeature = panelData?.features?.[0]
-      console.log('[FEMA API] Panel feature:', JSON.stringify(panelFeature?.attributes))
       if (panelFeature) {
         firmPanel = panelFeature.attributes.FIRM_PAN ?? null
         const effRaw: number | null = panelFeature.attributes.EFF_DATE
@@ -76,11 +72,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const result = { floodZone, bfe, firmPanel, firmEffDate, zoneDescription }
-    console.log('[FEMA API] Returning:', result)
-    return NextResponse.json(result)
-  } catch (err) {
-    console.error('[FEMA API] Error:', err)
+    return NextResponse.json({ floodZone, bfe, firmPanel, firmEffDate, zoneDescription })
+  } catch {
     return NextResponse.json(NULL_RESULT)
   }
 }
