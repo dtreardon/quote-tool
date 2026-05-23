@@ -4,6 +4,10 @@ import { useState, useRef } from 'react'
 import { SectionCard } from '../ui/SectionCard'
 import { useQuoteForm } from './QuoteFormContext'
 import type { FormState, InsuredData } from '@/app/types/form'
+import { loadGoogleMaps, type GoogleWindow } from '@/lib/googleMaps'
+import { calcMilesToCoast, runPropertyLookups } from '@/lib/addressEnrichment'
+
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
 
 interface AutofillPanelProps {
   onFlash: (fields: string[]) => void
@@ -150,6 +154,44 @@ export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPane
       const n = flashKeys.length + (insuredsChanged ? 1 : 0)
       setStatus(`Auto-filled ${n} field${n !== 1 ? 's' : ''}.`)
       setStatusType('ok')
+
+      // If the address was extracted, geocode it and run the same downstream
+      // pipeline that fires on Google Maps autocomplete selection
+      const street = x.subject_address as string | null
+      const city   = x.subject_city   as string | null
+      const state  = x.subject_state  as string | null
+      const zip    = (x.subject_zip   as string | null) ?? ''
+      if (GOOGLE_MAPS_API_KEY && street && city && state) {
+        loadGoogleMaps(GOOGLE_MAPS_API_KEY).then(() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const ggl = (window as unknown as GoogleWindow)['google'] as any
+          const geocoder = new ggl.maps.Geocoder()
+          const fullAddr = [street, city, state, zip].filter(Boolean).join(', ')
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          geocoder.geocode({ address: fullAddr }, (results: any[] | null, status: string) => {
+            if (status !== 'OK' || !results?.[0]) return
+            const r = results[0]
+            const lat: number = r.geometry.location.lat()
+            const lng: number = r.geometry.location.lng()
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const countyComp = r.address_components?.find((c: any) =>
+              c.types.includes('administrative_area_level_2')
+            )
+            const county: string = countyComp
+              ? (countyComp.long_name as string).replace(' County', '')
+              : ''
+            const dist = calcMilesToCoast(lat, lng)
+            update({
+              prop_lat:    lat,
+              prop_lng:    lng,
+              miles_coast: Number(dist.toFixed(2)).toString(),
+              ...(county ? { prop_county: county } : {}),
+            })
+            onFlash(['miles_coast', ...(county ? ['prop_county'] : [])])
+            runPropertyLookups(lat, lng, street, city, state, zip, update, onFlash)
+          })
+        }).catch(() => {})
+      }
     } catch {
       setStatus('Auto-fill failed. Please fill in manually.')
       setStatusType('err')

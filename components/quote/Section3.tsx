@@ -5,9 +5,8 @@ import { useQuoteForm } from './QuoteFormContext'
 import { SectionCard } from '../ui/SectionCard'
 import { Field, inputCls } from '../ui/Field'
 import { StateSelect } from '../ui/StateSelect'
-import { point, pointToLineDistance } from '@turf/turf'
-import coastline from '@/data/coastline.json'
 import { loadGoogleMaps, getPlaceComponent, streetFromPlace, type AcInstance, type GoogleWindow } from '@/lib/googleMaps'
+import { calcMilesToCoast, runPropertyLookups } from '@/lib/addressEnrichment'
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
 
 export function Section3() {
@@ -34,15 +33,7 @@ export function Section3() {
         const lng = geometry?.location?.lng()
         if (lat == null || lng == null) return
 
-        const propertyPoint = point([lng, lat])
-        const filtered = (coastline as { features: Array<{ geometry: { coordinates: number[][] } }> }).features.filter(feat => {
-          return feat.geometry.coordinates.some(([fLng, fLat]) =>
-            fLng >= -87 && fLng <= -75 && fLat >= 24 && fLat <= 37
-          )
-        })
-        const dist = filtered.length
-          ? Math.min(...filtered.map(feat => pointToLineDistance(propertyPoint, feat as Parameters<typeof pointToLineDistance>[1], { units: 'miles' })))
-          : 0
+        const dist = calcMilesToCoast(lat, lng)
 
         const street = streetFromPlace(place)
         const city   = getPlaceComponent(place, 'locality')
@@ -61,40 +52,7 @@ export function Section3() {
           miles_coast: Number(dist.toFixed(2)).toString(),
         })
 
-        try {
-          void fetch(`/api/property-details?${new URLSearchParams({ street, city, state, zip })}`)
-            .then(r => r.ok ? r.json() : {})
-            .then((data: Record<string, string>) => {
-              const keys = Object.keys(data)
-              if (keys.length) {
-                update(data as Partial<typeof form>)
-                flash(keys)
-              }
-            })
-            .catch(() => {})
-        } catch { /* ignore */ }
-
-        try {
-          void fetch('/api/fema-flood', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lat, lng }),
-          })
-            .then(r => r.ok ? r.json() : null)
-            .then((data) => {
-              if (!data || data.floodZone == null) return
-              const updates: Record<string, string> = {
-                flood_zone:             data.floodZone,
-                bfe:                    data.bfe             ?? '',
-                firm_panel:             data.firmPanel       ?? '',
-                firm_eff_date:          data.firmEffDate     ?? '',
-                flood_zone_description: data.zoneDescription ?? '',
-              }
-              update(updates as Partial<typeof form>)
-              flash(Object.entries(updates).filter(([, v]) => v !== '').map(([k]) => k))
-            })
-            .catch(() => {})
-        } catch { /* ignore */ }
+        runPropertyLookups(lat, lng, street, city, state, zip, update, flash)
       })
       autocompleteRef.current = ac
     }).catch(() => {})
