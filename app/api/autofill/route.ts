@@ -3,82 +3,92 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const client = new Anthropic()
 
-const SYSTEM_PROMPT = `You are extracting insurance intake data from a document or email. Extract any of the following fields you can find and return ONLY a JSON object with no explanation, no markdown, no backticks. Use null for any field not found.
+const MAX_BYTES = 10 * 1024 * 1024 // 10 MB
 
+const SYSTEM_PROMPT = `You are an insurance intake assistant. Extract information from the provided document or email and return ONLY a valid JSON object — no explanation, no markdown, no backticks. If a field cannot be found, return null for that field.
+
+Return this exact JSON structure:
 {
-  "first_name": null,
-  "middle_name": null,
-  "last_name": null,
-  "dob": null,
-  "ssn": null,
-  "occupation": null,
-  "email1": null,
-  "phone1": null,
-  "marital_status": null,
-  "prop_street": null,
-  "prop_city": null,
-  "prop_state": null,
-  "prop_zip": null,
-  "mail_street": null,
-  "mail_city": null,
-  "mail_state": null,
-  "mail_zip": null,
+  "primary_first": null,
+  "primary_middle": null,
+  "primary_last": null,
+  "primary_dob": null,
+  "primary_ssn_last4": null,
+  "primary_phone": null,
+  "primary_email": null,
+  "co_insureds": [],
+  "subject_address": null,
+  "subject_city": null,
+  "subject_state": null,
+  "subject_zip": null,
+  "mailing_address": null,
+  "previous_address": null,
+  "closing_date": null,
   "sales_price": null,
   "loan_number": null,
-  "mortgagee": null,
-  "closing_date": null,
-  "closing_contact": null,
-  "year_built": null,
-  "current_carrier": null,
-  "premium": null,
-  "new_purchase": null,
-  "occupancy": null
+  "occupancy": null,
+  "referred_by_name": null,
+  "referred_by_company": null,
+  "mortgagee_name": null,
+  "mortgagee_street": null,
+  "mortgagee_city": null,
+  "mortgagee_state": null,
+  "mortgagee_zip": null
 }
 
-For new_purchase return "yes" or "no". For occupancy return "Primary", "Secondary", "Rental - Long-term", or "Rental - Short-term". For dob use MM/DD/YYYY format. For sales_price return numbers only (no $ sign). Return only the JSON.`
+For co_insureds, return an array of objects: [{ "first": null, "middle": null, "last": null, "dob": null, "ssn_last4": null }]
+For referred_by_name and referred_by_company: if this is an email, extract the sender's name and company from the From: line or email signature.
+For occupancy: return one of "Primary", "Secondary", "Rental Long-term", "Rental Short-term", or null.
+For dates: return in MM/DD/YYYY format.
+For sales_price: return as a plain number (no $ or commas).
+For SSN: return only the last 4 digits as a string.`
 
 export async function POST(req: NextRequest) {
   try {
     const contentType = req.headers.get('content-type') || ''
-    let textContent = ''
-    let imageContent: Anthropic.ImageBlockParam | null = null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userContent: any[] = []
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData()
-      const text = formData.get('text')
       const file = formData.get('file')
-
-      if (typeof text === 'string' && text.trim()) {
-        textContent = text
-      }
+      const text = formData.get('text')
 
       if (file instanceof File) {
+        if (file.size > MAX_BYTES) {
+          return NextResponse.json(
+            { error: 'File exceeds the 10 MB limit.' },
+            { status: 400 }
+          )
+        }
         const bytes = await file.arrayBuffer()
         const base64 = Buffer.from(bytes).toString('base64')
-        const mediaType = (file.type as Anthropic.Base64ImageSource['media_type']) || 'image/jpeg'
 
         if (file.type === 'application/pdf') {
-          // PDFs not supported as images — extract text hint
-          textContent += '\n[PDF file uploaded — extract visible text fields]'
+          userContent.push({
+            type: 'document',
+            source: { type: 'base64', media_type: 'application/pdf', data: base64 },
+          })
         } else {
-          imageContent = {
+          const mediaType = (file.type || 'image/jpeg') as Anthropic.Base64ImageSource['media_type']
+          userContent.push({
             type: 'image',
             source: { type: 'base64', media_type: mediaType, data: base64 },
-          }
+          })
         }
+      }
+
+      if (typeof text === 'string' && text.trim()) {
+        userContent.push({ type: 'text', text: text.trim() })
       }
     } else {
       const body = await req.json()
-      textContent = body.text || ''
+      if (body.text) userContent.push({ type: 'text', text: body.text })
     }
 
-    if (!textContent && !imageContent) {
-      return NextResponse.json({ error: 'No content provided' }, { status: 400 })
+    if (userContent.length === 0) {
+      return NextResponse.json({ error: 'No content provided.' }, { status: 400 })
     }
-
-    const userContent: Anthropic.MessageParam['content'] = []
-    if (imageContent) userContent.push(imageContent)
-    if (textContent) userContent.push({ type: 'text', text: textContent })
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
@@ -88,12 +98,11 @@ export async function POST(req: NextRequest) {
     })
 
     const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
-    const clean = raw.replace(/```json|```/g, '').trim()
+    const clean = raw.replace(/```json\n?|```/g, '').trim()
     const parsed = JSON.parse(clean)
-
     return NextResponse.json(parsed)
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
