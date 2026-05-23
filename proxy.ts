@@ -15,12 +15,15 @@ async function hashPassword(password: string): Promise<string> {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Pass through login, auth API, and static assets without checking
+  // Pass through login, auth APIs, add-in files, and static assets without checking
   if (
     pathname === '/login' ||
+    pathname === '/manifest.xml' ||
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/autofill/session') ||
+    pathname.startsWith('/addins/') ||
     pathname.startsWith('/_next') ||
-    /\.(png|jpg|jpeg|gif|svg|ico|webp|woff2?|ttf)$/.test(pathname)
+    /\.(png|jpg|jpeg|gif|svg|ico|webp|woff2?|ttf|html|xml)$/.test(pathname)
   ) {
     return NextResponse.next()
   }

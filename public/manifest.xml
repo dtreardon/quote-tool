@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+=== QUOTESHEETPRO OUTLOOK ADD-IN — SETUP INSTRUCTIONS ===
+
+SIDELOAD FOR INDIVIDUAL TESTING (Outlook on the web or New Outlook for Windows):
+  1. Open Outlook → click the gear icon → "Get Add-ins" (or "Manage add-ins")
+  2. Choose "My add-ins" → scroll to "Custom add-ins" → click "+ Add a custom add-in"
+  3. Select "Add from URL" and enter: https://quotesheetpro.com/manifest.xml
+     — OR —
+     Select "Add from file" and upload this manifest.xml
+
+DEPLOY TO YOUR ORGANIZATION (Microsoft 365 Admin Center):
+  1. Sign in to https://admin.microsoft.com
+  2. Go to Settings → Integrated apps → Upload custom apps
+  3. Choose "Office Add-in" and upload this manifest.xml (or point to the URL above)
+  4. Assign to users or the whole organization
+  (Alternatively: Exchange Admin Center → Organization → Add-ins → + Add from URL)
+
+REQUIREMENTS:
+  • Outlook 365 web (OWA), New Outlook for Windows, or Outlook desktop 2016+
+  • Mailbox API set version 1.8 or later (all Outlook 365 clients qualify)
+  • The add-in reads email body and inline images — no file attachments are sent
+
+USAGE:
+  • Open any received email in Outlook
+  • Click "Send to Quote Tool" in the ribbon (Home tab → QuoteSheetPRO group)
+  • The task pane opens, reads the email, sends to QuoteSheetPRO, and opens the
+    pre-filled quote sheet in your browser automatically
+
+TROUBLESHOOTING:
+  • If the task pane shows a CORS or network error, ensure quotesheetpro.com is
+    reachable and UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN are set in
+    Vercel environment variables
+  • Sideloaded add-ins are only visible to the account that sideloaded them
+  • After deploying via Admin Center, allow up to 24 hours for propagation
+-->
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
+  xsi:type="MailApp">
+
+  <!-- Unique add-in ID — do not change after deployment -->
+  <Id>3e7fa6c2-b8d4-4f1a-9c5e-2a0b7d3e8f1c</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Reardon Insurance, LLC</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="QuoteSheetPRO"/>
+  <Description DefaultValue="Send an email to QuoteSheetPRO to auto-fill the quote sheet."/>
+  <IconUrl DefaultValue="https://quotesheetpro.com/logo-ra.png"/>
+  <HighResolutionIconUrl DefaultValue="https://quotesheetpro.com/logo-ra.png"/>
+  <SupportUrl DefaultValue="https://quotesheetpro.com"/>
+  <AppDomains>
+    <AppDomain>https://quotesheetpro.com</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+
+  <Requirements>
+    <Sets>
+      <!-- 1.8 required for getAttachmentContentAsync (inline image reading) -->
+      <Set Name="Mailbox" MinVersion="1.8"/>
+    </Sets>
+  </Requirements>
+
+  <!-- Fallback form for older clients that don't support VersionOverrides -->
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://quotesheetpro.com/addins/taskpane.html"/>
+        <RequestedHeight>300</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <!-- ReadItem allows reading body, attachments, and sender info -->
+  <Permissions>ReadItem</Permissions>
+
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  </Rule>
+
+  <DisableEntityHighlighting>false</DisableEntityHighlighting>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Requirements>
+      <bt:Sets>
+        <bt:Set Name="Mailbox" MinVersion="1.8"/>
+      </bt:Sets>
+    </Requirements>
+
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <FunctionFile resid="Taskpane.Url"/>
+
+          <ExtensionPoint xsi:type="MessageReadCommandSurface">
+            <!-- Add button to the default (Home) tab -->
+            <OfficeTab id="TabDefault">
+              <Group id="qsp.msgReadGroup">
+                <Label resid="GroupLabel"/>
+
+                <Control xsi:type="Button" id="qsp.openTaskpane">
+                  <Label resid="Button.Label"/>
+                  <Supertip>
+                    <Title resid="Button.Label"/>
+                    <Description resid="Button.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16"  resid="Icon.16"/>
+                    <bt:Image size="32"  resid="Icon.32"/>
+                    <bt:Image size="80"  resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>QuoteSheetPROPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16"  DefaultValue="https://quotesheetpro.com/logo-ra.png"/>
+        <bt:Image id="Icon.32"  DefaultValue="https://quotesheetpro.com/logo-ra.png"/>
+        <bt:Image id="Icon.80"  DefaultValue="https://quotesheetpro.com/logo-ra.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://quotesheetpro.com/addins/taskpane.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GroupLabel"    DefaultValue="QuoteSheetPRO"/>
+        <bt:String id="Button.Label"  DefaultValue="Send to Quote Tool"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="Button.Tooltip" DefaultValue="Extract this email&apos;s data and pre-fill the QuoteSheetPRO form."/>
+      </bt:LongStrings>
+    </Resources>
+
+    <!-- Nested VersionOverrides 1.1 for New Outlook for Windows support -->
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
+      <Requirements>
+        <bt:Sets>
+          <bt:Set Name="Mailbox" MinVersion="1.8"/>
+        </bt:Sets>
+      </Requirements>
+
+      <Hosts>
+        <Host xsi:type="MailHost">
+          <DesktopFormFactor>
+            <FunctionFile resid="Taskpane.Url"/>
+
+            <ExtensionPoint xsi:type="MessageReadCommandSurface">
+              <OfficeTab id="TabDefault">
+                <Group id="qsp.msgReadGroup.v11">
+                  <Label resid="GroupLabel"/>
+
+                  <Control xsi:type="Button" id="qsp.openTaskpane.v11">
+                    <Label resid="Button.Label"/>
+                    <Supertip>
+                      <Title resid="Button.Label"/>
+                      <Description resid="Button.Tooltip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16"  resid="Icon.16"/>
+                      <bt:Image size="32"  resid="Icon.32"/>
+                      <bt:Image size="80"  resid="Icon.80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>QuoteSheetPROPane</TaskpaneId>
+                      <SourceLocation resid="Taskpane.Url"/>
+                    </Action>
+                  </Control>
+
+                </Group>
+              </OfficeTab>
+            </ExtensionPoint>
+          </DesktopFormFactor>
+        </Host>
+      </Hosts>
+
+      <Resources>
+        <bt:Images>
+          <bt:Image id="Icon.16"  DefaultValue="https://quotesheetpro.com/logo-ra.png"/>
+          <bt:Image id="Icon.32"  DefaultValue="https://quotesheetpro.com/logo-ra.png"/>
+          <bt:Image id="Icon.80"  DefaultValue="https://quotesheetpro.com/logo-ra.png"/>
+        </bt:Images>
+        <bt:Urls>
+          <bt:Url id="Taskpane.Url" DefaultValue="https://quotesheetpro.com/addins/taskpane.html"/>
+        </bt:Urls>
+        <bt:ShortStrings>
+          <bt:String id="GroupLabel"    DefaultValue="QuoteSheetPRO"/>
+          <bt:String id="Button.Label"  DefaultValue="Send to Quote Tool"/>
+        </bt:ShortStrings>
+        <bt:LongStrings>
+          <bt:String id="Button.Tooltip" DefaultValue="Extract this email&apos;s data and pre-fill the QuoteSheetPRO form."/>
+        </bt:LongStrings>
+      </Resources>
+    </VersionOverrides>
+  </VersionOverrides>
+
+</OfficeApp>
