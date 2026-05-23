@@ -87,19 +87,17 @@ export function Section3() {
             })
             .then((data) => {
               console.log('[FEMA] Response data:', data)
-              if (!data) return
-              const updates: Record<string, string> = {}
-              if (data.floodZone)       updates.flood_zone             = data.floodZone
-              if (data.bfe != null)     updates.bfe                    = data.bfe
-              if (data.firmPanel)       updates.firm_panel             = data.firmPanel
-              if (data.firmEffDate)     updates.firm_eff_date          = data.firmEffDate
-              if (data.zoneDescription) updates.flood_zone_description = data.zoneDescription
-              console.log('[FEMA] Applying updates:', updates)
-              const keys = Object.keys(updates)
-              if (keys.length) {
-                update(updates as Partial<typeof form>)
-                flash(keys)
+              if (!data || data.floodZone == null) return
+              const updates: Record<string, string> = {
+                flood_zone:             data.floodZone,
+                bfe:                    data.bfe            ?? '',
+                firm_panel:             data.firmPanel      ?? '',
+                firm_eff_date:          data.firmEffDate    ?? '',
+                flood_zone_description: data.zoneDescription ?? '',
               }
+              console.log('[FEMA] Applying updates:', updates)
+              update(updates as Partial<typeof form>)
+              flash(Object.entries(updates).filter(([, v]) => v !== '').map(([k]) => k))
             })
             .catch((err) => { console.error('[FEMA] Fetch error:', err) })
         } catch (err) { console.error('[FEMA] Outer error:', err) }
