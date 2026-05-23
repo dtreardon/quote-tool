@@ -14,14 +14,15 @@ interface StateSelectProps {
   value: string
   onChange: (v: string) => void
   className?: string
+  autofilled?: boolean
 }
 
-export function StateSelect({ value, onChange, className = '' }: StateSelectProps) {
+export function StateSelect({ value, onChange, className = '', autofilled = false }: StateSelectProps) {
   return (
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className={`${selectCls()} uppercase ${className}`}
+      className={`${selectCls(autofilled)} uppercase ${className}`}
     >
       <option value="">--</option>
       {STATES.map(s => (

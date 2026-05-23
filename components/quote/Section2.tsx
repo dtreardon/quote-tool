@@ -73,8 +73,8 @@ export function Section2() {
                 <Field label="Last Name" className="flex-[3] min-w-32" autofilled={a(ins.uid, 'last')}>
                   <input value={ins.last} onChange={e => u({ last: e.target.value })} className={inputCls(a(ins.uid, 'last'))} />
                 </Field>
-                <Field label="Suffix" className="w-20" autofilled={a(ins.uid, 'suffix')} badgeOutside>
-                  <select value={ins.suffix} onChange={e => u({ suffix: e.target.value })} className={selectCls()}>
+                <Field label="Suffix" className="w-20" autofilled={a(ins.uid, 'suffix')} badgeRight="right-7">
+                  <select value={ins.suffix} onChange={e => u({ suffix: e.target.value })} className={selectCls(a(ins.uid, 'suffix'))}>
                     <option value=""></option>
                     {['Jr','Sr','II','III','IV'].map(s => <option key={s}>{s}</option>)}
                   </select>
@@ -101,8 +101,8 @@ export function Section2() {
                     className={inputCls(a(ins.uid, 'ssn'))}
                   />
                 </Field>
-                <Field label="Marital Status" className="flex-1 min-w-32" autofilled={a(ins.uid, 'marital')} badgeOutside>
-                  <select value={ins.marital} onChange={e => u({ marital: e.target.value })} className={selectCls()}>
+                <Field label="Marital Status" className="flex-1 min-w-32" autofilled={a(ins.uid, 'marital')} badgeRight="right-7">
+                  <select value={ins.marital} onChange={e => u({ marital: e.target.value })} className={selectCls(a(ins.uid, 'marital'))}>
                     <option value="">Select…</option>
                     {['Married','Single','Divorced','Widowed'].map(m => <option key={m}>{m}</option>)}
                   </select>

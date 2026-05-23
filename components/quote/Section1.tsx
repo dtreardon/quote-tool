@@ -101,8 +101,8 @@ export function Section1() {
             <Field label="City" className="flex-[2] min-w-36" autofilled={a('mortgagee_city')}>
               <input value={form.mortgagee_city} onChange={e => update({ mortgagee_city: e.target.value })} className={inputCls(a('mortgagee_city'))} />
             </Field>
-            <Field label="State" className="w-20" autofilled={a('mortgagee_state')} badgeOutside>
-              <StateSelect value={form.mortgagee_state} onChange={v => update({ mortgagee_state: v })} />
+            <Field label="State" className="w-20" autofilled={a('mortgagee_state')} badgeRight="right-7">
+              <StateSelect value={form.mortgagee_state} onChange={v => update({ mortgagee_state: v })} autofilled={a('mortgagee_state')} />
             </Field>
             <Field label="ZIP" className="w-24" autofilled={a('mortgagee_zip')}>
               <input value={form.mortgagee_zip} onChange={e => update({ mortgagee_zip: e.target.value })} maxLength={10} className={inputCls(a('mortgagee_zip'))} />

@@ -105,10 +105,11 @@ export function Section4() {
             className={`${inputCls(a('mail_city'))} disabled:bg-gray-100 disabled:text-gray-400`}
           />
         </Field>
-        <Field label="State" className="w-[60px]" autofilled={a('mail_state')} badgeOutside>
+        <Field label="State" className="w-[60px]" autofilled={a('mail_state')} badgeRight="right-7">
           <StateSelect
             value={form.mail_state}
             onChange={v => update({ mail_state: v })}
+            autofilled={a('mail_state')}
           />
         </Field>
         <Field label="ZIP" className="w-20" autofilled={a('mail_zip')}>
@@ -137,8 +138,8 @@ export function Section4() {
         <Field label="City" className="flex-[2] min-w-32" autofilled={a('prev_city')}>
           <input value={form.prev_city} onChange={e => update({ prev_city: e.target.value })} className={inputCls(a('prev_city'))} />
         </Field>
-        <Field label="State" className="w-[60px]" autofilled={a('prev_state')} badgeOutside>
-          <StateSelect value={form.prev_state} onChange={v => update({ prev_state: v })} />
+        <Field label="State" className="w-[60px]" autofilled={a('prev_state')} badgeRight="right-7">
+          <StateSelect value={form.prev_state} onChange={v => update({ prev_state: v })} autofilled={a('prev_state')} />
         </Field>
         <Field label="ZIP" className="w-20" autofilled={a('prev_zip')}>
           <input value={form.prev_zip} onChange={e => update({ prev_zip: e.target.value })} maxLength={10} className={inputCls(a('prev_zip'))} />

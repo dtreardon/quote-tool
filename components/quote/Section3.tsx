@@ -84,8 +84,8 @@ export function Section3() {
           <Field label="City" className="flex-[2] min-w-32" autofilled={a('prop_city')}>
             <input value={form.prop_city} onChange={e => update({ prop_city: e.target.value })} className={inputCls(a('prop_city'))} />
           </Field>
-          <Field label="State" className="w-[60px]" autofilled={a('prop_state')} badgeOutside>
-            <StateSelect value={form.prop_state} onChange={v => update({ prop_state: v })} />
+          <Field label="State" className="w-[60px]" autofilled={a('prop_state')} badgeRight="right-7">
+            <StateSelect value={form.prop_state} onChange={v => update({ prop_state: v })} autofilled={a('prop_state')} />
           </Field>
           <Field label="ZIP" className="w-20" autofilled={a('prop_zip')}>
             <input value={form.prop_zip} onChange={e => update({ prop_zip: e.target.value })} maxLength={10} className={inputCls(a('prop_zip'))} />
