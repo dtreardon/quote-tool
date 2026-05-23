@@ -24,12 +24,12 @@ export function Section1() {
           </select>
         </Field>
         <Field label="Referred By" className="flex-1 min-w-36" autofilled={a('referred_by_name')}>
-          <input value={form.referred_by_name} onChange={e => update({ referred_by_name: e.target.value })} placeholder="Name" className={inputCls()} />
+          <input value={form.referred_by_name} onChange={e => update({ referred_by_name: e.target.value })} placeholder="Name" className={inputCls(a('referred_by_name'))} />
         </Field>
         <Field label="Company" className="flex-1 min-w-36" autofilled={a('referred_by_company')}>
-          <input value={form.referred_by_company} onChange={e => update({ referred_by_company: e.target.value })} placeholder="Company" className={inputCls()} />
+          <input value={form.referred_by_company} onChange={e => update({ referred_by_company: e.target.value })} placeholder="Company" className={inputCls(a('referred_by_company'))} />
         </Field>
-        <Field label="New Purchase?" autofilled={a('new_purchase')}>
+        <Field label="New Purchase?" autofilled={a('new_purchase')} badgeOutside>
           <YesNo name="new_purchase" value={form.new_purchase} onChange={v => update({ new_purchase: v })} />
         </Field>
       </div>
@@ -43,10 +43,10 @@ export function Section1() {
               onChange={e => update({ closing_date: formatDate(e.target.value) })}
               placeholder="MM/DD/YYYY"
               maxLength={10}
-              className={inputCls()}
+              className={inputCls(a('closing_date'))}
             />
           </Field>
-          <Field label="Sales Price" className="flex-1 min-w-36" autofilled={a('sales_price')}>
+          <Field label="Sales Price" className="flex-1 min-w-36" autofilled={a('sales_price')} badgeOutside>
             <DollarInput value={form.sales_price} onChange={v => update({ sales_price: v })} />
           </Field>
           <Field label="Contact (Attorney or Lender)" className="flex-[2] min-w-48">
@@ -91,26 +91,26 @@ export function Section1() {
           </div>
           <div className="flex gap-3.5 flex-wrap mb-2">
             <Field label="Mortgagee Name" className="flex-[3] min-w-60" autofilled={a('mortgagee_name')}>
-              <input value={form.mortgagee_name} onChange={e => update({ mortgagee_name: e.target.value })} placeholder="e.g. First National Bank ISAOA/ATIMA" className={inputCls()} />
+              <input value={form.mortgagee_name} onChange={e => update({ mortgagee_name: e.target.value })} placeholder="e.g. First National Bank ISAOA/ATIMA" className={inputCls(a('mortgagee_name'))} />
             </Field>
           </div>
           <div className="flex gap-3.5 flex-wrap mb-2">
             <Field label="Street Address" className="flex-[3] min-w-48" autofilled={a('mortgagee_street')}>
-              <input value={form.mortgagee_street} onChange={e => update({ mortgagee_street: e.target.value })} className={inputCls()} />
+              <input value={form.mortgagee_street} onChange={e => update({ mortgagee_street: e.target.value })} className={inputCls(a('mortgagee_street'))} />
             </Field>
             <Field label="City" className="flex-[2] min-w-36" autofilled={a('mortgagee_city')}>
-              <input value={form.mortgagee_city} onChange={e => update({ mortgagee_city: e.target.value })} className={inputCls()} />
+              <input value={form.mortgagee_city} onChange={e => update({ mortgagee_city: e.target.value })} className={inputCls(a('mortgagee_city'))} />
             </Field>
-            <Field label="State" className="w-20" autofilled={a('mortgagee_state')}>
+            <Field label="State" className="w-20" autofilled={a('mortgagee_state')} badgeOutside>
               <StateSelect value={form.mortgagee_state} onChange={v => update({ mortgagee_state: v })} />
             </Field>
             <Field label="ZIP" className="w-24" autofilled={a('mortgagee_zip')}>
-              <input value={form.mortgagee_zip} onChange={e => update({ mortgagee_zip: e.target.value })} maxLength={10} className={inputCls()} />
+              <input value={form.mortgagee_zip} onChange={e => update({ mortgagee_zip: e.target.value })} maxLength={10} className={inputCls(a('mortgagee_zip'))} />
             </Field>
           </div>
           <div className="flex gap-3.5 flex-wrap">
             <Field label="Loan Number" className="w-52" autofilled={a('loan_number')}>
-              <input value={form.loan_number} onChange={e => update({ loan_number: e.target.value })} className={inputCls()} />
+              <input value={form.loan_number} onChange={e => update({ loan_number: e.target.value })} className={inputCls(a('loan_number'))} />
             </Field>
           </div>
         </div>

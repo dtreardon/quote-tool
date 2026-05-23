@@ -94,7 +94,7 @@ export function Section4() {
             onChange={e => update({ mail_street: e.target.value })}
             disabled={form.mail_same_as_subject}
             placeholder={GOOGLE_MAPS_API_KEY ? 'Start typing to search…' : ''}
-            className={`${inputCls()} disabled:bg-gray-100 disabled:text-gray-400`}
+            className={`${inputCls(a('mail_street'))} disabled:bg-gray-100 disabled:text-gray-400`}
           />
         </Field>
         <Field label="City" className="flex-[2] min-w-32" autofilled={a('mail_city')}>
@@ -102,10 +102,10 @@ export function Section4() {
             value={form.mail_city}
             onChange={e => update({ mail_city: e.target.value })}
             disabled={form.mail_same_as_subject}
-            className={`${inputCls()} disabled:bg-gray-100 disabled:text-gray-400`}
+            className={`${inputCls(a('mail_city'))} disabled:bg-gray-100 disabled:text-gray-400`}
           />
         </Field>
-        <Field label="State" className="w-[60px]" autofilled={a('mail_state')}>
+        <Field label="State" className="w-[60px]" autofilled={a('mail_state')} badgeOutside>
           <StateSelect
             value={form.mail_state}
             onChange={v => update({ mail_state: v })}
@@ -117,7 +117,7 @@ export function Section4() {
             onChange={e => update({ mail_zip: e.target.value })}
             maxLength={10}
             disabled={form.mail_same_as_subject}
-            className={`${inputCls()} disabled:bg-gray-100 disabled:text-gray-400`}
+            className={`${inputCls(a('mail_zip'))} disabled:bg-gray-100 disabled:text-gray-400`}
           />
         </Field>
       </div>
@@ -131,17 +131,17 @@ export function Section4() {
             value={form.prev_street}
             onChange={e => update({ prev_street: e.target.value })}
             placeholder={GOOGLE_MAPS_API_KEY ? 'Start typing to search…' : ''}
-            className={inputCls()}
+            className={inputCls(a('prev_street'))}
           />
         </Field>
         <Field label="City" className="flex-[2] min-w-32" autofilled={a('prev_city')}>
-          <input value={form.prev_city} onChange={e => update({ prev_city: e.target.value })} className={inputCls()} />
+          <input value={form.prev_city} onChange={e => update({ prev_city: e.target.value })} className={inputCls(a('prev_city'))} />
         </Field>
-        <Field label="State" className="w-[60px]" autofilled={a('prev_state')}>
+        <Field label="State" className="w-[60px]" autofilled={a('prev_state')} badgeOutside>
           <StateSelect value={form.prev_state} onChange={v => update({ prev_state: v })} />
         </Field>
         <Field label="ZIP" className="w-20" autofilled={a('prev_zip')}>
-          <input value={form.prev_zip} onChange={e => update({ prev_zip: e.target.value })} maxLength={10} className={inputCls()} />
+          <input value={form.prev_zip} onChange={e => update({ prev_zip: e.target.value })} maxLength={10} className={inputCls(a('prev_zip'))} />
         </Field>
       </div>
     </SectionCard>

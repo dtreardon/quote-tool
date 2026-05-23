@@ -77,21 +77,21 @@ export function Section3() {
               ref={inputRef}
               value={form.prop_street}
               onChange={e => update({ prop_street: e.target.value, prop_zip: '', prop_city: '', prop_state: '', prop_county: '', prop_lat: null, prop_lng: null })}
-              className={inputCls()}
+              className={inputCls(a('prop_street'))}
               placeholder={GOOGLE_MAPS_API_KEY ? 'Start typing to search…' : ''}
             />
           </Field>
           <Field label="City" className="flex-[2] min-w-32" autofilled={a('prop_city')}>
-            <input value={form.prop_city} onChange={e => update({ prop_city: e.target.value })} className={inputCls()} />
+            <input value={form.prop_city} onChange={e => update({ prop_city: e.target.value })} className={inputCls(a('prop_city'))} />
           </Field>
-          <Field label="State" className="w-[60px]" autofilled={a('prop_state')}>
+          <Field label="State" className="w-[60px]" autofilled={a('prop_state')} badgeOutside>
             <StateSelect value={form.prop_state} onChange={v => update({ prop_state: v })} />
           </Field>
           <Field label="ZIP" className="w-20" autofilled={a('prop_zip')}>
-            <input value={form.prop_zip} onChange={e => update({ prop_zip: e.target.value })} maxLength={10} className={inputCls()} />
+            <input value={form.prop_zip} onChange={e => update({ prop_zip: e.target.value })} maxLength={10} className={inputCls(a('prop_zip'))} />
           </Field>
           <Field label="County" className="w-36" autofilled={a('prop_county')}>
-            <input value={form.prop_county} onChange={e => update({ prop_county: e.target.value })} placeholder="Auto-filled" className={`${inputCls()} bg-gray-50`} />
+            <input value={form.prop_county} onChange={e => update({ prop_county: e.target.value })} placeholder="Auto-filled" className={`${inputCls(a('prop_county'))} bg-gray-50`} />
           </Field>
         </div>
 

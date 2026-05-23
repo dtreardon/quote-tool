@@ -63,7 +63,7 @@ export function Section8() {
             value={form.miles_coast}
             onChange={e => update({ miles_coast: e.target.value })}
             placeholder="Auto-filled"
-            className={`${inputCls()} bg-gray-50`}
+            className={`${inputCls(a('miles_coast'))} bg-gray-50`}
           />
         </Field>
 

@@ -38,7 +38,7 @@ export function Section10() {
             value={form.flood_zone}
             onChange={e => update({ flood_zone: e.target.value })}
             placeholder="Auto-filled"
-            className={`${inputCls()} bg-gray-50`}
+            className={`${inputCls(a('flood_zone'))} bg-gray-50`}
           />
         </Field>
         <Field label="BFE" className="w-24" autofilled={a('bfe')}>
@@ -46,7 +46,7 @@ export function Section10() {
             value={form.bfe}
             onChange={e => update({ bfe: e.target.value })}
             placeholder="Auto-filled"
-            className={`${inputCls()} bg-gray-50`}
+            className={`${inputCls(a('bfe'))} bg-gray-50`}
           />
         </Field>
         <Field label="Elevation Certificate?">
@@ -69,7 +69,7 @@ export function Section10() {
             value={form.firm_panel}
             onChange={e => update({ firm_panel: e.target.value })}
             placeholder="Auto-filled"
-            className={`${inputCls()} bg-gray-50`}
+            className={`${inputCls(a('firm_panel'))} bg-gray-50`}
           />
         </Field>
         <Field label="FIRM Eff. Date" className="flex-1 min-w-36" autofilled={a('firm_eff_date')}>
@@ -77,7 +77,7 @@ export function Section10() {
             value={form.firm_eff_date}
             onChange={e => update({ firm_eff_date: e.target.value })}
             placeholder="Auto-filled"
-            className={`${inputCls()} bg-gray-50`}
+            className={`${inputCls(a('firm_eff_date'))} bg-gray-50`}
           />
         </Field>
         <Field label="Zone Description" className="flex-[2] min-w-48 print:hidden" autofilled={a('flood_zone_description')}>
@@ -85,7 +85,7 @@ export function Section10() {
             value={form.flood_zone_description}
             onChange={e => update({ flood_zone_description: e.target.value })}
             placeholder="Auto-filled (screen only)"
-            className={`${inputCls()} bg-gray-50`}
+            className={`${inputCls(a('flood_zone_description'))} bg-gray-50`}
           />
         </Field>
       </div>

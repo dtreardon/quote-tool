@@ -15,22 +15,22 @@ export function Section5() {
       {/* Row 1: Basic stats */}
       <div className="flex gap-3.5 flex-wrap mb-3">
         <Field label="Year Built" className="w-24" autofilled={a('year_built')}>
-          <input value={form.year_built} onChange={e => update({ year_built: e.target.value })} placeholder="YYYY" className={inputCls()} />
+          <input value={form.year_built} onChange={e => update({ year_built: e.target.value })} placeholder="YYYY" className={inputCls(a('year_built'))} />
         </Field>
         <Field label="# Stories" className="w-20" autofilled={a('num_stories')}>
-          <input type="number" min={1} value={form.num_stories} onChange={e => update({ num_stories: e.target.value })} className={inputCls()} />
+          <input type="number" min={1} value={form.num_stories} onChange={e => update({ num_stories: e.target.value })} className={inputCls(a('num_stories'))} />
         </Field>
         <Field label="Sq Footage" className="w-28" autofilled={a('sqft')}>
-          <input value={form.sqft} onChange={e => update({ sqft: e.target.value })} className={inputCls()} />
+          <input value={form.sqft} onChange={e => update({ sqft: e.target.value })} className={inputCls(a('sqft'))} />
         </Field>
         <Field label="Beds" className="w-16" autofilled={a('beds')}>
-          <input type="number" min={0} value={form.beds} onChange={e => update({ beds: e.target.value })} className={inputCls()} />
+          <input type="number" min={0} value={form.beds} onChange={e => update({ beds: e.target.value })} className={inputCls(a('beds'))} />
         </Field>
         <Field label="Full Baths" className="w-20" autofilled={a('full_baths')}>
-          <input type="number" min={0} value={form.full_baths} onChange={e => update({ full_baths: e.target.value })} className={inputCls()} />
+          <input type="number" min={0} value={form.full_baths} onChange={e => update({ full_baths: e.target.value })} className={inputCls(a('full_baths'))} />
         </Field>
         <Field label="Half Baths" className="w-20" autofilled={a('half_baths')}>
-          <input type="number" min={0} value={form.half_baths} onChange={e => update({ half_baths: e.target.value })} className={inputCls()} />
+          <input type="number" min={0} value={form.half_baths} onChange={e => update({ half_baths: e.target.value })} className={inputCls(a('half_baths'))} />
         </Field>
       </div>
 
