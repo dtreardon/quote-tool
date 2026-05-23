@@ -65,6 +65,18 @@ export function Section8() {
             className={`${inputCls()} bg-gray-50`}
           />
         </Field>
+
+        <Field label="Barrier Island?" className="w-36">
+          <label className="flex items-center gap-1.5 text-[13px] cursor-pointer mt-[7px]">
+            <input
+              type="checkbox"
+              checked={form.barrier_island}
+              onChange={e => update({ barrier_island: e.target.checked })}
+              className="accent-navy w-[15px] h-[15px]"
+            />
+            Yes
+          </label>
+        </Field>
       </div>
     </SectionCard>
   )

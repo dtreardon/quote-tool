@@ -157,6 +157,9 @@ export interface FormState {
   // Section 9 - Quotes
   quotes: QuoteData[]
 
+  // Section 8 flags
+  barrier_island: boolean
+
   // Section 10 - Flood
   flood_zone: string
   lot_height: string
@@ -281,6 +284,7 @@ export const INITIAL_FORM: FormState = {
   feet_hydrant: '',
   miles_coast: '',
   quotes: [{ uid: 1, carrier: '', premium: '' }],
+  barrier_island: false,
   flood_zone: '',
   lot_height: '',
   elevation_cert: '',
