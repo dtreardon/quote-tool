@@ -163,6 +163,10 @@ export interface FormState {
   // Section 10 - Flood
   flood_zone: string
   lot_height: string
+  bfe: string
+  firm_panel: string
+  firm_eff_date: string
+  flood_zone_description: string
   elevation_cert: string
   flood_type: string
   flood_cov_dwelling: string
@@ -287,6 +291,10 @@ export const INITIAL_FORM: FormState = {
   barrier_island: false,
   flood_zone: '',
   lot_height: '',
+  bfe: '',
+  firm_panel: '',
+  firm_eff_date: '',
+  flood_zone_description: '',
   elevation_cert: '',
   flood_type: '',
   flood_cov_dwelling: '',

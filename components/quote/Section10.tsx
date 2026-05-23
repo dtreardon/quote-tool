@@ -14,7 +14,8 @@ function blankFloodQuote(): QuoteData {
 }
 
 export function Section10() {
-  const { form, update } = useQuoteForm()
+  const { form, update, flashFields } = useQuoteForm()
+  const f = (key: string) => flashFields.has(key)
 
   function addFloodQuote() {
     update({ flood_quotes: [...form.flood_quotes, blankFloodQuote()] })
@@ -30,12 +31,23 @@ export function Section10() {
 
   return (
     <SectionCard number={10} title="Flood Information">
+      {/* Row 1: Flood Zone, BFE, Elevation Certificate, Flood Type */}
       <div className="flex gap-3.5 flex-wrap mb-3">
-        <Field label="Flood Zone" className="w-32">
-          <input value={form.flood_zone} onChange={e => update({ flood_zone: e.target.value })} className={inputCls()} />
+        <Field label="Flood Zone" className="w-28">
+          <input
+            value={form.flood_zone}
+            onChange={e => update({ flood_zone: e.target.value })}
+            placeholder="Auto-filled"
+            className={`${inputCls(f('flood_zone'))} bg-gray-50`}
+          />
         </Field>
-        <Field label="Lot Height" className="w-32">
-          <input value={form.lot_height} onChange={e => update({ lot_height: e.target.value })} className={inputCls()} />
+        <Field label="BFE" className="w-24">
+          <input
+            value={form.bfe}
+            onChange={e => update({ bfe: e.target.value })}
+            placeholder="Auto-filled"
+            className={`${inputCls(f('bfe'))} bg-gray-50`}
+          />
         </Field>
         <Field label="Elevation Certificate?">
           <YesNo name="elevation_cert" value={form.elevation_cert} onChange={v => update({ elevation_cert: v })} />
@@ -49,6 +61,36 @@ export function Section10() {
           </select>
         </Field>
       </div>
+
+      {/* Row 2: FIRM Panel, FIRM Effective Date, Zone Description (screen-only) */}
+      <div className="flex gap-3.5 flex-wrap mb-3">
+        <Field label="FIRM Panel" className="flex-1 min-w-36">
+          <input
+            value={form.firm_panel}
+            onChange={e => update({ firm_panel: e.target.value })}
+            placeholder="Auto-filled"
+            className={`${inputCls(f('firm_panel'))} bg-gray-50`}
+          />
+        </Field>
+        <Field label="FIRM Eff. Date" className="flex-1 min-w-36">
+          <input
+            value={form.firm_eff_date}
+            onChange={e => update({ firm_eff_date: e.target.value })}
+            placeholder="Auto-filled"
+            className={`${inputCls(f('firm_eff_date'))} bg-gray-50`}
+          />
+        </Field>
+        <Field label="Zone Description" className="flex-[2] min-w-48 print:hidden">
+          <input
+            value={form.flood_zone_description}
+            onChange={e => update({ flood_zone_description: e.target.value })}
+            placeholder="Auto-filled (screen only)"
+            className={`${inputCls(f('flood_zone_description'))} bg-gray-50`}
+          />
+        </Field>
+      </div>
+
+      {/* Row 3: Dwelling Coverage, Contents Coverage */}
       <div className="flex gap-3.5 flex-wrap mb-4">
         <Field label="Dwelling Coverage" className="flex-1 min-w-36">
           <DollarInput value={form.flood_cov_dwelling} onChange={v => update({ flood_cov_dwelling: v })} />
@@ -57,6 +99,8 @@ export function Section10() {
           <DollarInput value={form.flood_cov_contents} onChange={v => update({ flood_cov_contents: v })} />
         </Field>
       </div>
+
+      {/* Quoted Through / Premium */}
       <div className="border-t border-[#d0cdc8] pt-4">
         <div className="text-[11px] font-semibold text-navy uppercase tracking-[0.03em] mb-2">Quoted Through / Premium</div>
         <div className="space-y-2">

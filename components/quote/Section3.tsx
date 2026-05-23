@@ -73,6 +73,30 @@ export function Section3() {
             })
             .catch(() => {})
         } catch { /* ignore */ }
+
+        try {
+          void fetch('/api/fema-flood', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat, lng }),
+          })
+            .then(r => r.ok ? r.json() : null)
+            .then((data) => {
+              if (!data) return
+              const updates: Record<string, string> = {}
+              if (data.floodZone)  updates.flood_zone             = data.floodZone
+              if (data.bfe != null) updates.bfe                   = data.bfe
+              if (data.firmPanel)  updates.firm_panel             = data.firmPanel
+              if (data.firmEffDate) updates.firm_eff_date         = data.firmEffDate
+              if (data.zoneDescription) updates.flood_zone_description = data.zoneDescription
+              const keys = Object.keys(updates)
+              if (keys.length) {
+                update(updates as Partial<typeof form>)
+                flash(keys)
+              }
+            })
+            .catch(() => {})
+        } catch { /* ignore */ }
       })
       autocompleteRef.current = ac
     }).catch(() => {})
@@ -131,14 +155,6 @@ export function Section3() {
               className="px-2.5 py-1 text-[12px] font-semibold border border-[#d0cdc8] rounded text-navy bg-white hover:bg-[#f0ede8] transition-colors"
             >
               View on Zillow
-            </a>
-            <a
-              href={`https://msc.fema.gov/portal/search?address=${encodeURIComponent(fullAddress)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-2.5 py-1 text-[12px] font-semibold border border-[#d0cdc8] rounded text-navy bg-white hover:bg-[#f0ede8] transition-colors"
-            >
-              FEMA Flood Map
             </a>
           </div>
         )}

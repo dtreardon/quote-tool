@@ -98,11 +98,15 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
       <div class="section-head">FLOOD INFORMATION</div>
       <div class="info-row">
         <div class="info-card"><div class="card-label">Flood Zone</div><div class="card-value">${form.flood_zone}</div></div>
-        <div class="info-card"><div class="card-label">Lot Height</div><div class="card-value">${form.lot_height || '<span style="color:#ccc">N/A</span>'}</div></div>
+        <div class="info-card"><div class="card-label">BFE</div><div class="card-value">${form.bfe || 'N/A'}</div></div>
         <div class="info-card"><div class="card-label">Elev. Certificate</div><div class="card-value">${yn(form.elevation_cert)}</div></div>
         <div class="info-card" style="flex:2"><div class="card-label">Flood Type</div><div class="card-value">${form.flood_type}</div></div>
       </div>
-      <div class="info-row">
+      <div class="info-row" style="margin-top:2px">
+        <div class="info-card" style="flex:2"><div class="card-label">FIRM Panel</div><div class="card-value">${form.firm_panel}</div></div>
+        <div class="info-card" style="flex:2"><div class="card-label">FIRM Eff. Date</div><div class="card-value">${form.firm_eff_date}</div></div>
+      </div>
+      <div class="info-row" style="margin-top:2px">
         <div class="info-card"><div class="card-label">Dwelling Cov</div><div class="card-value">${covFmt(form.flood_cov_dwelling)}</div></div>
         <div class="info-card"><div class="card-label">Contents Cov</div><div class="card-value">${covFmt(form.flood_cov_contents)}</div></div>
       </div>
