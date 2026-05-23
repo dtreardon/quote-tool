@@ -131,8 +131,8 @@ export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPane
           marital:      '',
           occupation:   '',
           relationship: '',
-          phone:        '',
-          email:        '',
+          phone:        ci.phone ?? '',
+          email:        ci.email ?? '',
           showContact:  false,
         }))
         updatedInsureds = [...updatedInsureds, ...appended]

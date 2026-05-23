@@ -43,7 +43,8 @@ Return this exact JSON structure:
   "mortgagee_zip": null
 }
 
-For co_insureds, return an array of objects: [{ "first": null, "middle": null, "last": null, "suffix": null, "dob": null, "ssn_last4": null }]
+For co_insureds, return an array of objects: [{ "first": null, "middle": null, "last": null, "suffix": null, "dob": null, "ssn_last4": null, "phone": null, "email": null }]
+Extract phone and email for co-insureds the same way as the primary insured — check all contact fields, signature blocks, and listed phone/email entries associated with each person's name.
 For name suffixes (Sr., Jr., II, III, IV, etc.): always place them in the suffix field — never include them in first_name, middle, or last. The last name field should contain only the family name with no suffix appended.
 For addresses: always split into separate street, city, state, and zip fields — never concatenate into a single string.
 For "Present Address" or "Current Address" on borrower/loan documents: this is where the borrower currently lives (before closing) — map it to previous_address fields, NOT mailing_address. Mailing address is only where correspondence is sent if explicitly labeled as such and different from the subject property.
