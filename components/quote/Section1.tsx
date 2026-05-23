@@ -69,31 +69,52 @@ export function Section1() {
         </div>
       )}
 
-      <div className="mb-1 text-[11px] font-bold text-[#666] uppercase tracking-[0.05em]">Mortgagee Clause</div>
-      <div className="flex gap-3.5 flex-wrap mb-2">
-        <Field label="Mortgagee Name" className="flex-[3] min-w-60">
-          <input value={form.mortgagee_name} onChange={e => update({ mortgagee_name: e.target.value })} placeholder="e.g. First National Bank ISAOA/ATIMA" className={inputCls(f('mortgagee_name'))} />
-        </Field>
-      </div>
-      <div className="flex gap-3.5 flex-wrap mb-2">
-        <Field label="Street Address" className="flex-[3] min-w-48">
-          <input value={form.mortgagee_street} onChange={e => update({ mortgagee_street: e.target.value })} className={inputCls()} />
-        </Field>
-        <Field label="City" className="flex-[2] min-w-36">
-          <input value={form.mortgagee_city} onChange={e => update({ mortgagee_city: e.target.value })} className={inputCls()} />
-        </Field>
-        <Field label="State" className="w-20">
-          <StateSelect value={form.mortgagee_state} onChange={v => update({ mortgagee_state: v })} />
-        </Field>
-        <Field label="ZIP" className="w-24">
-          <input value={form.mortgagee_zip} onChange={e => update({ mortgagee_zip: e.target.value })} maxLength={10} className={inputCls()} />
-        </Field>
-      </div>
-      <div className="flex gap-3.5 flex-wrap">
-        <Field label="Loan Number" className="w-52">
-          <input value={form.loan_number} onChange={e => update({ loan_number: e.target.value })} className={inputCls(f('loan_number'))} />
-        </Field>
-      </div>
+      {!form.mortgagee_open ? (
+        <button
+          type="button"
+          onClick={() => update({ mortgagee_open: true })}
+          className="text-sm font-semibold text-navy hover:text-gold transition-colors flex items-center gap-1.5"
+        >
+          <span className="text-base leading-none">+</span> Add Mortgagee Clause
+        </button>
+      ) : (
+        <div className="bg-[#f7f4ee] border border-[#d0cdc8] rounded p-3.5">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[11px] font-bold text-[#666] uppercase tracking-[0.05em]">Mortgagee Clause</div>
+            <button
+              type="button"
+              onClick={() => update({ mortgagee_open: false })}
+              className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              − hide
+            </button>
+          </div>
+          <div className="flex gap-3.5 flex-wrap mb-2">
+            <Field label="Mortgagee Name" className="flex-[3] min-w-60">
+              <input value={form.mortgagee_name} onChange={e => update({ mortgagee_name: e.target.value })} placeholder="e.g. First National Bank ISAOA/ATIMA" className={inputCls(f('mortgagee_name'))} />
+            </Field>
+          </div>
+          <div className="flex gap-3.5 flex-wrap mb-2">
+            <Field label="Street Address" className="flex-[3] min-w-48">
+              <input value={form.mortgagee_street} onChange={e => update({ mortgagee_street: e.target.value })} className={inputCls(f('mortgagee_street'))} />
+            </Field>
+            <Field label="City" className="flex-[2] min-w-36">
+              <input value={form.mortgagee_city} onChange={e => update({ mortgagee_city: e.target.value })} className={inputCls(f('mortgagee_city'))} />
+            </Field>
+            <Field label="State" className="w-20">
+              <StateSelect value={form.mortgagee_state} onChange={v => update({ mortgagee_state: v })} flash={f('mortgagee_state')} />
+            </Field>
+            <Field label="ZIP" className="w-24">
+              <input value={form.mortgagee_zip} onChange={e => update({ mortgagee_zip: e.target.value })} maxLength={10} className={inputCls(f('mortgagee_zip'))} />
+            </Field>
+          </div>
+          <div className="flex gap-3.5 flex-wrap">
+            <Field label="Loan Number" className="w-52">
+              <input value={form.loan_number} onChange={e => update({ loan_number: e.target.value })} className={inputCls(f('loan_number'))} />
+            </Field>
+          </div>
+        </div>
+      )}
     </SectionCard>
   )
 }

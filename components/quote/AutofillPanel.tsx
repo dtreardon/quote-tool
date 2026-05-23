@@ -87,6 +87,12 @@ export function AutofillPanel({ onFlash, autofillEnabled = false }: AutofillPane
       set('mortgagee_city',      x.mortgagee_city)
       set('mortgagee_state',     x.mortgagee_state)
       set('mortgagee_zip',       x.mortgagee_zip)
+
+      // Auto-expand mortgagee section if any mortgagee data was extracted
+      const mortgageeKeys: (keyof FormState)[] = ['mortgagee_name', 'mortgagee_street', 'mortgagee_city', 'mortgagee_state', 'mortgagee_zip', 'loan_number']
+      if (mortgageeKeys.some(k => k in updates)) {
+        updates.mortgagee_open = true
+      }
       set('closing_date',        x.closing_date)
       set('sales_price',         x.sales_price != null ? String(x.sales_price) : null)
 

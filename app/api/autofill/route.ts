@@ -49,6 +49,7 @@ For name suffixes (Sr., Jr., II, III, IV, etc.): always place them in the suffix
 For addresses: always split into separate street, city, state, and zip fields — never concatenate into a single string.
 For "Present Address" or "Current Address" on borrower/loan documents: this is where the borrower currently lives (before closing) — map it to previous_address fields, NOT mailing_address. Mailing address is only where correspondence is sent if explicitly labeled as such and different from the subject property.
 For referred_by_name and referred_by_company: if this is an email, extract the sender's name and company from the From: line or email signature.
+For mortgagee fields: extract the lender/bank name and mailing address from any mortgagee clause, loss payee, or lienholder section. Preserve designations such as "ISAOA/ATIMA" in mortgagee_name. Extract loan_number from any loan number, account number, or file number field associated with the lender.
 For occupancy: return one of "Primary", "Secondary", "Rental Long-term", "Rental Short-term", or null.
 For dates: return in MM/DD/YYYY format.
 For sales_price: return as a plain number (no $ or commas).

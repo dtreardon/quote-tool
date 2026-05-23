@@ -50,6 +50,7 @@ export interface FormState {
   purchase_year: string
   current_carrier: string
   premium: string
+  mortgagee_open: boolean
   mortgagee_name: string
   mortgagee_street: string
   mortgagee_city: string
@@ -198,6 +199,7 @@ export const INITIAL_FORM: FormState = {
   purchase_year: '',
   current_carrier: '',
   premium: '',
+  mortgagee_open: false,
   mortgagee_name: '',
   mortgagee_street: '',
   mortgagee_city: '',
