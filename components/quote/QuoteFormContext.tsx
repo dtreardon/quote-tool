@@ -7,6 +7,7 @@ interface QuoteFormContextType {
   update: (partial: Partial<FormState>) => void
   autofilledFields: Set<string>
   markAutofilled: (fields: string[]) => void
+  clearAutofilled: (fields: string[]) => void
 }
 
 export const QuoteFormContext = createContext<QuoteFormContextType | null>(null)

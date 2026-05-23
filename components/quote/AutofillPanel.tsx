@@ -117,6 +117,10 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillP
       if (x.primary_phone     != null) primaryPatch.phone  = x.primary_phone
       if (x.primary_email     != null) primaryPatch.email  = x.primary_email
       if (Object.keys(primaryPatch).length > 0) {
+        const primaryUid = form.insureds[0].uid
+        ;(Object.keys(primaryPatch) as (keyof InsuredData)[]).forEach(f => {
+          flashKeys.push(`ins_${primaryUid}_${f}`)
+        })
         updatedInsureds = updatedInsureds.map((ins, idx) =>
           idx === 0 ? { ...ins, ...primaryPatch } : ins
         )
@@ -126,21 +130,27 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillP
       const coInsureds: Record<string, string | null>[] =
         Array.isArray(x.co_insureds) ? x.co_insureds : []
       if (coInsureds.length > 0) {
-        const appended: InsuredData[] = coInsureds.map((ci, i) => ({
-          uid:          Date.now() + i + 1,
-          first:        ci.first        ?? '',
-          middle:       ci.middle       ?? '',
-          last:         ci.last         ?? '',
-          suffix:       normalizeSuffix(ci.suffix) ?? '',
-          dob:          ci.dob          ?? '',
-          ssn:          ci.ssn_last4    ?? '',
-          marital:      '',
-          occupation:   '',
-          relationship: '',
-          phone:        ci.phone ?? '',
-          email:        ci.email ?? '',
-          showContact:  false,
-        }))
+        const autoFields: (keyof InsuredData)[] = ['first', 'middle', 'last', 'suffix', 'dob', 'ssn', 'phone', 'email']
+        const appended: InsuredData[] = coInsureds.map((ci, i) => {
+          const uid = Date.now() + i + 1
+          const ins: InsuredData = {
+            uid,
+            first:        ci.first        ?? '',
+            middle:       ci.middle       ?? '',
+            last:         ci.last         ?? '',
+            suffix:       normalizeSuffix(ci.suffix) ?? '',
+            dob:          ci.dob          ?? '',
+            ssn:          ci.ssn_last4    ?? '',
+            marital:      '',
+            occupation:   '',
+            relationship: '',
+            phone:        ci.phone ?? '',
+            email:        ci.email ?? '',
+            showContact:  false,
+          }
+          autoFields.forEach(f => { if (ins[f]) flashKeys.push(`ins_${uid}_${f}`) })
+          return ins
+        })
         updatedInsureds = [...updatedInsureds, ...appended]
       }
 

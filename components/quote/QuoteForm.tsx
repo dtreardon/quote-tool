@@ -43,6 +43,15 @@ export default function QuoteForm({ autofillEnabled = false }: { autofillEnabled
     setAutofilledFields(prev => new Set([...prev, ...fields]))
   }, [])
 
+  const clearAutofilled = useCallback((fields: string[]) => {
+    setAutofilledFields(prev => {
+      if (!fields.some(f => prev.has(f))) return prev
+      const next = new Set(prev)
+      fields.forEach(f => next.delete(f))
+      return next
+    })
+  }, [])
+
   function clearForm() {
     if (!window.confirm('Clear all fields and start over?')) return
     setForm({ ...INITIAL_FORM, insureds: [{ ...INITIAL_FORM.insureds[0] }] })
@@ -50,7 +59,7 @@ export default function QuoteForm({ autofillEnabled = false }: { autofillEnabled
   }
 
   return (
-    <QuoteFormContext.Provider value={{ form, update, autofilledFields, markAutofilled }}>
+    <QuoteFormContext.Provider value={{ form, update, autofilledFields, markAutofilled, clearAutofilled }}>
       <div className="max-w-[980px] mx-auto px-4 pt-7 pb-20">
         <AutofillPanel onAutofill={markAutofilled} autofillEnabled={autofillEnabled} />
         <Banner />

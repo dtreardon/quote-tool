@@ -3,7 +3,6 @@
 import { useQuoteForm } from './QuoteFormContext'
 import { SectionCard } from '../ui/SectionCard'
 import { Field, inputCls, selectCls } from '../ui/Field'
-import { YesNo } from '../ui/RadioGroup'
 import { formatPhone, formatSSN, formatDate } from '@/lib/formatters'
 import type { InsuredData } from '@/app/types/form'
 
@@ -20,7 +19,10 @@ function blankInsured(): InsuredData {
 }
 
 export function Section2() {
-  const { form, update } = useQuoteForm()
+  const { form, update, autofilledFields, clearAutofilled } = useQuoteForm()
+
+  // Check autofill status for a specific insured field by uid + field name
+  const a = (uid: number, field: string) => autofilledFields.has(`ins_${uid}_${field}`)
 
   function addInsured() {
     update({ insureds: [...form.insureds, blankInsured()] })
@@ -34,6 +36,9 @@ export function Section2() {
     update({
       insureds: form.insureds.map(i => i.uid === uid ? { ...i, ...patch } : i),
     })
+    // Clear autofill indicator for any manually-edited fields
+    const patchKeys = Object.keys(patch) as (keyof InsuredData)[]
+    clearAutofilled(patchKeys.map(f => `ins_${uid}_${f}`))
   }
 
   return (
@@ -59,16 +64,16 @@ export function Section2() {
 
               {/* Row 1: Name */}
               <div className="flex gap-3.5 flex-wrap mb-3">
-                <Field label="First Name" className="flex-[2] min-w-28">
-                  <input value={ins.first} onChange={e => u({ first: e.target.value })} className={inputCls()} />
+                <Field label="First Name" className="flex-[2] min-w-28" autofilled={a(ins.uid, 'first')}>
+                  <input value={ins.first} onChange={e => u({ first: e.target.value })} className={inputCls(a(ins.uid, 'first'))} />
                 </Field>
-                <Field label="Middle Name" className="flex-[2] min-w-24">
-                  <input value={ins.middle} onChange={e => u({ middle: e.target.value })} className={inputCls()} />
+                <Field label="Middle Name" className="flex-[2] min-w-24" autofilled={a(ins.uid, 'middle')}>
+                  <input value={ins.middle} onChange={e => u({ middle: e.target.value })} className={inputCls(a(ins.uid, 'middle'))} />
                 </Field>
-                <Field label="Last Name" className="flex-[3] min-w-32">
-                  <input value={ins.last} onChange={e => u({ last: e.target.value })} className={inputCls()} />
+                <Field label="Last Name" className="flex-[3] min-w-32" autofilled={a(ins.uid, 'last')}>
+                  <input value={ins.last} onChange={e => u({ last: e.target.value })} className={inputCls(a(ins.uid, 'last'))} />
                 </Field>
-                <Field label="Suffix" className="w-20">
+                <Field label="Suffix" className="w-20" autofilled={a(ins.uid, 'suffix')} badgeOutside>
                   <select value={ins.suffix} onChange={e => u({ suffix: e.target.value })} className={selectCls()}>
                     <option value=""></option>
                     {['Jr','Sr','II','III','IV'].map(s => <option key={s}>{s}</option>)}
@@ -78,36 +83,36 @@ export function Section2() {
 
               {/* Row 2: DOB, SSN, Marital, Occupation, Relationship */}
               <div className="flex gap-3.5 flex-wrap mb-3">
-                <Field label="Date of Birth" className="w-32">
+                <Field label="Date of Birth" className="w-32" autofilled={a(ins.uid, 'dob')}>
                   <input
                     value={ins.dob}
                     onChange={e => u({ dob: formatDate(e.target.value) })}
                     placeholder="MM/DD/YYYY"
                     maxLength={10}
-                    className={inputCls()}
+                    className={inputCls(a(ins.uid, 'dob'))}
                   />
                 </Field>
-                <Field label="Social Security #" className="w-36">
+                <Field label="Social Security #" className="w-36" autofilled={a(ins.uid, 'ssn')}>
                   <input
                     value={ins.ssn}
                     onChange={e => u({ ssn: formatSSN(e.target.value) })}
                     placeholder="XXX-XX-XXXX"
                     maxLength={11}
-                    className={inputCls()}
+                    className={inputCls(a(ins.uid, 'ssn'))}
                   />
                 </Field>
-                <Field label="Marital Status" className="flex-1 min-w-32">
+                <Field label="Marital Status" className="flex-1 min-w-32" autofilled={a(ins.uid, 'marital')} badgeOutside>
                   <select value={ins.marital} onChange={e => u({ marital: e.target.value })} className={selectCls()}>
                     <option value="">Select…</option>
                     {['Married','Single','Divorced','Widowed'].map(m => <option key={m}>{m}</option>)}
                   </select>
                 </Field>
-                <Field label="Occupation" className="flex-[2] min-w-36">
-                  <input value={ins.occupation} onChange={e => u({ occupation: e.target.value })} className={inputCls()} />
+                <Field label="Occupation" className="flex-[2] min-w-36" autofilled={a(ins.uid, 'occupation')}>
+                  <input value={ins.occupation} onChange={e => u({ occupation: e.target.value })} className={inputCls(a(ins.uid, 'occupation'))} />
                 </Field>
                 {!isPrimary && (
-                  <Field label="Relationship to Primary" className="flex-[2] min-w-36">
-                    <input value={ins.relationship} onChange={e => u({ relationship: e.target.value })} className={inputCls()} />
+                  <Field label="Relationship to Primary" className="flex-[2] min-w-36" autofilled={a(ins.uid, 'relationship')}>
+                    <input value={ins.relationship} onChange={e => u({ relationship: e.target.value })} className={inputCls(a(ins.uid, 'relationship'))} />
                   </Field>
                 )}
               </div>
@@ -115,17 +120,17 @@ export function Section2() {
               {/* Row 3: Phone / Email */}
               {isPrimary ? (
                 <div className="flex gap-3.5 flex-wrap">
-                  <Field label="Phone" className="w-44">
+                  <Field label="Phone" className="w-44" autofilled={a(ins.uid, 'phone')}>
                     <input
                       value={ins.phone}
                       onChange={e => u({ phone: formatPhone(e.target.value) })}
                       placeholder="(XXX) XXX-XXXX"
                       maxLength={14}
-                      className={inputCls()}
+                      className={inputCls(a(ins.uid, 'phone'))}
                     />
                   </Field>
-                  <Field label="Email" className="flex-[2] min-w-48">
-                    <input type="email" value={ins.email} onChange={e => u({ email: e.target.value })} className={inputCls()} />
+                  <Field label="Email" className="flex-[2] min-w-48" autofilled={a(ins.uid, 'email')}>
+                    <input type="email" value={ins.email} onChange={e => u({ email: e.target.value })} className={inputCls(a(ins.uid, 'email'))} />
                   </Field>
                 </div>
               ) : (
@@ -139,17 +144,17 @@ export function Section2() {
                   </button>
                   {ins.showContact && (
                     <div className="flex gap-3.5 flex-wrap mt-2">
-                      <Field label="Phone" className="w-44">
+                      <Field label="Phone" className="w-44" autofilled={a(ins.uid, 'phone')}>
                         <input
                           value={ins.phone}
                           onChange={e => u({ phone: formatPhone(e.target.value) })}
                           placeholder="(XXX) XXX-XXXX"
                           maxLength={14}
-                          className={inputCls()}
+                          className={inputCls(a(ins.uid, 'phone'))}
                         />
                       </Field>
-                      <Field label="Email" className="flex-[2] min-w-48">
-                        <input type="email" value={ins.email} onChange={e => u({ email: e.target.value })} className={inputCls()} />
+                      <Field label="Email" className="flex-[2] min-w-48" autofilled={a(ins.uid, 'email')}>
+                        <input type="email" value={ins.email} onChange={e => u({ email: e.target.value })} className={inputCls(a(ins.uid, 'email'))} />
                       </Field>
                     </div>
                   )}
