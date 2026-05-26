@@ -7,7 +7,7 @@ import { YesNo } from '../ui/RadioGroup'
 import { DollarInput } from '../ui/DollarInput'
 import { formatDate } from '@/lib/formatters'
 
-const AGENTS = ['Becca','Emily','GA/Danny','Jennie','Mallory','Rob','Sam']
+const AGENTS = ['Becca','GA/Danny','Jennie','Mallory','Rob','Sam']
 
 export function Section1() {
   const { form, update, autofilledFields } = useAutoForm()
