@@ -5,7 +5,7 @@ import Image from 'next/image'
 
 const SHEET_OPTIONS = [
   { value: '/',     label: 'Homeowners & Flood' },
-  { value: '/auto', label: 'Personal Auto' },
+  { value: '/auto', label: 'Auto' },
 ]
 
 export function ConditionalHeader() {

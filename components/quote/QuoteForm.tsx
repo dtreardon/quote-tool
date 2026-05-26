@@ -223,8 +223,8 @@ export default function QuoteForm({
                 onClick={copyToAuto}
                 className="w-full text-left bg-[#f7f4ee] hover:bg-[#f0ede8] border border-[#d0cdc8] rounded-lg px-4 py-3 transition-colors"
               >
-                <div className="font-bold text-navy text-[14px]">Personal Auto</div>
-                <div className="text-[11px] text-gray-500 mt-0.5">Copies insured, mailing, garaging address (from property), referral, and lienholder info</div>
+                <div className="font-bold text-navy text-[14px]">Auto</div>
+                <div className="text-[11px] text-gray-500 mt-0.5">Copies insured info, mailing address, garaging address (from subject property), and referral info.</div>
               </button>
             </div>
             <button

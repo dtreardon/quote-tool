@@ -24,7 +24,7 @@ export function AutoActionBar({ onClear }: AutoActionBarProps) {
     <div className="sticky bottom-0 bg-navy flex items-center justify-between px-6 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-50 print:hidden">
       <div className="flex flex-col gap-0.5">
         <span className="text-white/60 text-xs">
-          Robinson &amp; Associates — Personal Auto Quote Sheet{' '}
+          Robinson &amp; Associates — Auto Quote Sheet{' '}
           <span className="text-[11px] ml-2" style={{ color: '#e8b44a' }}>v3.2</span>
         </span>
         <span className="text-white/40 text-[11px]">QuoteSheetPRO is a product of Reardon Insurance, LLC © 2026 — All Rights Reserved</span>

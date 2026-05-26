@@ -153,7 +153,7 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
 <div class="header">
   <img src="${logoUrl}" alt="Robinson & Associates" onerror="this.style.display='none'" />
   <div class="header-policy-block">
-    <div class="header-policy-type">Personal Auto</div>
+    <div class="header-policy-type">Auto</div>
     ${anySr22 ? '<div style="color:#c0392b;font-size:9pt;font-weight:bold;margin-top:2px">⚠ SR-22 Required</div>' : ''}
   </div>
   <div class="header-notes-box">

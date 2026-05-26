@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { AutoFormContext } from './AutoFormContext'
 import { INITIAL_AUTO_FORM, INITIAL_DRIVER, INITIAL_VEHICLE } from '@/app/types/autoForm'
 import type { AutoFormState } from '@/app/types/autoForm'
+import { AutoAutofillPanel } from './AutoAutofillPanel'
 import { AutoNotes } from './AutoNotes'
 import { Section1 } from './Section1'
 import { Section2 } from './Section2'
@@ -22,7 +23,7 @@ function makeInitialForm(): AutoFormState {
   }
 }
 
-export default function AutoForm() {
+export default function AutoForm({ autofillEnabled = false }: { autofillEnabled?: boolean }) {
   const [form, setForm] = useState<AutoFormState>(makeInitialForm)
   const [autofilledFields, setAutofilledFields] = useState<Set<string>>(new Set())
 
@@ -70,6 +71,7 @@ export default function AutoForm() {
   return (
     <AutoFormContext.Provider value={{ form, update, autofilledFields, markAutofilled, clearAutofilled }}>
       <div className="max-w-[980px] mx-auto px-4 pt-7 pb-20">
+        <AutoAutofillPanel onAutofill={markAutofilled} autofillEnabled={autofillEnabled} />
         <AutoNotes />
         <Section1 />
         <Section2 />

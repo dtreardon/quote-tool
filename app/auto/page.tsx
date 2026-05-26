@@ -1,9 +1,11 @@
 import AutoForm from '@/components/auto/AutoForm'
 
 export const metadata = {
-  title: 'Personal Auto Quote Sheet — QuoteSheetPRO',
+  title: 'Auto Quote Sheet — QuoteSheetPRO',
 }
 
 export default function AutoPage() {
-  return <AutoForm />
+  const key = process.env.ANTHROPIC_API_KEY
+  const autofillEnabled = !!key && key !== 'placeholder-replace-later'
+  return <AutoForm autofillEnabled={autofillEnabled} />
 }

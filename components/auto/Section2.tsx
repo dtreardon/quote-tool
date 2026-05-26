@@ -22,7 +22,8 @@ function blankDriver(): DriverData {
 }
 
 export function Section2() {
-  const { form, update } = useAutoForm()
+  const { form, update, autofilledFields, clearAutofilled } = useAutoForm()
+  const a = (uid: number, field: string) => autofilledFields.has(`drv_${uid}_${field}`)
 
   function addDriver() {
     update({ drivers: [...form.drivers, blankDriver()] })
@@ -34,6 +35,8 @@ export function Section2() {
 
   function updateDriver(uid: number, patch: Partial<DriverData>) {
     update({ drivers: form.drivers.map(d => d.uid === uid ? { ...d, ...patch } : d) })
+    const patchKeys = Object.keys(patch) as (keyof DriverData)[]
+    clearAutofilled(patchKeys.map(f => `drv_${uid}_${f}`))
   }
 
   return (
@@ -42,6 +45,7 @@ export function Section2() {
         {form.drivers.map((drv, idx) => {
           const isPrimary = idx === 0
           const u = (patch: Partial<DriverData>) => updateDriver(drv.uid, patch)
+          const af = (field: string) => a(drv.uid, field)
 
           return (
             <div key={drv.uid} className="border border-[#d0cdc8] rounded p-4 bg-[#fdfcfa]">
@@ -51,7 +55,7 @@ export function Section2() {
                 </span>
                 {!isPrimary && (
                   <button
-                    onClick={() => removeDriver(drv.uid)}
+                    onClick={() => { update({ drivers: form.drivers.filter(d => d.uid !== drv.uid) }) }}
                     className="border border-[#e0a0a0] text-[#c0504d] text-[11px] font-bold px-2.5 py-0.5 rounded hover:bg-[#fdf0f0] transition-colors"
                   >
                     ✕ Remove
@@ -76,17 +80,17 @@ export function Section2() {
 
               {/* Row 1: Name */}
               <div className="flex gap-3.5 flex-wrap mb-3">
-                <Field label="First Name" className="flex-[2] min-w-28">
-                  <input value={drv.first} onChange={e => u({ first: e.target.value })} className={inputCls()} />
+                <Field label="First Name" className="flex-[2] min-w-28" autofilled={af('first')}>
+                  <input value={drv.first} onChange={e => u({ first: e.target.value })} className={inputCls(af('first'))} />
                 </Field>
-                <Field label="Middle Name" className="flex-[2] min-w-24">
-                  <input value={drv.middle} onChange={e => u({ middle: e.target.value })} className={inputCls()} />
+                <Field label="Middle Name" className="flex-[2] min-w-24" autofilled={af('middle')}>
+                  <input value={drv.middle} onChange={e => u({ middle: e.target.value })} className={inputCls(af('middle'))} />
                 </Field>
-                <Field label="Last Name" className="flex-[3] min-w-32">
-                  <input value={drv.last} onChange={e => u({ last: e.target.value })} className={inputCls()} />
+                <Field label="Last Name" className="flex-[3] min-w-32" autofilled={af('last')}>
+                  <input value={drv.last} onChange={e => u({ last: e.target.value })} className={inputCls(af('last'))} />
                 </Field>
-                <Field label="Suffix" className="w-20" badgeRight="right-7">
-                  <select value={drv.suffix} onChange={e => u({ suffix: e.target.value })} className={selectCls()}>
+                <Field label="Suffix" className="w-20" autofilled={af('suffix')} badgeRight="right-7">
+                  <select value={drv.suffix} onChange={e => u({ suffix: e.target.value })} className={selectCls(af('suffix'))}>
                     <option value=""></option>
                     {['Jr','Sr','II','III','IV'].map(s => <option key={s}>{s}</option>)}
                   </select>
@@ -95,22 +99,22 @@ export function Section2() {
 
               {/* Row 2: DOB, SSN, Marital, Occupation */}
               <div className="flex gap-3.5 flex-wrap mb-3">
-                <Field label="Date of Birth" className="w-32">
+                <Field label="Date of Birth" className="w-32" autofilled={af('dob')}>
                   <input
                     value={drv.dob}
                     onChange={e => u({ dob: formatDate(e.target.value) })}
                     placeholder="MM/DD/YYYY"
                     maxLength={10}
-                    className={inputCls()}
+                    className={inputCls(af('dob'))}
                   />
                 </Field>
-                <Field label="SSN (Last 4)" className="w-28">
+                <Field label="SSN (Last 4)" className="w-28" autofilled={af('ssn')}>
                   <input
                     value={drv.ssn}
                     onChange={e => u({ ssn: formatSSN(e.target.value) })}
                     placeholder="XXX-XX-XXXX"
                     maxLength={11}
-                    className={inputCls()}
+                    className={inputCls(af('ssn'))}
                   />
                 </Field>
                 <Field label="Marital Status" className="flex-1 min-w-32" badgeRight="right-7">
@@ -126,17 +130,17 @@ export function Section2() {
 
               {/* Row 3: Phone, Email */}
               <div className="flex gap-3.5 flex-wrap mb-3">
-                <Field label="Phone" className="w-44">
+                <Field label="Phone" className="w-44" autofilled={af('phone')}>
                   <input
                     value={drv.phone}
                     onChange={e => u({ phone: formatPhone(e.target.value) })}
                     placeholder="(XXX) XXX-XXXX"
                     maxLength={14}
-                    className={inputCls()}
+                    className={inputCls(af('phone'))}
                   />
                 </Field>
-                <Field label="Email" className="flex-[2] min-w-48">
-                  <input type="email" value={drv.email} onChange={e => u({ email: e.target.value })} className={inputCls()} />
+                <Field label="Email" className="flex-[2] min-w-48" autofilled={af('email')}>
+                  <input type="email" value={drv.email} onChange={e => u({ email: e.target.value })} className={inputCls(af('email'))} />
                 </Field>
               </div>
 
