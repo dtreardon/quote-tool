@@ -1,18 +1,18 @@
 'use client'
 
-import { useQuoteForm } from './QuoteFormContext'
-import { buildPrintHTML } from '@/lib/buildPrintHTML'
+import { useAutoForm } from './AutoFormContext'
+import { buildAutoPrintHTML } from '@/lib/buildAutoPrintHTML'
 
-interface ActionBarProps {
+interface AutoActionBarProps {
   onClear: () => void
 }
 
-export function ActionBar({ onClear }: ActionBarProps) {
-  const { form } = useQuoteForm()
+export function AutoActionBar({ onClear }: AutoActionBarProps) {
+  const { form } = useAutoForm()
 
   function handlePrint() {
     const logoUrl = `${window.location.origin}/logo-white.png`
-    const html = buildPrintHTML(form, logoUrl)
+    const html = buildAutoPrintHTML(form, logoUrl)
     const printWin = window.open('', '_blank', 'width=900,height=1100')
     if (!printWin) { alert('Please allow pop-ups for this site to print.'); return }
     printWin.document.write(html)
@@ -24,7 +24,7 @@ export function ActionBar({ onClear }: ActionBarProps) {
     <div className="sticky bottom-0 bg-navy flex items-center justify-between px-6 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-50 print:hidden">
       <div className="flex flex-col gap-0.5">
         <span className="text-white/60 text-xs">
-          Robinson &amp; Associates — Homeowners &amp; Flood Quote Sheet{' '}
+          Robinson &amp; Associates — Personal Auto Quote Sheet{' '}
           <span className="text-[11px] ml-2" style={{ color: '#e8b44a' }}>v3.2</span>
         </span>
         <span className="text-white/40 text-[11px]">QuoteSheetPRO is a product of Reardon Insurance, LLC © 2026 — All Rights Reserved</span>

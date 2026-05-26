@@ -2,6 +2,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { QuoteFormContext } from './QuoteFormContext'
+import type { AutoFormState } from '@/app/types/autoForm'
 import { INITIAL_FORM } from '@/app/types/form'
 import type { FormState } from '@/app/types/form'
 import { applyExtractedData } from '@/lib/applyAutofill'
@@ -130,10 +131,45 @@ export default function QuoteForm({
     applySession()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [showCopyModal, setShowCopyModal] = useState(false)
+
   function clearForm() {
     if (!window.confirm('Clear all fields and start over?')) return
     setForm({ ...INITIAL_FORM, insureds: [{ ...INITIAL_FORM.insureds[0] }] })
     setAutofilledFields(new Set())
+  }
+
+  function copyToAuto() {
+    const data: Partial<AutoFormState> = {
+      agent:               form.agent,
+      referred_by_name:    form.referred_by_name,
+      referred_by_company: form.referred_by_company,
+      new_purchase:        form.new_purchase,
+      closing_date:        form.closing_date,
+      sales_price:         form.sales_price,
+      current_carrier:     form.current_carrier,
+      premium:             form.premium,
+      mortgagee_open:      form.mortgagee_open,
+      mortgagee_name:      form.mortgagee_name,
+      mortgagee_street:    form.mortgagee_street,
+      mortgagee_city:      form.mortgagee_city,
+      mortgagee_state:     form.mortgagee_state,
+      mortgagee_zip:       form.mortgagee_zip,
+      loan_number:         form.loan_number,
+      insureds:            form.insureds,
+      mail_street:         form.mail_street,
+      mail_city:           form.mail_city,
+      mail_state:          form.mail_state,
+      mail_zip:            form.mail_zip,
+      garaging_street:     form.prop_street,
+      garaging_city:       form.prop_city,
+      garaging_state:      form.prop_state,
+      garaging_zip:        form.prop_zip,
+    }
+    try {
+      sessionStorage.setItem('copiedData', JSON.stringify(data))
+    } catch { /* ignore */ }
+    router.push('/auto')
   }
 
   return (
@@ -152,8 +188,44 @@ export default function QuoteForm({
         <Section8 />
         <Section9 />
         {form.flood_quote === 'yes' && <Section10 />}
+
+        {/* Copy to Another Sheet */}
+        <div className="flex justify-center mt-2 mb-2 print:hidden">
+          <button
+            onClick={() => setShowCopyModal(true)}
+            className="text-[13px] font-semibold text-navy/60 hover:text-navy border border-dashed border-navy/30 hover:border-navy rounded px-5 py-2 transition-colors"
+          >
+            Copy to Another Sheet…
+          </button>
+        </div>
       </div>
       <ActionBar onClear={clearForm} />
+
+      {showCopyModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 print:hidden">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm mx-4">
+            <h2 className="text-lg font-bold text-navy mb-2">Copy to Another Sheet</h2>
+            <p className="text-[13px] text-gray-500 mb-5">
+              Copy insured info, addresses, and file details to a new quote sheet.
+            </p>
+            <div className="space-y-2 mb-6">
+              <button
+                onClick={copyToAuto}
+                className="w-full text-left bg-[#f7f4ee] hover:bg-[#f0ede8] border border-[#d0cdc8] rounded-lg px-4 py-3 transition-colors"
+              >
+                <div className="font-bold text-navy text-[14px]">Personal Auto</div>
+                <div className="text-[11px] text-gray-500 mt-0.5">Copies insured, mailing, garaging address (from property), referral, and lienholder info</div>
+              </button>
+            </div>
+            <button
+              onClick={() => setShowCopyModal(false)}
+              className="w-full border border-[#d0cdc8] rounded-lg py-2 text-[13px] text-gray-500 hover:bg-[#f7f4ee] transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </QuoteFormContext.Provider>
   )
 }
