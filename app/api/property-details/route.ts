@@ -26,9 +26,7 @@ function mapConstruction(materials: unknown): string | null {
     if (s.includes('stone') || s.includes('rock')) return 'Stone'
     if (s.includes('stucco')) return 'Stucco'
     if (s.includes('tabby')) return 'Tabby'
-    // CBS / concrete block / masonry block → Cinderblock
     if (s.includes('cbs') || s.includes('concrete block') || s.includes('cinderblock') || s.includes('cinder block') || s.includes('masonry block')) return 'Cinderblock'
-    // Wood frame / frame / wood siding → Wood
     if (s.includes('wood') || s.includes('frame') || s.includes('wood siding') || s.includes('wood shingle') || s.includes('wood board')) return 'Wood'
   }
   return null
@@ -79,6 +77,11 @@ function mapBurglarAlarm(features: unknown): string | null {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Rec = Record<string, any>
 
+const RAPIDAPI_HEADERS = (apiKey: string) => ({
+  'x-rapidapi-host': 'zllw-working-api.p.rapidapi.com',
+  'x-rapidapi-key':  apiKey,
+})
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const street = searchParams.get('street') ?? ''
@@ -89,99 +92,92 @@ export async function GET(req: NextRequest) {
   if (!apiKey || !street) return NextResponse.json({})
 
   try {
+    // ── Step 1: summary lookup by address (returns ZPID + basic fields) ──
     const propertyaddress = [street, city, zip].filter(Boolean).join(' ')
-    const url = `https://zllw-working-api.p.rapidapi.com/byaddress?propertyaddress=${encodeURIComponent(propertyaddress)}`
+    const summaryUrl = `https://zllw-working-api.p.rapidapi.com/byaddress?propertyaddress=${encodeURIComponent(propertyaddress)}`
+    console.log('[property-details] step1 fetching:', propertyaddress)
 
-    console.log('[property-details] fetching:', propertyaddress)
-
-    const res = await fetch(url, {
-      headers: {
-        'x-rapidapi-host': 'zllw-working-api.p.rapidapi.com',
-        'x-rapidapi-key':  apiKey,
-      },
+    const summaryRes = await fetch(summaryUrl, {
+      headers: RAPIDAPI_HEADERS(apiKey),
       cache: 'no-store',
     })
-
-    if (!res.ok) {
-      console.log('[property-details] non-OK response:', res.status)
+    if (!summaryRes.ok) {
+      console.log('[property-details] step1 non-OK:', summaryRes.status)
       return NextResponse.json({})
     }
 
-    const raw: Rec = await res.json()
-    if (!raw || raw.error) {
-      console.log('[property-details] error in response:', raw?.error)
+    const summary: Rec = await summaryRes.json()
+    if (!summary || summary.error) {
+      console.log('[property-details] step1 error:', summary?.error)
       return NextResponse.json({})
     }
 
-    // Handle both documented shape { propertyDetails: { resoFacts: {...} } }
-    // and flat shape { yearBuilt, Bedrooms, Bathrooms, "Area(sqft)", ... }
-    const prop: Rec = raw.propertyDetails ?? raw
-    const rF: Rec  = prop?.resoFacts ?? {}
+    console.log('[property-details] step1 keys:', Object.keys(summary))
 
-    console.log('[property-details] raw top-level keys:', Object.keys(raw))
-    console.log('[property-details] prop keys:', Object.keys(prop))
-    console.log('[property-details] resoFacts keys:', Object.keys(rF))
-    console.log('[property-details] resoFacts values:', {
-      bathroomsFull:         rF.bathroomsFull,
-      bathroomsHalf:         rF.bathroomsHalf,
-      stories:               rF.stories,
-      roofType:              rF.roofType,
-      constructionMaterials: rF.constructionMaterials,
-      foundationDetails:     rF.foundationDetails,
-      hasGarage:             rF.hasGarage,
-      hasAttachedGarage:     rF.hasAttachedGarage,
-      garageParkingCapacity: rF.garageParkingCapacity,
-      heating:               rF.heating,
-      fireplaces:            rF.fireplaces,
-      hasFireplace:          rF.hasFireplace,
-      hasPrivatePool:        rF.hasPrivatePool,
-      securityFeatures:      rF.securityFeatures,
-      communityFeatures:     rF.communityFeatures,
-    })
-    console.log('[property-details] flat fallback values:', {
-      yearBuilt:    prop.yearBuilt  ?? raw.yearBuilt,
-      livingArea:   prop.livingArea ?? raw['Area(sqft)'],
-      bedrooms:     prop.bedrooms   ?? raw.Bedrooms,
-      bathrooms:    prop.bathrooms  ?? raw.Bathrooms,
-    })
-
+    // Basic fields always available from summary
     const out: Record<string, string> = {}
-
-    // --- Basic fields ---
-    const yearBuilt  = prop.yearBuilt  ?? raw.yearBuilt
-    const livingArea = prop.livingArea ?? raw['Area(sqft)']
-    const bedrooms   = prop.bedrooms   ?? raw.Bedrooms
+    const yearBuilt  = summary.yearBuilt
+    const livingArea = summary['Area(sqft)']
+    const bedrooms   = summary.Bedrooms
+    const bathrooms  = summary.Bathrooms
 
     if (yearBuilt  != null) out.year_built = String(yearBuilt)
     if (livingArea != null) out.sqft       = String(Math.round(Number(livingArea)))
     if (bedrooms   != null) out.beds       = String(bedrooms)
+    if (bathrooms  != null) out.full_baths = String(Math.floor(Number(bathrooms)))
 
-    // bathroomsFull from resoFacts takes priority; fall back to prop.bathrooms then flat Bathrooms
-    const fullBathsRaw = rF.bathroomsFull != null
-      ? rF.bathroomsFull
-      : (prop.bathrooms ?? raw.Bathrooms)
-    if (fullBathsRaw != null) out.full_baths = String(Math.floor(Number(fullBathsRaw)))
+    // ── Step 2: full details via ZPID (contains resoFacts) ──
+    const zpid = summary.PropertyZPID
+    if (!zpid) {
+      console.log('[property-details] no ZPID in summary — returning basic fields only')
+      console.log('[property-details] final output:', out)
+      return NextResponse.json(out)
+    }
 
+    console.log('[property-details] step2 fetching zpid:', zpid)
+    const detailUrl = `https://zllw-working-api.p.rapidapi.com/propertyDetails?zpid=${encodeURIComponent(zpid)}`
+    const detailRes = await fetch(detailUrl, {
+      headers: RAPIDAPI_HEADERS(apiKey),
+      cache: 'no-store',
+    })
+
+    if (!detailRes.ok) {
+      console.log('[property-details] step2 non-OK:', detailRes.status, '— returning basic fields only')
+      console.log('[property-details] final output:', out)
+      return NextResponse.json(out)
+    }
+
+    const detail: Rec = await detailRes.json()
+    console.log('[property-details] step2 raw (full):', JSON.stringify(detail).slice(0, 3000))
+
+    // Navigate to propertyDetails / resoFacts if present
+    const prop: Rec = detail.propertyDetails ?? detail
+    const rF: Rec   = prop?.resoFacts ?? {}
+
+    console.log('[property-details] step2 prop keys:', Object.keys(prop))
+    console.log('[property-details] step2 resoFacts keys:', Object.keys(rF))
+
+    // ── Override bathrooms with bathroomsFull if available ──
+    if (rF.bathroomsFull != null) out.full_baths = String(Math.floor(Number(rF.bathroomsFull)))
     if (rF.bathroomsHalf != null) out.half_baths  = String(rF.bathroomsHalf)
     if (rF.stories       != null) out.num_stories  = String(rF.stories)
 
     // --- Roof ---
     const roofMapped = mapRoofType(rF.roofType)
-    console.log('[property-details] roofType raw:', rF.roofType, '→ mapped:', roofMapped)
+    console.log('[property-details] roofType:', rF.roofType, '→', roofMapped)
     if (roofMapped) out.roof_type = roofMapped
 
     // --- Construction ---
     const constructionMapped = mapConstruction(rF.constructionMaterials)
-    console.log('[property-details] constructionMaterials raw:', rF.constructionMaterials, '→ mapped:', constructionMapped)
+    console.log('[property-details] constructionMaterials:', rF.constructionMaterials, '→', constructionMapped)
     if (constructionMapped) out.construction_type = constructionMapped
 
     // --- Foundation ---
     const foundationMapped = mapFoundation(rF.foundationDetails)
-    console.log('[property-details] foundationDetails raw:', rF.foundationDetails, '→ mapped:', foundationMapped)
+    console.log('[property-details] foundationDetails:', rF.foundationDetails, '→', foundationMapped)
     if (foundationMapped) out.foundation_type = foundationMapped
 
     // --- Garage ---
-    // Exact values: 'None' | 'Attached / Built-in' | 'Detached' | 'Carport'
     if (rF.hasGarage === false) {
       out.garage_type = 'None'
     } else if (rF.hasAttachedGarage === true) {
@@ -190,11 +186,11 @@ export async function GET(req: NextRequest) {
       out.garage_type = 'Detached'
     }
     if (rF.garageParkingCapacity != null) out.garage_cars = String(rF.garageParkingCapacity)
-    console.log('[property-details] garage raw:', { hasGarage: rF.hasGarage, hasAttachedGarage: rF.hasAttachedGarage, capacity: rF.garageParkingCapacity }, '→ type:', out.garage_type, 'cars:', out.garage_cars)
+    console.log('[property-details] garage:', { hasGarage: rF.hasGarage, hasAttachedGarage: rF.hasAttachedGarage, capacity: rF.garageParkingCapacity }, '→ type:', out.garage_type, 'cars:', out.garage_cars)
 
     // --- Heat / Air ---
     const heatMapped = mapHeatAir(rF.heating)
-    console.log('[property-details] heating raw:', rF.heating, '→ mapped:', heatMapped)
+    console.log('[property-details] heating:', rF.heating, '→', heatMapped)
     if (heatMapped) out.heat_air = heatMapped
 
     // --- Fireplaces ---
