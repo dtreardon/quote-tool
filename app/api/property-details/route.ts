@@ -134,20 +134,30 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(out)
     }
 
-    console.log('[property-details] step2 fetching zpid:', zpid)
-    const detailUrl = `https://zllw-working-api.p.rapidapi.com/propertyDetails?zpid=${encodeURIComponent(zpid)}`
-    const detailRes = await fetch(detailUrl, {
-      headers: RAPIDAPI_HEADERS(apiKey),
-      cache: 'no-store',
-    })
+    // Try candidate endpoint names in priority order (naming convention: all lowercase, no separator)
+    const zpidCandidates = [
+      `https://zllw-working-api.p.rapidapi.com/byzpid?zpid=${encodeURIComponent(zpid)}`,
+      `https://zllw-working-api.p.rapidapi.com/property?zpid=${encodeURIComponent(zpid)}`,
+      `https://zllw-working-api.p.rapidapi.com/propertydetails?zpid=${encodeURIComponent(zpid)}`,
+    ]
 
-    if (!detailRes.ok) {
-      console.log('[property-details] step2 non-OK:', detailRes.status, '— returning basic fields only')
+    let detail: Rec | null = null
+    for (const url of zpidCandidates) {
+      console.log('[property-details] step2 trying:', url)
+      const r = await fetch(url, { headers: RAPIDAPI_HEADERS(apiKey), cache: 'no-store' })
+      console.log('[property-details] step2 status:', r.status)
+      if (r.ok) {
+        detail = await r.json()
+        console.log('[property-details] step2 success at:', url)
+        break
+      }
+    }
+
+    if (!detail) {
+      console.log('[property-details] step2 all candidates failed — returning basic fields only')
       console.log('[property-details] final output:', out)
       return NextResponse.json(out)
     }
-
-    const detail: Rec = await detailRes.json()
     console.log('[property-details] step2 raw (full):', JSON.stringify(detail).slice(0, 3000))
 
     // Navigate to propertyDetails / resoFacts if present
