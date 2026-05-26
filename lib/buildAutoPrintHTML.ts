@@ -9,33 +9,39 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
   const today = new Date()
   const dateStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`
 
-  const firstN = form.insureds[0]?.first || ''
-  const lastN  = form.insureds[0]?.last || ''
+  const primary = form.drivers[0]
+  const firstN  = primary?.first || ''
+  const lastN   = primary?.last  || ''
   const suggested = `${lastN.toUpperCase()}, ${firstN.toUpperCase()} AUTO QUOTE SHEET`
 
   const referredBy = form.referred_by_name
     ? form.referred_by_name + (form.referred_by_company ? ` (${form.referred_by_company})` : '')
     : '—'
 
-  // Insured rows
-  const insuredRows = form.insureds.map((ins, idx) => {
-    const isFirst = idx === 0
-    const fullName = [ins.first, ins.middle, ins.last, ins.suffix].filter(Boolean).join(' ')
-    const phone = ins.phone
-    const email = ins.email
-    const showContact = isFirst || phone || email
+  // Driver rows
+  const driverRows = form.drivers.map((drv, idx) => {
+    const isPrimary = idx === 0
+    const fullName  = [drv.first, drv.middle, drv.last, drv.suffix].filter(Boolean).join(' ')
+    const flags: string[] = []
+    if (!isPrimary && drv.secondary_named_insured) flags.push('Secondary Named Insured')
+    if (drv.sr22 === 'yes') flags.push('SR-22')
     return `
-      <div class="info-row">
-        <div class="info-card" style="flex:2.5"><div class="card-label">${isFirst ? 'Named Insured' : 'Additional Insured'}</div><div class="card-value large">${fullName}</div></div>
-        <div class="info-card"><div class="card-label">Date of Birth</div><div class="card-value">${ins.dob}</div></div>
-        <div class="info-card"><div class="card-label">SSN</div><div class="card-value">${ins.ssn}</div></div>
-        <div class="info-card"><div class="card-label">Marital</div><div class="card-value">${ins.marital}</div></div>
-        <div class="info-card"><div class="card-label">Occupation</div><div class="card-value">${ins.occupation}</div></div>
+    <div class="info-row">
+      <div class="info-card" style="flex:2.5">
+        <div class="card-label">${isPrimary ? 'Driver 1 — Primary Named Insured' : `Driver ${idx + 1}`}</div>
+        <div class="card-value large">${fullName}${flags.length ? ' <span style="color:#c0392b;font-size:7pt;font-weight:bold">[' + flags.join(', ') + ']</span>' : ''}</div>
       </div>
-      ${showContact ? `<div class="info-row" style="margin-top:2px">
-        <div class="info-card" style="flex:1.5"><div class="card-label">Phone</div><div class="card-value">${phone}</div></div>
-        <div class="info-card" style="flex:2.5"><div class="card-label">Email</div><div class="card-value">${email}</div></div>
-      </div>` : ''}`
+      <div class="info-card"><div class="card-label">DOB</div><div class="card-value">${drv.dob}</div></div>
+      <div class="info-card"><div class="card-label">SSN</div><div class="card-value">${drv.ssn}</div></div>
+      <div class="info-card"><div class="card-label">Marital</div><div class="card-value">${drv.marital}</div></div>
+      <div class="info-card"><div class="card-label">Occupation</div><div class="card-value">${drv.occupation}</div></div>
+    </div>
+    <div class="info-row" style="margin-top:2px">
+      <div class="info-card" style="flex:1.5"><div class="card-label">Phone</div><div class="card-value">${drv.phone}</div></div>
+      <div class="info-card" style="flex:2"><div class="card-label">Email</div><div class="card-value">${drv.email}</div></div>
+      <div class="info-card" style="flex:2"><div class="card-label">License #</div><div class="card-value">${drv.license_number}</div></div>
+      <div class="info-card w50"><div class="card-label">Lic. State</div><div class="card-value">${drv.license_state}</div></div>
+    </div>`
   }).join('')
 
   // Vehicle rows
@@ -44,6 +50,8 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
     if (veh.comp === 'yes') covs.push(`Comp $${veh.comp_ded || '—'}`)
     if (veh.collision === 'yes') covs.push(`Collision $${veh.collision_ded || '—'}`)
     const covStr = covs.join(' / ') || 'Liability Only'
+    const typeStr = [veh.type, veh.commercial_use ? '(Commercial)' : ''].filter(Boolean).join(' ')
+    const hasLien = !!veh.lienholder_name
     return `
     <div class="info-row">
       <div class="info-card w50"><div class="card-label">#</div><div class="card-value xl">${idx + 1}</div></div>
@@ -51,31 +59,19 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
       <div class="info-card" style="flex:1.5"><div class="card-label">Make</div><div class="card-value">${veh.make}</div></div>
       <div class="info-card" style="flex:2"><div class="card-label">Model</div><div class="card-value">${veh.model}</div></div>
       <div class="info-card"><div class="card-label">Color</div><div class="card-value">${veh.color}</div></div>
-      <div class="info-card"><div class="card-label">Type</div><div class="card-value">${veh.type}</div></div>
-      <div class="info-card" style="flex:2"><div class="card-label">VIN</div><div class="card-value" style="font-family:monospace;font-size:7.5pt">${veh.vin}</div></div>
+      <div class="info-card"><div class="card-label">Type</div><div class="card-value">${typeStr}</div></div>
+      <div class="info-card" style="flex:2"><div class="card-label">VIN / Serial #</div><div class="card-value" style="font-family:monospace;font-size:7.5pt">${veh.vin}</div></div>
     </div>
     <div class="info-row" style="margin-top:2px">
       <div class="info-card"><div class="card-label">Annual Mileage</div><div class="card-value">${veh.annual_mileage}</div></div>
       <div class="info-card" style="flex:2"><div class="card-label">Physical Damage</div><div class="card-value">${covStr}</div></div>
       ${veh.notes ? `<div class="info-card" style="flex:3"><div class="card-label">Notes</div><div class="card-value muted">${veh.notes}</div></div>` : ''}
-    </div>`
-  }).join('')
-
-  // Driver rows
-  const driverRows = form.drivers.map((drv, idx) => {
-    const isFirst = idx === 0
-    const flags: string[] = []
-    if (drv.good_student === 'yes') flags.push('Good Student')
-    if (drv.sr22 === 'yes') flags.push('SR-22')
-    return `
-    <div class="info-row">
-      <div class="info-card" style="flex:2"><div class="card-label">${isFirst ? 'Primary Driver' : `Driver ${idx + 1}`}</div><div class="card-value large">${[drv.first, drv.last].filter(Boolean).join(' ')}</div></div>
-      <div class="info-card"><div class="card-label">Date of Birth</div><div class="card-value">${drv.dob}</div></div>
-      <div class="info-card" style="flex:2"><div class="card-label">License #</div><div class="card-value">${drv.license_number}</div></div>
-      <div class="info-card w50"><div class="card-label">Lic. State</div><div class="card-value">${drv.license_state}</div></div>
-      ${!isFirst ? `<div class="info-card"><div class="card-label">Relationship</div><div class="card-value">${drv.relationship}</div></div>` : ''}
-      ${flags.length > 0 ? `<div class="info-card"><div class="card-label">Flags</div><div class="card-value" style="color:#c0392b">${flags.join(', ')}</div></div>` : ''}
-    </div>`
+    </div>
+    ${hasLien ? `<div class="info-row" style="margin-top:2px">
+      <div class="info-card" style="flex:3"><div class="card-label">Lienholder</div><div class="card-value">${veh.lienholder_name}</div></div>
+      <div class="info-card" style="flex:3"><div class="card-label">Address</div><div class="card-value">${[veh.lienholder_street, veh.lienholder_city, veh.lienholder_state, veh.lienholder_zip].filter(Boolean).join(', ')}</div></div>
+      <div class="info-card" style="flex:1.5"><div class="card-label">Loan #</div><div class="card-value">${veh.loan_number}</div></div>
+    </div>` : ''}`
   }).join('')
 
   // Quote rows
@@ -86,13 +82,13 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
       <div class="quote-premium">${q.premium ? '$' + q.premium : ''}</div>
     </div>`).join('')
 
-  const isNew = form.new_purchase === 'yes'
-  const hasMortgagee = !!form.mortgagee_name
-
+  const isNew       = form.new_purchase === 'yes'
   const garagingAddr = [form.garaging_street, form.garaging_city, form.garaging_state, form.garaging_zip].filter(Boolean).join(', ')
-  const mailingAddr = form.mail_same_as_garaging
+  const mailingAddr  = form.mail_same_as_garaging
     ? 'Same as garaging'
     : [form.mail_street, form.mail_city, form.mail_state, form.mail_zip].filter(Boolean).join(', ')
+
+  const anySr22 = form.drivers.some(d => d.sr22 === 'yes')
 
   return `<!DOCTYPE html>
 <html>
@@ -157,8 +153,8 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
 <div class="header">
   <img src="${logoUrl}" alt="Robinson & Associates" onerror="this.style.display='none'" />
   <div class="header-policy-block">
-    <div class="header-policy-type">${form.policy_type || 'Personal Auto'}</div>
-    ${form.sr22_required === 'yes' ? '<div style="color:#c0392b;font-size:9pt;font-weight:bold;margin-top:2px">⚠ SR-22 Required</div>' : ''}
+    <div class="header-policy-type">Personal Auto</div>
+    ${anySr22 ? '<div style="color:#c0392b;font-size:9pt;font-weight:bold;margin-top:2px">⚠ SR-22 Required</div>' : ''}
   </div>
   <div class="header-notes-box">
     <div class="header-notes-label">Notes</div>
@@ -183,18 +179,6 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
       <div class="info-card"><div class="card-label">Current Premium</div><div class="card-value">${form.premium ? '$' + form.premium : ''}</div></div>
     `}
   </div>
-  ${hasMortgagee ? `
-  <div class="info-row" style="margin-top:2px">
-    <div class="info-card" style="flex:3"><div class="card-label">Lienholder</div><div class="card-value">${form.mortgagee_name}</div></div>
-    <div class="info-card" style="flex:3"><div class="card-label">Address</div><div class="card-value">${[form.mortgagee_street, form.mortgagee_city, form.mortgagee_state, form.mortgagee_zip].filter(Boolean).join(', ')}</div></div>
-    <div class="info-card" style="flex:1.5"><div class="card-label">Loan #</div><div class="card-value">${form.loan_number}</div></div>
-  </div>` : ''}
-</div>
-
-<!-- NAMED INSURED(S) -->
-<div class="section">
-  <div class="section-head">Named Insured(s)</div>
-  ${insuredRows}
 </div>
 
 <!-- ADDRESSES -->
@@ -206,17 +190,17 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
   </div>
 </div>
 
-<!-- TWO COLUMN: VEHICLES + COVERAGE -->
+<!-- TWO COLUMN: DRIVERS + VEHICLES (left) / COVERAGE + UW + QUOTES (right) -->
 <div class="two-col">
   <div class="col-left">
     <div class="section">
-      <div class="section-head">Vehicles</div>
-      ${vehicleRows}
+      <div class="section-head">Drivers</div>
+      ${driverRows}
     </div>
 
     <div class="section">
-      <div class="section-head">Drivers</div>
-      ${driverRows}
+      <div class="section-head">Vehicles</div>
+      ${vehicleRows}
     </div>
   </div>
 
@@ -227,8 +211,7 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
         ${form.cov_bi ? `<div class="cov-item"><div class="cov-label">BI / PD</div><div class="cov-value">${form.cov_bi}</div></div>` : ''}
         ${form.cov_pd ? `<div class="cov-item"><div class="cov-label">Prop. Damage</div><div class="cov-value">$${form.cov_pd}</div></div>` : ''}
         ${form.cov_um ? `<div class="cov-item"><div class="cov-label">UM / UIM</div><div class="cov-value">${form.cov_um}</div></div>` : ''}
-        ${form.cov_med ? `<div class="cov-item"><div class="cov-label">Med Pay</div><div class="cov-value">$${form.cov_med}</div></div>` : ''}
-        ${form.cov_pip ? `<div class="cov-item"><div class="cov-label">PIP</div><div class="cov-value">${form.cov_pip}</div></div>` : ''}
+        ${form.pip_med_pay ? `<div class="cov-item"><div class="cov-label">PIP / Med Pay</div><div class="cov-value">${form.pip_med_pay}</div></div>` : ''}
         ${form.rental_reimbursement ? `<div class="cov-item"><div class="cov-label">Rental Reimb.</div><div class="cov-value">${yn(form.rental_reimbursement)}</div></div>` : ''}
         ${form.roadside ? `<div class="cov-item"><div class="cov-label">Roadside</div><div class="cov-value">${yn(form.roadside)}</div></div>` : ''}
       </div>
@@ -241,7 +224,6 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
         ${form.has_violations ? `<div class="cov-item"><div class="cov-label">Violations</div><div class="cov-value" style="${form.has_violations === 'yes' ? 'color:#c0392b' : ''}">${form.has_violations === 'yes' ? form.num_violations + ' violation(s)' : 'None'}</div></div>` : ''}
         ${form.has_accidents ? `<div class="cov-item"><div class="cov-label">At-Fault Accid.</div><div class="cov-value" style="${form.has_accidents === 'yes' ? 'color:#c0392b' : ''}">${form.has_accidents === 'yes' ? form.num_accidents + ' accident(s)' : 'None'}</div></div>` : ''}
         ${form.bankruptcy ? `<div class="cov-item"><div class="cov-label">Bankruptcy</div><div class="cov-value">${yn(form.bankruptcy)}</div></div>` : ''}
-        ${form.sr22_required ? `<div class="cov-item"><div class="cov-label">SR-22</div><div class="cov-value" style="${form.sr22_required === 'yes' ? 'color:#c0392b' : ''}">${yn(form.sr22_required)}</div></div>` : ''}
       </div>
     </div>
 

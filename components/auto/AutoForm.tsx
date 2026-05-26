@@ -2,9 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { AutoFormContext } from './AutoFormContext'
-import { INITIAL_AUTO_FORM } from '@/app/types/autoForm'
+import { INITIAL_AUTO_FORM, INITIAL_DRIVER, INITIAL_VEHICLE } from '@/app/types/autoForm'
 import type { AutoFormState } from '@/app/types/autoForm'
-import { AutoBanner } from './AutoBanner'
 import { AutoNotes } from './AutoNotes'
 import { Section1 } from './Section1'
 import { Section2 } from './Section2'
@@ -13,15 +12,13 @@ import { Section4 } from './Section4'
 import { Section5 } from './Section5'
 import { Section6 } from './Section6'
 import { Section7 } from './Section7'
-import { Section8 } from './Section8'
 import { AutoActionBar } from './AutoActionBar'
 
 function makeInitialForm(): AutoFormState {
   return {
     ...INITIAL_AUTO_FORM,
-    insureds: [{ ...INITIAL_AUTO_FORM.insureds[0] }],
-    vehicles: [{ ...INITIAL_AUTO_FORM.vehicles[0] }],
-    drivers: [{ ...INITIAL_AUTO_FORM.drivers[0] }],
+    drivers:  [{ ...INITIAL_DRIVER }],
+    vehicles: [{ ...INITIAL_VEHICLE }],
   }
 }
 
@@ -73,7 +70,6 @@ export default function AutoForm() {
   return (
     <AutoFormContext.Provider value={{ form, update, autofilledFields, markAutofilled, clearAutofilled }}>
       <div className="max-w-[980px] mx-auto px-4 pt-7 pb-20">
-        <AutoBanner />
         <AutoNotes />
         <Section1 />
         <Section2 />
@@ -82,7 +78,6 @@ export default function AutoForm() {
         <Section5 />
         <Section6 />
         <Section7 />
-        <Section8 />
       </div>
       <AutoActionBar onClear={clearForm} />
     </AutoFormContext.Provider>

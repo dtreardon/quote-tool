@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAutoForm } from './AutoFormContext'
 import { SectionCard } from '../ui/SectionCard'
 import { Field, inputCls, selectCls } from '../ui/Field'
+import { StateSelect } from '../ui/StateSelect'
 import { YesNo } from '../ui/RadioGroup'
 import type { VehicleData } from '@/app/types/autoForm'
 
@@ -12,14 +13,21 @@ let nextVehUid = 2
 function blankVehicle(): VehicleData {
   return {
     uid: nextVehUid++,
-    type: '', vin: '', year: '', make: '', model: '', color: '',
+    type: '', commercial_use: false,
+    vin: '', year: '', make: '', model: '', color: '',
     annual_mileage: '', comp: '', collision: '',
-    comp_ded: '', collision_ded: '', notes: '',
+    comp_ded: '', collision_ded: '',
+    lienholder_name: '', lienholder_street: '', lienholder_city: '',
+    lienholder_state: '', lienholder_zip: '', loan_number: '',
+    notes: '',
   }
 }
 
 const DEDUCTIBLES = ['','500','1,000','2,000','2,500']
-const VEHICLE_TYPES = ['','Car','Truck','SUV','Van','Motorcycle','Other']
+const VEHICLE_TYPES = [
+  '', 'Private Passenger', 'Truck', 'SUV', 'Van',
+  'Motorcycle', 'RV', 'Golf Cart', 'LSV (Low Speed Vehicle)', 'Other',
+]
 
 function useVinDecode(vin: string, onResult: (year: string, make: string, model: string) => void) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -34,8 +42,8 @@ function useVinDecode(vin: string, onResult: (year: string, make: string, model:
         const r = data?.Results?.[0]
         if (!r) return
         const year  = r.ModelYear  || ''
-        const make  = r.Make       ? r.Make.charAt(0).toUpperCase() + r.Make.slice(1).toLowerCase() : ''
-        const model = r.Model      ? r.Model.charAt(0).toUpperCase() + r.Model.slice(1).toLowerCase() : ''
+        const make  = r.Make  ? r.Make.charAt(0).toUpperCase()  + r.Make.slice(1).toLowerCase()  : ''
+        const model = r.Model ? r.Model.charAt(0).toUpperCase() + r.Model.slice(1).toLowerCase() : ''
         if (year || make || model) onResult(year, make, model)
       } catch { /* ignore */ }
     }, 600)
@@ -53,6 +61,7 @@ interface VehicleCardProps {
 
 function VehicleCard({ veh, index, onUpdate, onRemove, flashKeys }: VehicleCardProps) {
   const [open, setOpen] = useState(true)
+  const [lienOpen, setLienOpen] = useState(false)
   const isFlashing = (f: string) => flashKeys.has(`veh_${veh.uid}_${f}`)
 
   useVinDecode(veh.vin, (year, make, model) => {
@@ -71,7 +80,8 @@ function VehicleCard({ veh, index, onUpdate, onRemove, flashKeys }: VehicleCardP
             {index + 1}
           </span>
           <span className="text-[13px] font-bold text-navy">{yearStr}</span>
-          {veh.vin && <span className="text-[11px] text-gray-400 font-mono">VIN: {veh.vin}</span>}
+          {veh.commercial_use && <span className="text-[11px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded">Commercial</span>}
+          {veh.vin && <span className="text-[11px] text-gray-400 font-mono">{veh.vin}</span>}
         </div>
         <div className="flex items-center gap-2">
           {index > 0 && (
@@ -89,25 +99,36 @@ function VehicleCard({ veh, index, onUpdate, onRemove, flashKeys }: VehicleCardP
 
       {open && (
         <div className="px-4 pb-4 border-t border-[#d0cdc8]">
-          {/* Row 1: VIN + type */}
+          {/* VIN / Serial # + Type + Commercial Use */}
           <div className="flex gap-3.5 flex-wrap mt-3 mb-3">
-            <Field label="VIN" className="flex-[3] min-w-48">
+            <Field label="VIN / Serial #" className="flex-[3] min-w-48">
               <input
                 value={veh.vin}
                 onChange={e => onUpdate({ vin: e.target.value.toUpperCase() })}
-                maxLength={17}
-                placeholder="17-character VIN"
+                maxLength={25}
+                placeholder="Enter VIN or serial number"
                 className={`${inputCls()} font-mono`}
               />
             </Field>
-            <Field label="Type" className="w-36">
+            <Field label="Type" className="w-52">
               <select value={veh.type} onChange={e => onUpdate({ type: e.target.value })} className={selectCls()}>
                 {VEHICLE_TYPES.map(t => <option key={t} value={t}>{t || 'Select…'}</option>)}
               </select>
             </Field>
+            <div className="flex flex-col gap-1 justify-end">
+              <label className="flex items-center gap-2 text-[13px] font-semibold text-navy cursor-pointer pb-[9px]">
+                <input
+                  type="checkbox"
+                  checked={veh.commercial_use}
+                  onChange={e => onUpdate({ commercial_use: e.target.checked })}
+                  className="w-4 h-4 accent-navy"
+                />
+                Commercial Use?
+              </label>
+            </div>
           </div>
 
-          {/* Row 2: Year, Make, Model, Color */}
+          {/* Year, Make, Model, Color, Mileage */}
           <div className="flex gap-3.5 flex-wrap mb-3">
             <Field label="Year" className="w-20">
               <input value={veh.year} onChange={e => onUpdate({ year: e.target.value })} maxLength={4} placeholder="YYYY" className={inputCls(isFlashing('year'))} />
@@ -126,7 +147,7 @@ function VehicleCard({ veh, index, onUpdate, onRemove, flashKeys }: VehicleCardP
             </Field>
           </div>
 
-          {/* Row 3: Comp / Collision */}
+          {/* Comp / Collision */}
           <div className="flex gap-3.5 flex-wrap mb-3">
             <Field label="Comprehensive?" className="flex-shrink-0" badgeOutside>
               <YesNo name={`comp_${veh.uid}`} value={veh.comp} onChange={v => onUpdate({ comp: v })} />
@@ -150,8 +171,61 @@ function VehicleCard({ veh, index, onUpdate, onRemove, flashKeys }: VehicleCardP
             )}
           </div>
 
+          {/* Lienholder / Lender */}
+          {!lienOpen ? (
+            <button
+              type="button"
+              onClick={() => setLienOpen(true)}
+              className="text-sm font-semibold text-navy hover:text-gold transition-colors flex items-center gap-1.5 mb-3"
+            >
+              <span className="text-base leading-none">+</span> Add Lienholder / Lender
+            </button>
+          ) : (
+            <div className="bg-[#f7f4ee] border border-[#d0cdc8] rounded p-3.5 mb-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[11px] font-bold text-[#666] uppercase tracking-[0.05em]">Lienholder / Lender</div>
+                <button
+                  type="button"
+                  onClick={() => setLienOpen(false)}
+                  className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  − hide
+                </button>
+              </div>
+              <div className="flex gap-3.5 flex-wrap mb-2">
+                <Field label="Lienholder Name" className="flex-[3] min-w-60">
+                  <input
+                    value={veh.lienholder_name}
+                    onChange={e => onUpdate({ lienholder_name: e.target.value })}
+                    placeholder="e.g. First National Bank ISAOA/ATIMA"
+                    className={inputCls()}
+                  />
+                </Field>
+              </div>
+              <div className="flex gap-3.5 flex-wrap mb-2">
+                <Field label="Street Address" className="flex-[3] min-w-48">
+                  <input value={veh.lienholder_street} onChange={e => onUpdate({ lienholder_street: e.target.value })} className={inputCls()} />
+                </Field>
+                <Field label="City" className="flex-[2] min-w-36">
+                  <input value={veh.lienholder_city} onChange={e => onUpdate({ lienholder_city: e.target.value })} className={inputCls()} />
+                </Field>
+                <Field label="State" className="w-20" badgeRight="right-7">
+                  <StateSelect value={veh.lienholder_state} onChange={v => onUpdate({ lienholder_state: v })} />
+                </Field>
+                <Field label="ZIP" className="w-24">
+                  <input value={veh.lienholder_zip} onChange={e => onUpdate({ lienholder_zip: e.target.value })} maxLength={10} className={inputCls()} />
+                </Field>
+              </div>
+              <div className="flex gap-3.5">
+                <Field label="Loan Number" className="w-52">
+                  <input value={veh.loan_number} onChange={e => onUpdate({ loan_number: e.target.value })} className={inputCls()} />
+                </Field>
+              </div>
+            </div>
+          )}
+
           <Field label="Vehicle Notes" className="w-full">
-            <input value={veh.notes} onChange={e => onUpdate({ notes: e.target.value })} placeholder="Salvage, custom equipment, etc." className={inputCls()} />
+            <input value={veh.notes} onChange={e => onUpdate({ notes: e.target.value })} placeholder="Salvage, custom equipment, modifications, etc." className={inputCls()} />
           </Field>
         </div>
       )}

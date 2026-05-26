@@ -3,55 +3,55 @@
 import { useAutoForm } from './AutoFormContext'
 import { SectionCard } from '../ui/SectionCard'
 import { Field, inputCls, selectCls } from '../ui/Field'
+import { StateSelect } from '../ui/StateSelect'
+import { YesNo } from '../ui/RadioGroup'
 import { formatPhone, formatSSN, formatDate } from '@/lib/formatters'
-import type { InsuredData } from '@/app/types/autoForm'
+import type { DriverData } from '@/app/types/autoForm'
 
-let nextUid = 2
+let nextDriverUid = 2
 
-function blankInsured(): InsuredData {
+function blankDriver(): DriverData {
   return {
-    uid: nextUid++,
+    uid: nextDriverUid++,
+    secondary_named_insured: false,
     first: '', middle: '', last: '', suffix: '',
     dob: '', ssn: '', marital: '', occupation: '',
-    relationship: '', phone: '', email: '',
-    showContact: false,
+    phone: '', email: '',
+    license_number: '', license_state: '', sr22: '',
   }
 }
 
 export function Section2() {
-  const { form, update, autofilledFields, clearAutofilled } = useAutoForm()
-  const a = (uid: number, field: string) => autofilledFields.has(`ins_${uid}_${field}`)
+  const { form, update } = useAutoForm()
 
-  function addInsured() {
-    update({ insureds: [...form.insureds, blankInsured()] })
+  function addDriver() {
+    update({ drivers: [...form.drivers, blankDriver()] })
   }
 
-  function removeInsured(uid: number) {
-    update({ insureds: form.insureds.filter(i => i.uid !== uid) })
+  function removeDriver(uid: number) {
+    update({ drivers: form.drivers.filter(d => d.uid !== uid) })
   }
 
-  function updateInsured(uid: number, patch: Partial<InsuredData>) {
-    update({
-      insureds: form.insureds.map(i => i.uid === uid ? { ...i, ...patch } : i),
-    })
-    const patchKeys = Object.keys(patch) as (keyof InsuredData)[]
-    clearAutofilled(patchKeys.map(f => `ins_${uid}_${f}`))
+  function updateDriver(uid: number, patch: Partial<DriverData>) {
+    update({ drivers: form.drivers.map(d => d.uid === uid ? { ...d, ...patch } : d) })
   }
 
   return (
-    <SectionCard number={2} title="Named Insured(s)">
+    <SectionCard number={2} title="Drivers">
       <div className="space-y-3.5">
-        {form.insureds.map((ins, idx) => {
+        {form.drivers.map((drv, idx) => {
           const isPrimary = idx === 0
-          const title = isPrimary ? 'Primary Named Insured' : `Additional Named Insured ${idx}`
-          const u = (patch: Partial<InsuredData>) => updateInsured(ins.uid, patch)
+          const u = (patch: Partial<DriverData>) => updateDriver(drv.uid, patch)
+
           return (
-            <div key={ins.uid} className="border border-[#d0cdc8] rounded p-4 bg-[#fdfcfa]" style={{ position: 'relative' }}>
+            <div key={drv.uid} className="border border-[#d0cdc8] rounded p-4 bg-[#fdfcfa]">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-navy uppercase tracking-[0.05em]">{title}</span>
+                <span className="text-xs font-bold text-navy uppercase tracking-[0.05em]">
+                  {isPrimary ? 'Driver 1 — Primary Named Insured' : `Driver ${idx + 1}`}
+                </span>
                 {!isPrimary && (
                   <button
-                    onClick={() => removeInsured(ins.uid)}
+                    onClick={() => removeDriver(drv.uid)}
                     className="border border-[#e0a0a0] text-[#c0504d] text-[11px] font-bold px-2.5 py-0.5 rounded hover:bg-[#fdf0f0] transition-colors"
                   >
                     ✕ Remove
@@ -59,105 +59,108 @@ export function Section2() {
                 )}
               </div>
 
+              {/* Secondary Named Insured checkbox (non-primary only) */}
+              {!isPrimary && (
+                <div className="mb-3">
+                  <label className="flex items-center gap-2 text-[13px] font-semibold text-navy cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={drv.secondary_named_insured}
+                      onChange={e => u({ secondary_named_insured: e.target.checked })}
+                      className="w-4 h-4 accent-navy"
+                    />
+                    Secondary Named Insured?
+                  </label>
+                </div>
+              )}
+
+              {/* Row 1: Name */}
               <div className="flex gap-3.5 flex-wrap mb-3">
-                <Field label="First Name" className="flex-[2] min-w-28" autofilled={a(ins.uid, 'first')}>
-                  <input value={ins.first} onChange={e => u({ first: e.target.value })} className={inputCls(a(ins.uid, 'first'))} />
+                <Field label="First Name" className="flex-[2] min-w-28">
+                  <input value={drv.first} onChange={e => u({ first: e.target.value })} className={inputCls()} />
                 </Field>
-                <Field label="Middle Name" className="flex-[2] min-w-24" autofilled={a(ins.uid, 'middle')}>
-                  <input value={ins.middle} onChange={e => u({ middle: e.target.value })} className={inputCls(a(ins.uid, 'middle'))} />
+                <Field label="Middle Name" className="flex-[2] min-w-24">
+                  <input value={drv.middle} onChange={e => u({ middle: e.target.value })} className={inputCls()} />
                 </Field>
-                <Field label="Last Name" className="flex-[3] min-w-32" autofilled={a(ins.uid, 'last')}>
-                  <input value={ins.last} onChange={e => u({ last: e.target.value })} className={inputCls(a(ins.uid, 'last'))} />
+                <Field label="Last Name" className="flex-[3] min-w-32">
+                  <input value={drv.last} onChange={e => u({ last: e.target.value })} className={inputCls()} />
                 </Field>
-                <Field label="Suffix" className="w-20" autofilled={a(ins.uid, 'suffix')} badgeRight="right-7">
-                  <select value={ins.suffix} onChange={e => u({ suffix: e.target.value })} className={selectCls(a(ins.uid, 'suffix'))}>
+                <Field label="Suffix" className="w-20" badgeRight="right-7">
+                  <select value={drv.suffix} onChange={e => u({ suffix: e.target.value })} className={selectCls()}>
                     <option value=""></option>
                     {['Jr','Sr','II','III','IV'].map(s => <option key={s}>{s}</option>)}
                   </select>
                 </Field>
               </div>
 
+              {/* Row 2: DOB, SSN, Marital, Occupation */}
               <div className="flex gap-3.5 flex-wrap mb-3">
-                <Field label="Date of Birth" className="w-32" autofilled={a(ins.uid, 'dob')}>
+                <Field label="Date of Birth" className="w-32">
                   <input
-                    value={ins.dob}
+                    value={drv.dob}
                     onChange={e => u({ dob: formatDate(e.target.value) })}
                     placeholder="MM/DD/YYYY"
                     maxLength={10}
-                    className={inputCls(a(ins.uid, 'dob'))}
+                    className={inputCls()}
                   />
                 </Field>
-                <Field label="Social Security #" className="w-36" autofilled={a(ins.uid, 'ssn')}>
+                <Field label="SSN (Last 4)" className="w-28">
                   <input
-                    value={ins.ssn}
+                    value={drv.ssn}
                     onChange={e => u({ ssn: formatSSN(e.target.value) })}
                     placeholder="XXX-XX-XXXX"
                     maxLength={11}
-                    className={inputCls(a(ins.uid, 'ssn'))}
+                    className={inputCls()}
                   />
                 </Field>
-                <Field label="Marital Status" className="flex-1 min-w-32" autofilled={a(ins.uid, 'marital')} badgeRight="right-7">
-                  <select value={ins.marital} onChange={e => u({ marital: e.target.value })} className={selectCls(a(ins.uid, 'marital'))}>
+                <Field label="Marital Status" className="flex-1 min-w-32" badgeRight="right-7">
+                  <select value={drv.marital} onChange={e => u({ marital: e.target.value })} className={selectCls()}>
                     <option value="">Select…</option>
                     {['Married','Single','Divorced','Widowed'].map(m => <option key={m}>{m}</option>)}
                   </select>
                 </Field>
-                <Field label="Occupation" className="flex-[2] min-w-36" autofilled={a(ins.uid, 'occupation')}>
-                  <input value={ins.occupation} onChange={e => u({ occupation: e.target.value })} className={inputCls(a(ins.uid, 'occupation'))} />
+                <Field label="Occupation" className="flex-[2] min-w-36">
+                  <input value={drv.occupation} onChange={e => u({ occupation: e.target.value })} className={inputCls()} />
                 </Field>
               </div>
 
-              {isPrimary ? (
-                <div className="flex gap-3.5 flex-wrap">
-                  <Field label="Phone" className="w-44" autofilled={a(ins.uid, 'phone')}>
-                    <input
-                      value={ins.phone}
-                      onChange={e => u({ phone: formatPhone(e.target.value) })}
-                      placeholder="(XXX) XXX-XXXX"
-                      maxLength={14}
-                      className={inputCls(a(ins.uid, 'phone'))}
-                    />
-                  </Field>
-                  <Field label="Email" className="flex-[2] min-w-48" autofilled={a(ins.uid, 'email')}>
-                    <input type="email" value={ins.email} onChange={e => u({ email: e.target.value })} className={inputCls(a(ins.uid, 'email'))} />
-                  </Field>
-                </div>
-              ) : (
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => u({ showContact: !ins.showContact })}
-                    className="text-[11px] font-bold text-navy border border-dashed border-navy/50 rounded px-3 py-1 hover:bg-[#f0ede8] transition-colors"
-                  >
-                    {ins.showContact ? '− Contact Info' : '+ Contact Info'}
-                  </button>
-                  {ins.showContact && (
-                    <div className="flex gap-3.5 flex-wrap mt-2">
-                      <Field label="Phone" className="w-44" autofilled={a(ins.uid, 'phone')}>
-                        <input
-                          value={ins.phone}
-                          onChange={e => u({ phone: formatPhone(e.target.value) })}
-                          placeholder="(XXX) XXX-XXXX"
-                          maxLength={14}
-                          className={inputCls(a(ins.uid, 'phone'))}
-                        />
-                      </Field>
-                      <Field label="Email" className="flex-[2] min-w-48" autofilled={a(ins.uid, 'email')}>
-                        <input type="email" value={ins.email} onChange={e => u({ email: e.target.value })} className={inputCls(a(ins.uid, 'email'))} />
-                      </Field>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Row 3: Phone, Email */}
+              <div className="flex gap-3.5 flex-wrap mb-3">
+                <Field label="Phone" className="w-44">
+                  <input
+                    value={drv.phone}
+                    onChange={e => u({ phone: formatPhone(e.target.value) })}
+                    placeholder="(XXX) XXX-XXXX"
+                    maxLength={14}
+                    className={inputCls()}
+                  />
+                </Field>
+                <Field label="Email" className="flex-[2] min-w-48">
+                  <input type="email" value={drv.email} onChange={e => u({ email: e.target.value })} className={inputCls()} />
+                </Field>
+              </div>
+
+              {/* Row 4: License + SR-22 */}
+              <div className="flex gap-3.5 flex-wrap">
+                <Field label="Driver's License #" className="flex-[2] min-w-36">
+                  <input value={drv.license_number} onChange={e => u({ license_number: e.target.value })} className={inputCls()} />
+                </Field>
+                <Field label="License State" className="w-24" badgeRight="right-7">
+                  <StateSelect value={drv.license_state} onChange={v => u({ license_state: v })} />
+                </Field>
+                <Field label="SR-22 Required?" badgeOutside>
+                  <YesNo name={`sr22_${drv.uid}`} value={drv.sr22} onChange={v => u({ sr22: v })} />
+                </Field>
+              </div>
             </div>
           )
         })}
       </div>
       <button
-        onClick={addInsured}
+        onClick={addDriver}
         className="mt-3.5 text-[13px] font-bold text-navy border border-dashed border-navy rounded px-4 py-2 hover:bg-[#f0ede8] transition-colors inline-flex items-center gap-1.5"
       >
-        + Add Named Insured
+        + Add Driver
       </button>
     </SectionCard>
   )

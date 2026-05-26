@@ -140,6 +140,7 @@ export default function QuoteForm({
   }
 
   function copyToAuto() {
+    const ins = form.insureds[0]
     const data: Partial<AutoFormState> = {
       agent:               form.agent,
       referred_by_name:    form.referred_by_name,
@@ -149,14 +150,6 @@ export default function QuoteForm({
       sales_price:         form.sales_price,
       current_carrier:     form.current_carrier,
       premium:             form.premium,
-      mortgagee_open:      form.mortgagee_open,
-      mortgagee_name:      form.mortgagee_name,
-      mortgagee_street:    form.mortgagee_street,
-      mortgagee_city:      form.mortgagee_city,
-      mortgagee_state:     form.mortgagee_state,
-      mortgagee_zip:       form.mortgagee_zip,
-      loan_number:         form.loan_number,
-      insureds:            form.insureds,
       mail_street:         form.mail_street,
       mail_city:           form.mail_city,
       mail_state:          form.mail_state,
@@ -165,6 +158,23 @@ export default function QuoteForm({
       garaging_city:       form.prop_city,
       garaging_state:      form.prop_state,
       garaging_zip:        form.prop_zip,
+      drivers: [{
+        uid:                      1,
+        secondary_named_insured:  false,
+        first:    ins?.first    ?? '',
+        middle:   ins?.middle   ?? '',
+        last:     ins?.last     ?? '',
+        suffix:   ins?.suffix   ?? '',
+        dob:      ins?.dob      ?? '',
+        ssn:      ins?.ssn      ?? '',
+        marital:  ins?.marital  ?? '',
+        occupation: ins?.occupation ?? '',
+        phone:    ins?.phone    ?? '',
+        email:    ins?.email    ?? '',
+        license_number: '',
+        license_state:  '',
+        sr22:           '',
+      }],
     }
     try {
       sessionStorage.setItem('copiedData', JSON.stringify(data))

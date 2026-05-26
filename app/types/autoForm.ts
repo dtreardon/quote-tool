@@ -1,10 +1,11 @@
-import type { InsuredData, QuoteData } from './form'
+import type { QuoteData } from './form'
 
-export type { InsuredData, QuoteData }
+export type { QuoteData }
 
 export interface VehicleData {
   uid: number
   type: string
+  commercial_use: boolean
   vin: string
   year: string
   make: string
@@ -15,26 +16,34 @@ export interface VehicleData {
   collision: string
   comp_ded: string
   collision_ded: string
+  lienholder_name: string
+  lienholder_street: string
+  lienholder_city: string
+  lienholder_state: string
+  lienholder_zip: string
+  loan_number: string
   notes: string
 }
 
 export interface DriverData {
   uid: number
+  secondary_named_insured: boolean
   first: string
+  middle: string
   last: string
+  suffix: string
   dob: string
+  ssn: string
+  marital: string
+  occupation: string
+  phone: string
+  email: string
   license_number: string
   license_state: string
-  relationship: string
-  good_student: string
   sr22: string
 }
 
 export interface AutoFormState {
-  // Banner
-  policy_type: string
-  sr22_required: string
-
   // Notes
   notes: string
 
@@ -47,16 +56,9 @@ export interface AutoFormState {
   sales_price: string
   current_carrier: string
   premium: string
-  mortgagee_open: boolean
-  mortgagee_name: string
-  mortgagee_street: string
-  mortgagee_city: string
-  mortgagee_state: string
-  mortgagee_zip: string
-  loan_number: string
 
-  // Section 2 - Insured
-  insureds: InsuredData[]
+  // Section 2 - Drivers
+  drivers: DriverData[]
 
   // Section 3 - Addresses
   garaging_street: string
@@ -72,20 +74,16 @@ export interface AutoFormState {
   // Section 4 - Vehicles
   vehicles: VehicleData[]
 
-  // Section 5 - Drivers
-  drivers: DriverData[]
-
-  // Section 6 - Coverage
+  // Section 5 - Coverage
   cov_bi: string
   cov_pd: string
   cov_um: string
   cov_uim: string
-  cov_med: string
-  cov_pip: string
+  pip_med_pay: string
   rental_reimbursement: string
   roadside: string
 
-  // Section 7 - Underwriting
+  // Section 6 - Underwriting
   has_dui: string
   has_violations: string
   num_violations: string
@@ -93,13 +91,14 @@ export interface AutoFormState {
   num_accidents: string
   bankruptcy: string
 
-  // Section 8 - Quotes
+  // Section 7 - Quotes
   quotes: QuoteData[]
 }
 
 export const INITIAL_VEHICLE: VehicleData = {
   uid: 1,
   type: '',
+  commercial_use: false,
   vin: '',
   year: '',
   make: '',
@@ -110,24 +109,34 @@ export const INITIAL_VEHICLE: VehicleData = {
   collision: '',
   comp_ded: '',
   collision_ded: '',
+  lienholder_name: '',
+  lienholder_street: '',
+  lienholder_city: '',
+  lienholder_state: '',
+  lienholder_zip: '',
+  loan_number: '',
   notes: '',
 }
 
 export const INITIAL_DRIVER: DriverData = {
   uid: 1,
+  secondary_named_insured: false,
   first: '',
+  middle: '',
   last: '',
+  suffix: '',
   dob: '',
+  ssn: '',
+  marital: '',
+  occupation: '',
+  phone: '',
+  email: '',
   license_number: '',
   license_state: '',
-  relationship: '',
-  good_student: '',
   sr22: '',
 }
 
 export const INITIAL_AUTO_FORM: AutoFormState = {
-  policy_type: 'Personal Auto',
-  sr22_required: '',
   notes: '',
   agent: '',
   referred_by_name: '',
@@ -137,22 +146,7 @@ export const INITIAL_AUTO_FORM: AutoFormState = {
   sales_price: '',
   current_carrier: '',
   premium: '',
-  mortgagee_open: false,
-  mortgagee_name: '',
-  mortgagee_street: '',
-  mortgagee_city: '',
-  mortgagee_state: '',
-  mortgagee_zip: '',
-  loan_number: '',
-  insureds: [
-    {
-      uid: 1,
-      first: '', middle: '', last: '', suffix: '',
-      dob: '', ssn: '', marital: '', occupation: '',
-      relationship: '', phone: '', email: '',
-      showContact: false,
-    }
-  ],
+  drivers: [{ ...INITIAL_DRIVER }],
   garaging_street: '',
   garaging_city: '',
   garaging_state: '',
@@ -163,13 +157,11 @@ export const INITIAL_AUTO_FORM: AutoFormState = {
   mail_state: '',
   mail_zip: '',
   vehicles: [{ ...INITIAL_VEHICLE }],
-  drivers: [{ ...INITIAL_DRIVER }],
   cov_bi: '',
   cov_pd: '',
   cov_um: '',
   cov_uim: '',
-  cov_med: '',
-  cov_pip: '',
+  pip_med_pay: '',
   rental_reimbursement: '',
   roadside: '',
   has_dui: '',
