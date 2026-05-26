@@ -298,7 +298,13 @@ export default function CarrierGuidePage() {
                     placeholder="Build Year"
                     type="number"
                     value={form.buildYear}
-                    onChange={e => setForm(prev => ({ ...prev, buildYear: e.target.value, roofYear: e.target.value }))}
+                    onChange={e => setForm(prev => ({ ...prev, buildYear: e.target.value }))}
+                    onBlur={e => {
+                      const yr = Number(e.target.value);
+                      if (yr >= 1900 && yr <= 2099 && !form.roofYear) {
+                        setForm(prev => ({ ...prev, roofYear: e.target.value }));
+                      }
+                    }}
                   />
                   <input
                     className="w-full rounded-lg border border-gray-300 p-3"
