@@ -10,7 +10,7 @@ import { calcMilesToCoast, runPropertyLookups } from '@/lib/addressEnrichment'
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
 
 export function Section3() {
-  const { form, update, autofilledFields, markAutofilled } = useQuoteForm()
+  const { form, update, updateIfEmpty, autofilledFields, markAutofilled } = useQuoteForm()
   const a = (key: string) => autofilledFields.has(key)
   const inputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<unknown>(null)
@@ -52,7 +52,7 @@ export function Section3() {
           miles_coast: Number(dist.toFixed(2)).toString(),
         })
 
-        runPropertyLookups(lat, lng, street, city, state, zip, update, markAutofilled)
+        runPropertyLookups(lat, lng, street, city, state, zip, update, markAutofilled, updateIfEmpty)
       })
       autocompleteRef.current = ac
     }).catch(() => {})

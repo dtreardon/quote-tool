@@ -5,6 +5,7 @@ import type { FormState } from '@/app/types/form'
 interface QuoteFormContextType {
   form: FormState
   update: (partial: Partial<FormState>) => void
+  updateIfEmpty: (partial: Partial<FormState>) => void
   autofilledFields: Set<string>
   markAutofilled: (fields: string[]) => void
   clearAutofilled: (fields: string[]) => void

@@ -63,6 +63,19 @@ export default function QuoteForm({
     })
   }, [])
 
+  // Like update(), but only sets fields whose current value is empty.
+  // Used for async property lookups so manually entered data is never overwritten.
+  const updateIfEmpty = useCallback((partial: Partial<FormState>) => {
+    setForm(prev => {
+      const next = { ...prev }
+      for (const [k, v] of Object.entries(partial)) {
+        const key = k as keyof FormState
+        if (!prev[key]) (next as Record<string, unknown>)[key] = v
+      }
+      return next
+    })
+  }, [])
+
   // Auto-apply extracted data from an Outlook add-in session
   useEffect(() => {
     if (!sessionId) return
@@ -113,7 +126,7 @@ export default function QuoteForm({
                 ...(county ? { prop_county: county } : {}),
               })
               markAutofilled(['miles_coast', ...(county ? ['prop_county'] : [])])
-              runPropertyLookups(lat, lng, street, city, state, zip, update, markAutofilled)
+              runPropertyLookups(lat, lng, street, city, state, zip, update, markAutofilled, updateIfEmpty)
             })
           }).catch(() => {})
         }
@@ -180,7 +193,7 @@ export default function QuoteForm({
   }
 
   return (
-    <QuoteFormContext.Provider value={{ form, update, autofilledFields, markAutofilled, clearAutofilled }}>
+    <QuoteFormContext.Provider value={{ form, update, updateIfEmpty, autofilledFields, markAutofilled, clearAutofilled }}>
       <div className="max-w-[980px] mx-auto px-4 pt-7 pb-20">
         <AutofillPanel onAutofill={markAutofilled} autofillEnabled={autofillEnabled} />
         <Banner />

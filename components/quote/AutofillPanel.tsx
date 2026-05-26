@@ -16,7 +16,7 @@ interface AutofillPanelProps {
 }
 
 export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillPanelProps) {
-  const { form, update } = useQuoteForm()
+  const { form, update, updateIfEmpty } = useQuoteForm()
   const [file, setFile] = useState<File | null>(null)
   const [pasteText, setPasteText] = useState('')
   const [status, setStatus] = useState('')
@@ -96,7 +96,7 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillP
               ...(county ? { prop_county: county } : {}),
             })
             onAutofill(['miles_coast', ...(county ? ['prop_county'] : [])])
-            runPropertyLookups(lat, lng, street, city, state, zip, update, onAutofill)
+            runPropertyLookups(lat, lng, street, city, state, zip, update, onAutofill, updateIfEmpty)
           })
         }).catch(() => {})
       }

@@ -24,14 +24,15 @@ export function runPropertyLookups(
   state: string,
   zip: string,
   update: (partial: Partial<FormState>) => void,
-  markAutofilled: (keys: string[]) => void
+  markAutofilled: (keys: string[]) => void,
+  updateIfEmpty: (partial: Partial<FormState>) => void
 ) {
   try {
     void fetch(`/api/property-details?${new URLSearchParams({ street, city, state, zip })}`)
       .then(r => r.ok ? r.json() : {})
       .then((data: Record<string, string>) => {
         const keys = Object.keys(data)
-        if (keys.length) { update(data as Partial<FormState>); markAutofilled(keys) }
+        if (keys.length) { updateIfEmpty(data as Partial<FormState>); markAutofilled(keys) }
       })
       .catch(() => {})
   } catch { /* ignore */ }
