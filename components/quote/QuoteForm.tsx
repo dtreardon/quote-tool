@@ -39,9 +39,6 @@ export default function QuoteForm({
   const update = useCallback((partial: Partial<FormState>) => {
     setForm(prev => {
       const next = { ...prev, ...partial }
-      if (partial.year_built && !prev.reno_roof && !('reno_roof' in partial)) {
-        next.reno_roof = partial.year_built
-      }
       return next
     })
     setAutofilledFields(prev => {

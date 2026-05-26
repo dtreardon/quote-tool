@@ -15,7 +15,18 @@ export function Section5() {
       {/* Row 1: Basic stats */}
       <div className="flex gap-3.5 flex-wrap mb-3">
         <Field label="Year Built" className="w-24" autofilled={a('year_built')}>
-          <input value={form.year_built} onChange={e => update({ year_built: e.target.value })} placeholder="YYYY" className={inputCls(a('year_built'))} />
+          <input
+            value={form.year_built}
+            onChange={e => update({ year_built: e.target.value })}
+            onBlur={e => {
+              const yr = Number(e.target.value)
+              if (yr >= 1900 && yr <= 2099 && !form.reno_roof) {
+                update({ reno_roof: e.target.value })
+              }
+            }}
+            placeholder="YYYY"
+            className={inputCls(a('year_built'))}
+          />
         </Field>
         <Field label="# Stories" className="w-20" autofilled={a('num_stories')}>
           <input type="number" min={1} value={form.num_stories} onChange={e => update({ num_stories: e.target.value })} className={inputCls(a('num_stories'))} />
