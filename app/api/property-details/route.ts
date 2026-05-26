@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Exact values from the Roof Type select in Section5: ['Architectural','3-Tab','Metal','Tile','Wood Shake','Flat/TPO','Other']
+// Exact values from Section5 Roof Type select: ['Architectural','3-Tab','Metal','Tile','Wood Shake','Flat/TPO','Other']
 function mapRoofType(raw: string | null | undefined): string | null {
   if (!raw) return null
   const s = raw.toLowerCase().trim()
   if (s.includes('3-tab') || s.includes('3 tab')) return '3-Tab'
-  if (s.includes('asphalt') || s.includes('architectural') || s.includes('composition') || s.includes('dimensional') || s.includes('shingle')) return 'Architectural'
+  if (s.includes('asphalt') && !s.includes('architectural')) return '3-Tab'
+  if (s.includes('architectural') || s.includes('composition') || s.includes('dimensional') || s.includes('laminated')) return 'Architectural'
+  if (s === 'shingle' || s === 'asphalt shingle') return 'Architectural'
   if (s.includes('metal') || s.includes('steel') || s.includes('aluminum')) return 'Metal'
-  if (s.includes('tile') || s.includes('clay')) return 'Tile'
+  if (s.includes('tile') || s.includes('clay') || s.includes('concrete tile')) return 'Tile'
   if (s.includes('wood') || s.includes('shake') || s.includes('cedar')) return 'Wood Shake'
   if (s.includes('flat') || s.includes('built-up') || s.includes('built up') || s.includes('tpo') || s.includes('foam')) return 'Flat/TPO'
   return null
 }
 
-// Exact values from Construction Type select: ['Brick','Hardi','Vinyl','Stone','Stucco','Tabby','Wood','Cinderblock']
+// Exact values from Section5 Construction Type select: ['Brick','Hardi','Vinyl','Stone','Stucco','Tabby','Wood','Cinderblock']
 function mapConstruction(materials: unknown): string | null {
   if (!Array.isArray(materials) || materials.length === 0) return null
   for (const m of materials) {
@@ -24,13 +26,15 @@ function mapConstruction(materials: unknown): string | null {
     if (s.includes('stone') || s.includes('rock')) return 'Stone'
     if (s.includes('stucco')) return 'Stucco'
     if (s.includes('tabby')) return 'Tabby'
-    if (s.includes('cinderblock') || s.includes('cinder block') || s.includes('concrete block') || s.includes('cbs') || s.includes('masonry block')) return 'Cinderblock'
-    if (s.includes('wood siding') || s.includes('wood shingle') || s.includes('wood board') || s.includes('wood frame')) return 'Wood'
+    // CBS / concrete block / masonry block → Cinderblock
+    if (s.includes('cbs') || s.includes('concrete block') || s.includes('cinderblock') || s.includes('cinder block') || s.includes('masonry block')) return 'Cinderblock'
+    // Wood frame / frame / wood siding → Wood
+    if (s.includes('wood') || s.includes('frame') || s.includes('wood siding') || s.includes('wood shingle') || s.includes('wood board')) return 'Wood'
   }
   return null
 }
 
-// Exact values from Foundation Type select: ['Slab','Crawlspace','Raised Slab','Enclosure','Piers','Basement']
+// Exact values from Section5 Foundation Type select: ['Slab','Crawlspace','Raised Slab','Enclosure','Piers','Basement']
 function mapFoundation(details: unknown): string | null {
   if (!Array.isArray(details) || details.length === 0) return null
   for (const d of details) {
@@ -45,12 +49,16 @@ function mapFoundation(details: unknown): string | null {
   return null
 }
 
-// Exact values from Heat/Air select: ['Central Heat & Air','Central Heat / Window AC','Window Units Only','Baseboard','Radiator','Mini-Split','None']
+// Exact values from Section5 Heat/Air select:
+// ['Central Heat & Air','Central Heat / Window AC','Window Units Only','Baseboard','Radiator','Mini-Split','None']
 function mapHeatAir(heating: unknown): string | null {
   if (!Array.isArray(heating) || heating.length === 0) return null
   for (const h of heating) {
     const s = String(h).toLowerCase().trim()
-    if (s.includes('forced air') || s.includes('central') || s.includes('furnace')) return 'Central Heat & Air'
+    if (s.includes('forced air') || s.includes('central') || s.includes('furnace') ||
+        s.includes('heat pump') || s.includes('electric') || s.includes('natural gas') || s.includes('gas')) {
+      return 'Central Heat & Air'
+    }
     if (s.includes('baseboard')) return 'Baseboard'
     if (s.includes('radiator')) return 'Radiator'
     if (s.includes('mini') || s.includes('split') || s.includes('ductless')) return 'Mini-Split'
@@ -59,7 +67,7 @@ function mapHeatAir(heating: unknown): string | null {
   return null
 }
 
-// Exact values from Burglar Alarm select: ['None','Local','Central Station','Direct','Smart']
+// Exact values from Section5 Burglar Alarm select: ['None','Local','Central Station','Direct','Smart']
 function mapBurglarAlarm(features: unknown): string | null {
   if (!Array.isArray(features)) return null
   const joined = features.map(f => String(f).toLowerCase()).join(' ')
@@ -81,9 +89,10 @@ export async function GET(req: NextRequest) {
   if (!apiKey || !street) return NextResponse.json({})
 
   try {
-    // API expects a single address string: "486 Green Fern Dr Summerville 29483"
     const propertyaddress = [street, city, zip].filter(Boolean).join(' ')
     const url = `https://zllw-working-api.p.rapidapi.com/byaddress?propertyaddress=${encodeURIComponent(propertyaddress)}`
+
+    console.log('[property-details] fetching:', propertyaddress)
 
     const res = await fetch(url, {
       headers: {
@@ -93,15 +102,48 @@ export async function GET(req: NextRequest) {
       cache: 'no-store',
     })
 
-    if (!res.ok) return NextResponse.json({})
+    if (!res.ok) {
+      console.log('[property-details] non-OK response:', res.status)
+      return NextResponse.json({})
+    }
 
     const raw: Rec = await res.json()
-    if (!raw || raw.error) return NextResponse.json({})
+    if (!raw || raw.error) {
+      console.log('[property-details] error in response:', raw?.error)
+      return NextResponse.json({})
+    }
 
     // Handle both documented shape { propertyDetails: { resoFacts: {...} } }
-    // and observed flat shape { yearBuilt, Bedrooms, Bathrooms, "Area(sqft)", ... }
+    // and flat shape { yearBuilt, Bedrooms, Bathrooms, "Area(sqft)", ... }
     const prop: Rec = raw.propertyDetails ?? raw
     const rF: Rec  = prop?.resoFacts ?? {}
+
+    console.log('[property-details] raw top-level keys:', Object.keys(raw))
+    console.log('[property-details] prop keys:', Object.keys(prop))
+    console.log('[property-details] resoFacts keys:', Object.keys(rF))
+    console.log('[property-details] resoFacts values:', {
+      bathroomsFull:         rF.bathroomsFull,
+      bathroomsHalf:         rF.bathroomsHalf,
+      stories:               rF.stories,
+      roofType:              rF.roofType,
+      constructionMaterials: rF.constructionMaterials,
+      foundationDetails:     rF.foundationDetails,
+      hasGarage:             rF.hasGarage,
+      hasAttachedGarage:     rF.hasAttachedGarage,
+      garageParkingCapacity: rF.garageParkingCapacity,
+      heating:               rF.heating,
+      fireplaces:            rF.fireplaces,
+      hasFireplace:          rF.hasFireplace,
+      hasPrivatePool:        rF.hasPrivatePool,
+      securityFeatures:      rF.securityFeatures,
+      communityFeatures:     rF.communityFeatures,
+    })
+    console.log('[property-details] flat fallback values:', {
+      yearBuilt:    prop.yearBuilt  ?? raw.yearBuilt,
+      livingArea:   prop.livingArea ?? raw['Area(sqft)'],
+      bedrooms:     prop.bedrooms   ?? raw.Bedrooms,
+      bathrooms:    prop.bathrooms  ?? raw.Bathrooms,
+    })
 
     const out: Record<string, string> = {}
 
@@ -114,36 +156,45 @@ export async function GET(req: NextRequest) {
     if (livingArea != null) out.sqft       = String(Math.round(Number(livingArea)))
     if (bedrooms   != null) out.beds       = String(bedrooms)
 
-    // bathroomsFull preferred; fall back to bathrooms then flat Bathrooms
-    const fullBaths = rF.bathroomsFull ?? prop.bathrooms ?? raw.Bathrooms
-    if (fullBaths != null) out.full_baths = String(Math.floor(Number(fullBaths)))
-    if (rF.bathroomsHalf != null) out.half_baths = String(rF.bathroomsHalf)
-    if (rF.stories       != null) out.num_stories = String(rF.stories)
+    // bathroomsFull from resoFacts takes priority; fall back to prop.bathrooms then flat Bathrooms
+    const fullBathsRaw = rF.bathroomsFull != null
+      ? rF.bathroomsFull
+      : (prop.bathrooms ?? raw.Bathrooms)
+    if (fullBathsRaw != null) out.full_baths = String(Math.floor(Number(fullBathsRaw)))
+
+    if (rF.bathroomsHalf != null) out.half_baths  = String(rF.bathroomsHalf)
+    if (rF.stories       != null) out.num_stories  = String(rF.stories)
 
     // --- Roof ---
     const roofMapped = mapRoofType(rF.roofType)
+    console.log('[property-details] roofType raw:', rF.roofType, '→ mapped:', roofMapped)
     if (roofMapped) out.roof_type = roofMapped
 
-    // --- Construction & foundation ---
+    // --- Construction ---
     const constructionMapped = mapConstruction(rF.constructionMaterials)
+    console.log('[property-details] constructionMaterials raw:', rF.constructionMaterials, '→ mapped:', constructionMapped)
     if (constructionMapped) out.construction_type = constructionMapped
 
+    // --- Foundation ---
     const foundationMapped = mapFoundation(rF.foundationDetails)
+    console.log('[property-details] foundationDetails raw:', rF.foundationDetails, '→ mapped:', foundationMapped)
     if (foundationMapped) out.foundation_type = foundationMapped
 
     // --- Garage ---
     // Exact values: 'None' | 'Attached / Built-in' | 'Detached' | 'Carport'
-    if (rF.hasAttachedGarage === true) {
+    if (rF.hasGarage === false) {
+      out.garage_type = 'None'
+    } else if (rF.hasAttachedGarage === true) {
       out.garage_type = 'Attached / Built-in'
     } else if (rF.hasGarage === true) {
       out.garage_type = 'Detached'
-    } else if (rF.hasGarage === false) {
-      out.garage_type = 'None'
     }
     if (rF.garageParkingCapacity != null) out.garage_cars = String(rF.garageParkingCapacity)
+    console.log('[property-details] garage raw:', { hasGarage: rF.hasGarage, hasAttachedGarage: rF.hasAttachedGarage, capacity: rF.garageParkingCapacity }, '→ type:', out.garage_type, 'cars:', out.garage_cars)
 
     // --- Heat / Air ---
     const heatMapped = mapHeatAir(rF.heating)
+    console.log('[property-details] heating raw:', rF.heating, '→ mapped:', heatMapped)
     if (heatMapped) out.heat_air = heatMapped
 
     // --- Fireplaces ---
@@ -166,8 +217,10 @@ export async function GET(req: NextRequest) {
       if (isGated) out.gated = 'yes'
     }
 
+    console.log('[property-details] final output:', out)
     return NextResponse.json(out)
-  } catch {
+  } catch (err) {
+    console.error('[property-details] error:', err)
     return NextResponse.json({})
   }
 }
