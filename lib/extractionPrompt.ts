@@ -10,6 +10,7 @@ Return this exact JSON structure:
   "primary_ssn_last4": null,
   "primary_phone": null,
   "primary_email": null,
+  "primary_marital_status": null,
   "co_insureds": [],
   "subject_address": null,
   "subject_city": null,
@@ -36,7 +37,7 @@ Return this exact JSON structure:
   "mortgagee_zip": null
 }
 
-For co_insureds, return an array of objects: [{ "first": null, "middle": null, "last": null, "suffix": null, "dob": null, "ssn_last4": null, "phone": null, "email": null }]
+For co_insureds, return an array of objects: [{ "first": null, "middle": null, "last": null, "suffix": null, "dob": null, "ssn_last4": null, "phone": null, "email": null, "marital_status": null }]
 Extract phone and email for co-insureds the same way as the primary insured — check all contact fields, signature blocks, and listed phone/email entries associated with each person's name.
 For name suffixes (Sr., Jr., II, III, IV, etc.): always place them in the suffix field — never include them in first_name, middle, or last. The last name field should contain only the family name with no suffix appended.
 For addresses: always split into separate street, city, state, and zip fields — never concatenate into a single string.
@@ -46,4 +47,6 @@ For mortgagee fields: extract the lender/bank name and mailing address from any 
 For occupancy: return one of "Primary", "Secondary", "Rental Long-term", "Rental Short-term", or null.
 For dates: return in MM/DD/YYYY format.
 For sales_price: return as a plain number (no $ or commas).
-For SSN: return only the last 4 digits as a string.`
+For SSN: return only the last 4 digits as a string.
+For closing_date: "effective date", "policy effective date", and "effective" are synonyms for closing date — map them to closing_date.
+For marital_status: if the document contains any indication that the insured(s) are married (e.g., "they are married", "husband and wife", "spouse", "married couple", a marital status field set to Married), set primary_marital_status to "Married". If a co-insured is present and the same indication applies to them, set marital_status to "Married" in their co_insureds entry. Return null for either field if no marital status information is present.`

@@ -76,8 +76,9 @@ export function applyExtractedData(
   if (ps != null) primaryPatch.suffix = ps
   if (x.primary_dob       != null) primaryPatch.dob    = x.primary_dob
   if (x.primary_ssn_last4 != null) primaryPatch.ssn    = x.primary_ssn_last4
-  if (x.primary_phone     != null) primaryPatch.phone  = x.primary_phone
-  if (x.primary_email     != null) primaryPatch.email  = x.primary_email
+  if (x.primary_phone          != null) primaryPatch.phone  = x.primary_phone
+  if (x.primary_email          != null) primaryPatch.email  = x.primary_email
+  if (x.primary_marital_status != null && !currentInsureds[0]?.marital) primaryPatch.marital = x.primary_marital_status
   if (Object.keys(primaryPatch).length > 0) {
     const primaryUid = currentInsureds[0].uid
     ;(Object.keys(primaryPatch) as (keyof InsuredData)[]).forEach(f => {
@@ -90,22 +91,22 @@ export function applyExtractedData(
 
   const coInsureds: Record<string, string | null>[] = Array.isArray(x.co_insureds) ? x.co_insureds : []
   if (coInsureds.length > 0) {
-    const autoFields: (keyof InsuredData)[] = ['first', 'middle', 'last', 'suffix', 'dob', 'ssn', 'phone', 'email']
+    const autoFields: (keyof InsuredData)[] = ['first', 'middle', 'last', 'suffix', 'dob', 'ssn', 'phone', 'email', 'marital']
     const appended: InsuredData[] = coInsureds.map((ci, i) => {
       const uid = Date.now() + i + 1
       const ins: InsuredData = {
         uid,
-        first:        ci.first        ?? '',
-        middle:       ci.middle       ?? '',
-        last:         ci.last         ?? '',
+        first:        ci.first          ?? '',
+        middle:       ci.middle         ?? '',
+        last:         ci.last           ?? '',
         suffix:       normalizeSuffix(ci.suffix) ?? '',
-        dob:          ci.dob          ?? '',
-        ssn:          ci.ssn_last4    ?? '',
-        marital:      '',
+        dob:          ci.dob            ?? '',
+        ssn:          ci.ssn_last4      ?? '',
+        marital:      ci.marital_status ?? '',
         occupation:   '',
         relationship: '',
-        phone:        ci.phone  ?? '',
-        email:        ci.email  ?? '',
+        phone:        ci.phone          ?? '',
+        email:        ci.email          ?? '',
         showContact:  !!(ci.phone || ci.email),
       }
       autoFields.forEach(f => { if (ins[f]) flashKeys.push(`ins_${uid}_${f}`) })
