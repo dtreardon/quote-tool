@@ -47,14 +47,14 @@ export function Section5() {
 
       {/* Row 2: Construction & Foundation */}
       <div className="flex gap-3.5 flex-wrap mb-3">
-        <Field label="Construction Type" className="flex-[2] min-w-40">
-          <select value={form.construction_type} onChange={e => update({ construction_type: e.target.value })} className={selectCls()}>
+        <Field label="Construction Type" className="flex-[2] min-w-40" autofilled={a('construction_type')} badgeRight="right-7">
+          <select value={form.construction_type} onChange={e => update({ construction_type: e.target.value })} className={selectCls(a('construction_type'))}>
             <option value="">Select…</option>
             {['Brick','Hardi','Vinyl','Stone','Stucco','Tabby','Wood','Cinderblock'].map(o => <option key={o}>{o}</option>)}
           </select>
         </Field>
-        <Field label="Foundation Type" className="flex-[2] min-w-40">
-          <select value={form.foundation_type} onChange={e => update({ foundation_type: e.target.value })} className={selectCls()}>
+        <Field label="Foundation Type" className="flex-[2] min-w-40" autofilled={a('foundation_type')} badgeRight="right-7">
+          <select value={form.foundation_type} onChange={e => update({ foundation_type: e.target.value })} className={selectCls(a('foundation_type'))}>
             <option value="">Select…</option>
             {['Slab','Crawlspace','Raised Slab','Enclosure','Piers','Basement'].map(o => <option key={o}>{o}</option>)}
           </select>
@@ -63,17 +63,17 @@ export function Section5() {
 
       {/* Row 3: Garage, HVAC, Laundry */}
       <div className="flex gap-3.5 flex-wrap mb-3">
-        <Field label="Garage Type" className="flex-[2] min-w-40">
-          <select value={form.garage_type} onChange={e => update({ garage_type: e.target.value })} className={selectCls()}>
+        <Field label="Garage Type" className="flex-[2] min-w-40" autofilled={a('garage_type')} badgeRight="right-7">
+          <select value={form.garage_type} onChange={e => update({ garage_type: e.target.value })} className={selectCls(a('garage_type'))}>
             <option value="">Select…</option>
             {['None','Attached / Built-in','Detached','Carport'].map(o => <option key={o}>{o}</option>)}
           </select>
         </Field>
-        <Field label="# of Cars" className="w-20">
-          <input type="number" min={0} value={form.garage_cars} onChange={e => update({ garage_cars: e.target.value })} className={inputCls()} />
+        <Field label="# of Cars" className="w-20" autofilled={a('garage_cars')}>
+          <input type="number" min={0} value={form.garage_cars} onChange={e => update({ garage_cars: e.target.value })} className={inputCls(a('garage_cars'))} />
         </Field>
-        <Field label="Heat / Air Type" className="flex-[2] min-w-44">
-          <select value={form.heat_air} onChange={e => update({ heat_air: e.target.value })} className={selectCls()}>
+        <Field label="Heat / Air Type" className="flex-[2] min-w-44" autofilled={a('heat_air')} badgeRight="right-7">
+          <select value={form.heat_air} onChange={e => update({ heat_air: e.target.value })} className={selectCls(a('heat_air'))}>
             <option value="">Select…</option>
             {['Central Heat & Air','Central Heat / Window AC','Window Units Only','Baseboard','Radiator','Mini-Split','None'].map(o => <option key={o}>{o}</option>)}
           </select>
@@ -135,8 +135,8 @@ export function Section5() {
             {['Gable','Hip','Flat','Gambrel','Mansard','Other'].map(o => <option key={o}>{o}</option>)}
           </select>
         </Field>
-        <Field label="Roof Type" className="flex-1 min-w-36">
-          <select value={form.roof_type} onChange={e => update({ roof_type: e.target.value })} className={selectCls()}>
+        <Field label="Roof Type" className="flex-1 min-w-36" autofilled={a('roof_type')} badgeRight="right-7">
+          <select value={form.roof_type} onChange={e => update({ roof_type: e.target.value })} className={selectCls(a('roof_type'))}>
             <option value="">Select…</option>
             {['Architectural','3-Tab','Metal','Tile','Wood Shake','Flat/TPO','Other'].map(o => <option key={o}>{o}</option>)}
           </select>
@@ -203,8 +203,8 @@ export function Section5() {
             {['None','Local','Central Station','Direct','Smart'].map(o => <option key={o}>{o}</option>)}
           </select>
         </Field>
-        <Field label="Burglar Alarm" className="flex-1 min-w-36">
-          <select value={form.burglar_alarm} onChange={e => update({ burglar_alarm: e.target.value })} className={selectCls()}>
+        <Field label="Burglar Alarm" className="flex-1 min-w-36" autofilled={a('burglar_alarm')} badgeRight="right-7">
+          <select value={form.burglar_alarm} onChange={e => update({ burglar_alarm: e.target.value })} className={selectCls(a('burglar_alarm'))}>
             <option value="">Select…</option>
             {['None','Local','Central Station','Direct','Smart'].map(o => <option key={o}>{o}</option>)}
           </select>
@@ -217,16 +217,16 @@ export function Section5() {
             <input value={form.sprinkler_floor} onChange={e => update({ sprinkler_floor: e.target.value })} className={inputCls()} />
           </Field>
         )}
-        <Field label="Gated Community?">
+        <Field label="Gated Community?" autofilled={a('gated')}>
           <YesNo name="gated" value={form.gated} onChange={v => update({ gated: v })} />
         </Field>
       </div>
 
       <div className="flex gap-3.5 flex-wrap">
-        <Field label="# Fireplaces" className="w-28">
-          <input type="number" min={0} value={form.fireplaces} onChange={e => update({ fireplaces: e.target.value })} className={inputCls()} />
+        <Field label="# Fireplaces" className="w-28" autofilled={a('fireplaces')}>
+          <input type="number" min={0} value={form.fireplaces} onChange={e => update({ fireplaces: e.target.value })} className={inputCls(a('fireplaces'))} />
         </Field>
-        <Field label="Pool?">
+        <Field label="Pool?" autofilled={a('pool')}>
           <YesNo name="pool" value={form.pool} onChange={v => update({ pool: v })} />
         </Field>
         {form.pool === 'yes' && (
