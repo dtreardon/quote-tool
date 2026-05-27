@@ -90,6 +90,8 @@ export async function GET(req: NextRequest) {
     const propertyaddress = [street, city, zip].filter(Boolean).join(' ')
     const url = `https://zllw-working-api.p.rapidapi.com/By%20Property%20Address?propertyaddress=${encodeURIComponent(propertyaddress)}`
 
+    console.log('[property-details] url:', url)
+
     const res = await fetch(url, {
       headers: {
         'x-rapidapi-host': 'zllw-working-api.p.rapidapi.com',
@@ -98,15 +100,21 @@ export async function GET(req: NextRequest) {
       cache: 'no-store',
     })
 
+    console.log('[property-details] status:', res.status)
     if (!res.ok) return NextResponse.json({})
 
     const raw: Rec = await res.json()
+    console.log('[property-details] raw keys:', Object.keys(raw))
+    console.log('[property-details] raw sample:', JSON.stringify(raw).slice(0, 500))
     if (!raw || raw.error) return NextResponse.json({})
 
     // Handle both documented shape { propertyDetails: { resoFacts: {...} } }
     // and observed flat shape { yearBuilt, Bedrooms, Bathrooms, "Area(sqft)", ... }
     const prop: Rec = raw.propertyDetails ?? raw
     const rF: Rec   = prop?.resoFacts ?? {}
+
+    console.log('[property-details] prop keys:', Object.keys(prop))
+    console.log('[property-details] resoFacts keys:', Object.keys(rF))
 
     const out: Record<string, string> = {}
 
@@ -175,8 +183,10 @@ export async function GET(req: NextRequest) {
       if (isGated) out.gated = 'yes'
     }
 
+    console.log('[property-details] final output:', out)
     return NextResponse.json(out)
-  } catch {
+  } catch (err) {
+    console.error('[property-details] caught error:', err)
     return NextResponse.json({})
   }
 }
