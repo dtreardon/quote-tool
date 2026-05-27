@@ -77,8 +77,10 @@ export interface AutoFormState {
   // Section 5 - Coverage
   cov_bi: string
   cov_pd: string
-  cov_um: string
-  cov_uim: string
+  cov_um_bi: string
+  cov_um_pd: string
+  cov_uim_bi: string
+  cov_uim_pd: string
   pip_med_pay: string
   rental_reimbursement: string
   roadside: string
@@ -159,8 +161,10 @@ export const INITIAL_AUTO_FORM: AutoFormState = {
   vehicles: [{ ...INITIAL_VEHICLE }],
   cov_bi: '',
   cov_pd: '',
-  cov_um: '',
-  cov_uim: '',
+  cov_um_bi: '',
+  cov_um_pd: '',
+  cov_uim_bi: '',
+  cov_uim_pd: '',
   pip_med_pay: '',
   rental_reimbursement: '',
   roadside: '',

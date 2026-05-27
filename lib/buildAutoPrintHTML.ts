@@ -210,7 +210,8 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
       <div class="cov-box">
         ${form.cov_bi ? `<div class="cov-item"><div class="cov-label">BI / PD</div><div class="cov-value">${form.cov_bi}</div></div>` : ''}
         ${form.cov_pd ? `<div class="cov-item"><div class="cov-label">Prop. Damage</div><div class="cov-value">$${form.cov_pd}</div></div>` : ''}
-        ${form.cov_um ? `<div class="cov-item"><div class="cov-label">UM / UIM</div><div class="cov-value">${form.cov_um}</div></div>` : ''}
+        ${(form.cov_um_bi || form.cov_um_pd) ? `<div class="cov-item"><div class="cov-label">UM</div><div class="cov-value">${[form.cov_um_bi, form.cov_um_pd].filter(Boolean).join(' / ')}</div></div>` : ''}
+        ${(form.cov_uim_bi || form.cov_uim_pd) ? `<div class="cov-item"><div class="cov-label">UIM</div><div class="cov-value">${[form.cov_uim_bi, form.cov_uim_pd].filter(Boolean).join(' / ')}</div></div>` : ''}
         ${form.pip_med_pay ? `<div class="cov-item"><div class="cov-label">PIP / Med Pay</div><div class="cov-value">${form.pip_med_pay}</div></div>` : ''}
         ${form.rental_reimbursement ? `<div class="cov-item"><div class="cov-label">Rental Reimb.</div><div class="cov-value">${yn(form.rental_reimbursement)}</div></div>` : ''}
         ${form.roadside ? `<div class="cov-item"><div class="cov-label">Roadside</div><div class="cov-value">${yn(form.roadside)}</div></div>` : ''}

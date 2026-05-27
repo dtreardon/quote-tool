@@ -6,10 +6,10 @@ import { Field, selectCls } from '../ui/Field'
 import { YesNo } from '../ui/RadioGroup'
 
 const BI_OPTIONS = [
-  '', '25/50', '50/100', '100/300', '250/500', '500/500', '100 CSL', '300 CSL', '500 CSL',
+  '', '25/50', '50/100', '100/300', '250/500', '500/500', '100 CSL', '300 CSL', '500 CSL', '1,000 CSL',
 ]
 const PD_OPTIONS = [
-  '', '$25,000', '$50,000', '$100,000', '$300,000', '$500,000',
+  '', '$25,000', '$50,000', '$100,000', '$300,000', '$500,000', '$1,000,000',
 ]
 const PIP_MED_OPTIONS = [
   '', 'None', '$1,000', '$2,000', '$2,500', '$5,000', '$10,000',
@@ -37,14 +37,38 @@ export function Section5() {
             </select>
           </Field>
         )}
-        <Field label="UM / UIM Limits" className="flex-1 min-w-44">
-          <select value={form.cov_um} onChange={e => update({ cov_um: e.target.value })} className={selectCls()}>
-            {BI_OPTIONS.map(o => <option key={o} value={o}>{o || 'Select limits…'}</option>)}
-          </select>
-        </Field>
-        <Field label="UIM Separate?" className="flex-shrink-0" badgeOutside>
-          <YesNo name="uim_separate" value={form.cov_uim} onChange={v => update({ cov_uim: v })} />
-        </Field>
+        <div className="w-full flex gap-3.5 flex-wrap">
+          <div className="flex-1 min-w-56 bg-white border border-[#d0cdc8] rounded p-3">
+            <div className="text-[11px] font-bold text-[#666] uppercase tracking-[0.05em] mb-2">UM — Uninsured Motorist</div>
+            <div className="flex gap-3 flex-wrap">
+              <Field label="Bodily Injury (BI)" className="flex-1 min-w-36">
+                <select value={form.cov_um_bi} onChange={e => update({ cov_um_bi: e.target.value })} className={selectCls()}>
+                  {BI_OPTIONS.map(o => <option key={o} value={o}>{o || 'Select limits…'}</option>)}
+                </select>
+              </Field>
+              <Field label="Property Damage (PD)" className="flex-1 min-w-32">
+                <select value={form.cov_um_pd} onChange={e => update({ cov_um_pd: e.target.value })} className={selectCls()}>
+                  {PD_OPTIONS.map(o => <option key={o} value={o}>{o || 'Select limit…'}</option>)}
+                </select>
+              </Field>
+            </div>
+          </div>
+          <div className="flex-1 min-w-56 bg-white border border-[#d0cdc8] rounded p-3">
+            <div className="text-[11px] font-bold text-[#666] uppercase tracking-[0.05em] mb-2">UIM — Underinsured Motorist</div>
+            <div className="flex gap-3 flex-wrap">
+              <Field label="Bodily Injury (BI)" className="flex-1 min-w-36">
+                <select value={form.cov_uim_bi} onChange={e => update({ cov_uim_bi: e.target.value })} className={selectCls()}>
+                  {BI_OPTIONS.map(o => <option key={o} value={o}>{o || 'Select limits…'}</option>)}
+                </select>
+              </Field>
+              <Field label="Property Damage (PD)" className="flex-1 min-w-32">
+                <select value={form.cov_uim_pd} onChange={e => update({ cov_uim_pd: e.target.value })} className={selectCls()}>
+                  {PD_OPTIONS.map(o => <option key={o} value={o}>{o || 'Select limit…'}</option>)}
+                </select>
+              </Field>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* PIP / Med Pay + Extras */}
