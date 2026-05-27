@@ -18,17 +18,8 @@ export const universal_sc = {
     const age = currentYear - buildYear;
     const roofAge = currentYear - roofYear;
 
-    // --- Coastal Counties ---
-    const coastalCounties = [
-      "Charleston",
-      "Berkeley",
-      "Dorchester",
-      "Beaufort",
-      "Jasper",
-      "Horry",
-      "Georgetown",
-      "Colleton",
-    ];
+    // --- Special Counties ---
+    const specialCounties = ["Allendale", "Bamberg", "Barnwell", "Colleton", "Dillon", "Fairfield", "Hampton", "Jasper", "Lee", "Orangeburg", "Williamsburg"];
 
     // --- State ---
     if (state !== "SC") {
@@ -55,20 +46,18 @@ export const universal_sc = {
     }
 
     // --- Build Year Rules ---
-    const isCoastalCounty = coastalCounties.includes(county);
+    const isSpecialCounty = specialCounties.includes(county);
 
-    if (isCoastalCounty && buildYear < 2003) {
-      return {
-        eligible: false,
-        reason: "Build year must be 2003 or newer in coastal counties",
-      };
+    if (isSpecialCounty && buildYear < 2003) {
+      return { eligible: false, reason: "Build year must be 2003 or newer in special counties" };
     }
 
-    if (!isCoastalCounty && buildYear < 1950) {
-      return {
-        eligible: false,
-        reason: "Build year must be 1950 or newer",
-      };
+    if (!isSpecialCounty && (policyType === "Condo" || policyType === "Renters") && buildYear < 1900) {
+      return { eligible: false, reason: "Build year must be 1900 or newer" };
+    }
+
+    if (!isSpecialCounty && (policyType === "HO" || policyType === "DP") && buildYear < 1950) {
+      return { eligible: false, reason: "Build year must be 1950 or newer" };
     }
 
     // --- Base Score ---
