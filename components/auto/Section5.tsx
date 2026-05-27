@@ -11,6 +11,8 @@ const BI_OPTIONS = [
 const PD_OPTIONS = [
   '', '$25,000', '$50,000', '$100,000', '$300,000', '$500,000', '$1,000,000',
 ]
+const UIM_BI_OPTIONS = [...BI_OPTIONS, 'Rejected']
+const UIM_PD_OPTIONS = [...PD_OPTIONS, 'Rejected']
 const PIP_MED_OPTIONS = [
   '', 'None', '$1,000', '$2,000', '$2,500', '$5,000', '$10,000',
 ]
@@ -46,12 +48,12 @@ export function Section5() {
           </Field>
           <Field label="UIM — Underinsured Motorist: Bodily Injury (BI)">
             <select value={form.cov_uim_bi} onChange={e => update({ cov_uim_bi: e.target.value })} className={selectCls()}>
-              {BI_OPTIONS.map(o => <option key={o} value={o}>{o || 'Select limits…'}</option>)}
+              {UIM_BI_OPTIONS.map(o => <option key={o} value={o}>{o || 'Select limits…'}</option>)}
             </select>
           </Field>
           <Field label="UIM — Underinsured Motorist: Property Damage (PD)">
             <select value={form.cov_uim_pd} onChange={e => update({ cov_uim_pd: e.target.value })} className={selectCls()}>
-              {PD_OPTIONS.map(o => <option key={o} value={o}>{o || 'Select limit…'}</option>)}
+              {UIM_PD_OPTIONS.map(o => <option key={o} value={o}>{o || 'Select limit…'}</option>)}
             </select>
           </Field>
         </div>
