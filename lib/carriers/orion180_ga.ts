@@ -1,3 +1,7 @@
+const EXCLUDED_COUNTIES = [
+  "Chatham", "Bryan", "Liberty", "McIntosh", "Glynn", "Camden", "Effingham"
+];
+
 export const orion180_ga = {
   key: "orion180_ga",
   label: "Orion180 (GA)",
@@ -5,6 +9,7 @@ export const orion180_ga = {
   evaluate(input: any) {
     const {
       state,
+      county,
       distanceToCoast,
       buildYear,
       roofYear,
@@ -20,6 +25,11 @@ export const orion180_ga = {
     // --- State ---
     if (state !== "GA") {
       return { eligible: false, reason: "State not eligible" };
+    }
+
+    // --- County Exclusion ---
+    if (county && EXCLUDED_COUNTIES.some(c => county.toLowerCase().includes(c.toLowerCase()))) {
+      return { eligible: false, reason: "County not eligible (coastal GA)" };
     }
 
     // --- Policy Type ---
