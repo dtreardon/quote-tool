@@ -34,7 +34,18 @@ Return this exact JSON structure:
   "mortgagee_street": null,
   "mortgagee_city": null,
   "mortgagee_state": null,
-  "mortgagee_zip": null
+  "mortgagee_zip": null,
+  "agent": null,
+  "primary_occupation": null,
+  "primary_license_number": null,
+  "primary_license_state": null,
+  "has_dui": null,
+  "has_violations": null,
+  "num_violations": null,
+  "has_accidents": null,
+  "num_accidents": null,
+  "bankruptcy": null,
+  "vehicles": []
 }
 
 For co_insureds, return an array of objects: [{ "first": null, "middle": null, "last": null, "suffix": null, "dob": null, "ssn_last4": null, "phone": null, "email": null, "marital_status": null }]
@@ -49,4 +60,10 @@ For dates: return in MM/DD/YYYY format.
 For sales_price: return as a plain number (no $ or commas).
 For SSN: return only the last 4 digits as a string.
 For closing_date: "effective date", "policy effective date", and "effective" are synonyms for closing date — map them to closing_date.
-For marital_status: if the document contains any indication that the insured(s) are married (e.g., "they are married", "husband and wife", "spouse", "married couple", a marital status field set to Married), set primary_marital_status to "Married". If a co-insured is present and the same indication applies to them, set marital_status to "Married" in their co_insureds entry. Return null for either field if no marital status information is present.`
+For marital_status: if the document contains any indication that the insured(s) are married (e.g., "they are married", "husband and wife", "spouse", "married couple", a marital status field set to Married), set primary_marital_status to "Married". If a co-insured is present and the same indication applies to them, set marital_status to "Married" in their co_insureds entry. Return null for either field if no marital status information is present.
+For agent: extract from any Agent, Producer, Written by, or similar producer/agent field. Return the name exactly as written in the document.
+For primary_occupation: extract the occupation, job title, or employer description for the primary insured/driver (e.g. "Owner/Operator", "Teacher", "Retired").
+For primary_license_number and primary_license_state: extract the driver's license number and the 2-letter state abbreviation of the issuing state for the primary driver.
+For has_dui, has_violations, has_accidents, bankruptcy: return "yes" or "no" (lowercase string). Return null only if the document contains no information about that question at all. If the document explicitly shows "None", "No", "0", or a blank/unchecked box, return "no". If the document shows any affirmative answer, count, or checked box, return "yes".
+For num_violations and num_accidents: return the count as a plain number string (e.g. "2"). If violations or accidents are answered "No" or "None", return null for the num_ field (the "no" answer on the has_ field is sufficient).
+For vehicles: return an array of objects — one per vehicle found in the document — using this shape: [{ "comp_ded": null, "collision_ded": null, "notes": null }]. Extract comp and collision deductible amounts as dollar strings (e.g. "$500"). Extract any vehicle-specific notes, equipment, or special items (e.g. "Bed cap", "Lift kit") into notes. Preserve document order so index 0 corresponds to the first vehicle listed.`

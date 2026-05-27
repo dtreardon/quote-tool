@@ -1,4 +1,4 @@
-import type { AutoFormState, DriverData } from '@/app/types/autoForm'
+import type { AutoFormState, DriverData, VehicleData } from '@/app/types/autoForm'
 
 export type AutoApplyResult = {
   updates: Partial<AutoFormState>
@@ -30,6 +30,7 @@ export function applyAutoExtractedData(
     flashKeys.push(key as string)
   }
 
+  setIf('agent',               x.agent)
   setIf('referred_by_name',    x.referred_by_name)
   setIf('referred_by_company', x.referred_by_company)
   setIf('mail_street',         x.mailing_address)
@@ -54,13 +55,17 @@ export function applyAutoExtractedData(
       flashKeys.push(`drv_${uid}_${field}`)
     }
 
-    setDrvIf('first',  x.primary_first)
-    setDrvIf('middle', x.primary_middle)
-    setDrvIf('last',   x.primary_last)
-    setDrvIf('dob',    x.primary_dob)
-    setDrvIf('ssn',    x.primary_ssn_last4)
-    setDrvIf('phone',  x.primary_phone)
-    setDrvIf('email',  x.primary_email)
+    setDrvIf('first',           x.primary_first)
+    setDrvIf('middle',          x.primary_middle)
+    setDrvIf('last',            x.primary_last)
+    setDrvIf('dob',             x.primary_dob)
+    setDrvIf('ssn',             x.primary_ssn_last4)
+    setDrvIf('phone',           x.primary_phone)
+    setDrvIf('email',           x.primary_email)
+    setDrvIf('marital',         x.primary_marital_status)
+    setDrvIf('occupation',      x.primary_occupation)
+    setDrvIf('license_number',  x.primary_license_number)
+    setDrvIf('license_state',   x.primary_license_state)
 
     const ns = normalizeSuffix(x.primary_suffix)
     if (ns != null && !primary.suffix) {
@@ -71,6 +76,44 @@ export function applyAutoExtractedData(
     if (Object.keys(driverPatch).length > 0) {
       updates.drivers = form.drivers.map((d, i) => i === 0 ? { ...d, ...driverPatch } : d)
     }
+  }
+
+  // Underwriting
+  setIf('has_dui',        x.has_dui)
+  setIf('has_violations', x.has_violations)
+  setIf('num_violations', x.num_violations)
+  setIf('has_accidents',  x.has_accidents)
+  setIf('num_accidents',  x.num_accidents)
+  setIf('bankruptcy',     x.bankruptcy)
+
+  // Vehicles — additive per vehicle, matched by index
+  const extractedVehicles: Record<string, string | null>[] = Array.isArray(x.vehicles) ? x.vehicles : []
+  if (extractedVehicles.length > 0) {
+    let vehiclesPatch: VehicleData[] | null = null
+
+    extractedVehicles.forEach((ev, idx) => {
+      const fv = form.vehicles[idx]
+      if (!fv) return
+
+      const patch: Partial<VehicleData> = {}
+      const setVehIf = (field: keyof VehicleData, val: string | null | undefined) => {
+        if (val == null) return
+        if (fv[field]) return
+        ;(patch as Record<string, string>)[field] = val as string
+        flashKeys.push(`veh_${fv.uid}_${field}`)
+      }
+
+      setVehIf('comp_ded',      ev.comp_ded)
+      setVehIf('collision_ded', ev.collision_ded)
+      setVehIf('notes',         ev.notes)
+
+      if (Object.keys(patch).length > 0) {
+        if (!vehiclesPatch) vehiclesPatch = [...form.vehicles]
+        vehiclesPatch[idx] = { ...fv, ...patch }
+      }
+    })
+
+    if (vehiclesPatch) updates.vehicles = vehiclesPatch
   }
 
   return { updates, flashKeys }
