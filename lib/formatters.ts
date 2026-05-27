@@ -20,9 +20,12 @@ export function formatDate(value: string): string {
 }
 
 export function formatDollar(value: string): string {
-  const digits = value.replace(/[^0-9]/g, '')
-  if (!digits) return ''
-  return Number(digits).toLocaleString()
+  // Strip everything except digits and the first decimal point
+  const sanitized = value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
+  if (!sanitized || sanitized === '.') return ''
+  const [intPart, decPart] = sanitized.split('.')
+  const formatted = Number(intPart || '0').toLocaleString()
+  return decPart !== undefined && decPart !== '' ? `${formatted}.${decPart}` : formatted
 }
 
 export function expandLiability(value: string): string {

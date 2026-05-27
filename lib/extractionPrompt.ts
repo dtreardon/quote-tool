@@ -57,10 +57,10 @@ For referred_by_name and referred_by_company: if this is an email, extract the s
 For mortgagee fields: extract the lender/bank name and mailing address from any mortgagee clause, loss payee, or lienholder section. Preserve designations such as "ISAOA/ATIMA" in mortgagee_name. Extract loan_number from any loan number, account number, or file number field associated with the lender.
 For occupancy: return one of "Primary", "Secondary", "Rental Long-term", "Rental Short-term", or null.
 For dates: return in MM/DD/YYYY format.
-For sales_price: return as a plain number (no $ or commas).
+For sales_price: return as a plain number (no $ or commas). If no sales price or closing price is present, use the loan amount as a fallback for this field.
 For SSN: return only the last 4 digits as a string.
 For closing_date: "effective date", "policy effective date", and "effective" are synonyms for closing date — map them to closing_date.
-For marital_status: if the document contains any indication that the insured(s) are married (e.g., "they are married", "husband and wife", "spouse", "married couple", a marital status field set to Married), set primary_marital_status to "Married". If a co-insured is present and the same indication applies to them, set marital_status to "Married" in their co_insureds entry. Return null for either field if no marital status information is present.
+For marital_status: if the document contains any indication that the insured(s) are married (e.g., "they are married", "husband and wife", "spouse", "married couple", a marital status field set to Married), set primary_marital_status to "Married". If the document contains any indication the insured is single/unmarried (e.g., "single", "unmarried", a marital status field set to Single or Unmarried), set primary_marital_status to "Single". Apply the same logic to co_insureds entries. Return null for either field if no marital status information is present.
 For agent: extract from any Agent, Producer, Written by, or similar producer/agent field. Return the name exactly as written in the document.
 For primary_occupation: extract the occupation, job title, or employer description for the primary insured/driver (e.g. "Owner/Operator", "Teacher", "Retired").
 For primary_license_number and primary_license_state: extract the driver's license number and the 2-letter state abbreviation of the issuing state for the primary driver.

@@ -32,7 +32,11 @@ export function runPropertyLookups(
       .then(r => r.ok ? r.json() : {})
       .then((data: Record<string, string>) => {
         const keys = Object.keys(data)
-        if (keys.length) { updateIfEmpty(data as Partial<FormState>); markAutofilled(keys) }
+        if (keys.length) {
+          if (data.year_built && !data.reno_roof) data.reno_roof = data.year_built
+          updateIfEmpty(data as Partial<FormState>)
+          markAutofilled(keys)
+        }
       })
       .catch(() => {})
   } catch { /* ignore */ }
