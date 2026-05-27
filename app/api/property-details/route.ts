@@ -120,12 +120,7 @@ export async function GET(req: NextRequest) {
     if (livingArea != null) out.sqft       = String(Math.round(Number(livingArea)))
     if (bedrooms   != null) out.beds       = String(bedrooms)
 
-    // bathroomsFull from resoFacts takes priority; fall back to prop.bathrooms then flat Bathrooms
-    const fullBathsRaw = rF.bathroomsFull != null
-      ? rF.bathroomsFull
-      : (prop.bathrooms ?? raw.Bathrooms)
-    if (fullBathsRaw != null) out.full_baths = String(Math.floor(Number(fullBathsRaw)))
-
+    if (rF.bathroomsFull != null) out.full_baths = String(Math.floor(Number(rF.bathroomsFull)))
     if (rF.bathroomsHalf != null) out.half_baths  = String(rF.bathroomsHalf)
     if (rF.stories       != null) out.num_stories  = String(rF.stories)
 
