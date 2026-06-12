@@ -61,8 +61,8 @@ export async function POST(req: NextRequest) {
     })
 
     const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
-    console.log('AUTOFILL RAW RESPONSE:', raw)
-    const clean = raw.replace(/```json\n?|```/g, '').trim()
+    const match = raw.match(/\{[\s\S]*\}/)
+    const clean = match ? match[0] : ''
     let parsed
     try {
       parsed = JSON.parse(clean)
