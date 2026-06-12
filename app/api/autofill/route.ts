@@ -55,14 +55,23 @@ export async function POST(req: NextRequest) {
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
+      max_tokens: 4096,
+      betas: ['pdfs-2024-09-25'],
       system: EXTRACTION_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userContent }],
     })
 
     const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
     const clean = raw.replace(/```json\n?|```/g, '').trim()
-    const parsed = JSON.parse(clean)
+    let parsed
+    try {
+      parsed = JSON.parse(clean)
+    } catch {
+      return NextResponse.json(
+        { error: 'Auto-fill could not parse the response. The document may be too complex — try pasting the text instead.' },
+        { status: 422 }
+      )
+    }
     return NextResponse.json(parsed)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
