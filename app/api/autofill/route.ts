@@ -56,10 +56,9 @@ export async function POST(req: NextRequest) {
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
-      betas: ['pdfs-2024-09-25'],
       system: EXTRACTION_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userContent }],
-    })
+    }, { headers: { 'anthropic-beta': 'pdfs-2024-09-25' } })
 
     const raw = message.content[0]?.type === 'text' ? message.content[0].text : ''
     const clean = raw.replace(/```json\n?|```/g, '').trim()
