@@ -1,9 +1,12 @@
 export interface InsuredData {
   uid: number
+  insuredType: 'individual' | 'entity'
+  // Individual fields
   first: string
   middle: string
   last: string
   suffix: string
+  nickname: string
   dob: string
   ssn: string
   marital: string
@@ -12,6 +15,11 @@ export interface InsuredData {
   phone: string
   email: string
   showContact: boolean
+  // Entity fields
+  entityName: string
+  entityType: string
+  entityTypeOther: string
+  ein: string
 }
 
 export interface ClaimData {
@@ -177,10 +185,12 @@ export interface FormState {
 
 export const INITIAL_INSURED: InsuredData = {
   uid: 1,
-  first: '', middle: '', last: '', suffix: '',
+  insuredType: 'individual',
+  first: '', middle: '', last: '', suffix: '', nickname: '',
   dob: '', ssn: '', marital: '', occupation: '',
   relationship: '', phone: '', email: '',
   showContact: false,
+  entityName: '', entityType: '', entityTypeOther: '', ein: '',
 }
 
 export const INITIAL_FORM: FormState = {
@@ -253,18 +263,18 @@ export const INITIAL_FORM: FormState = {
   reno_plum: '',
   reno_plum_scope: '',
   water_heater: '',
-  tankless: '',
+  tankless: 'no',
   fire_alarm: '',
   burglar_alarm: '',
-  sprinklered: '',
+  sprinklered: 'no',
   sprinkler_floor: '',
-  gated: '',
+  gated: 'no',
   fireplaces: '0',
-  pool: '',
+  pool: 'no',
   pool_diving: false,
   pool_slide: false,
   pool_fenced: false,
-  trampoline: '',
+  trampoline: 'no',
   cov_dwelling: '',
   cov_other_structures: '',
   cov_contents: '',
@@ -276,11 +286,11 @@ export const INITIAL_FORM: FormState = {
   cov_hurricane_ded: '',
   hur_ded_mode: '%',
   hur_type: 'Hurricane',
-  bankruptcy: '',
-  has_dogs: '',
+  bankruptcy: 'no',
+  has_dogs: 'no',
   num_dogs: '0',
-  biting_dogs: '',
-  has_claims: '',
+  biting_dogs: 'no',
+  has_claims: 'no',
   claims: [],
   protection_class: '',
   territory_code: '',

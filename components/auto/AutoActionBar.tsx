@@ -1,24 +1,85 @@
 'use client'
 
+import { useState } from 'react'
 import { useAutoForm } from './AutoFormContext'
 import { buildAutoPrintHTML } from '@/lib/buildAutoPrintHTML'
+import { useSaveFolder } from '@/lib/useSaveFolder'
+import type { AutoFormState } from '@/app/types/autoForm'
 
 interface AutoActionBarProps {
   onClear: () => void
 }
 
+function buildFilename(form: AutoFormState): string {
+  const primary = form.drivers[0]
+  const firstN = primary?.first || ''
+  const lastN = primary?.last || ''
+  return `${lastN.toUpperCase()}, ${firstN.toUpperCase()} AUTO QUOTE SHEET.pdf`.trim()
+}
+
+function downloadPDF(bytes: ArrayBuffer, filename: string) {
+  const blob = new Blob([bytes], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+function printFallback(html: string) {
+  const win = window.open('', '_blank', 'width=900,height=1100')
+  if (!win) { alert('Please allow pop-ups for this site to print.'); return }
+  win.document.write(html)
+  win.document.close()
+  win.onload = () => { win.focus(); win.print() }
+}
+
 export function AutoActionBar({ onClear }: AutoActionBarProps) {
   const { form } = useAutoForm()
+  const { isSupported, folderName, pickFolder, clearFolder, saveFile } = useSaveFolder()
+  const [saving, setSaving] = useState(false)
 
-  function handlePrint() {
+  async function handleSave() {
+    setSaving(true)
     const logoUrl = `${window.location.origin}/logo-white.png`
     const html = buildAutoPrintHTML(form, logoUrl)
-    const printWin = window.open('', '_blank', 'width=900,height=1100')
-    if (!printWin) { alert('Please allow pop-ups for this site to print.'); return }
-    printWin.document.write(html)
-    printWin.document.close()
-    printWin.onload = () => { printWin.focus(); printWin.print() }
+    const filename = buildFilename(form)
+
+    if (!isSupported) {
+      printFallback(html)
+      setSaving(false)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html, filename }),
+      })
+
+      if (!res.ok) throw new Error(await res.text())
+
+      const buffer = await res.arrayBuffer()
+      const result = await saveFile(filename, buffer)
+
+      if (result === 'failed') {
+        downloadPDF(buffer, filename)
+      }
+    } catch (err) {
+      console.warn('[AutoActionBar] PDF server failed, falling back to print:', err)
+      printFallback(html)
+    } finally {
+      setSaving(false)
+    }
   }
+
+  const FOLDER_TOOLTIP =
+    'Save folder is stored in this browser profile only — ' +
+    'each machine/browser you use needs to be set up once.'
 
   return (
     <div className="sticky bottom-0 bg-navy flex items-center justify-between px-6 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-50 print:hidden">
@@ -29,22 +90,66 @@ export function AutoActionBar({ onClear }: AutoActionBarProps) {
         </span>
         <span className="text-white/40 text-[11px]">QuoteSheetPRO is a product of Reardon Insurance, LLC © 2026 — All Rights Reserved</span>
       </div>
-      <div className="flex gap-2">
-        <button
-          onClick={onClear}
-          className="border border-white/30 text-white px-[22px] py-2.5 rounded text-sm font-bold hover:bg-white/10 transition-colors"
-        >
-          Clear Form
-        </button>
-        <button
-          onClick={handlePrint}
-          className="bg-gold hover:bg-gold-light text-white px-[22px] py-2.5 rounded text-sm font-bold transition-colors"
-          style={{ transition: 'background-color 0.15s, transform 0.15s' }}
-          onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
-          onMouseLeave={e => (e.currentTarget.style.transform = '')}
-        >
-          🖨 Print / Save PDF
-        </button>
+
+      <div className="flex flex-col items-end gap-1.5">
+        {/* Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={onClear}
+            className="border border-white/30 text-white px-[22px] py-2.5 rounded text-sm font-bold hover:bg-white/10 transition-colors"
+          >
+            Clear Form
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-gold hover:bg-gold-light text-white px-[22px] py-2.5 rounded text-sm font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ transition: 'background-color 0.15s, transform 0.15s' }}
+            onMouseEnter={e => { if (!saving) e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = '' }}
+          >
+            {saving ? 'Saving…' : '🖨 Print / Save PDF'}
+          </button>
+        </div>
+
+        {/* Save-folder status — only shown when FS API is supported */}
+        {isSupported && (
+          <div className="flex items-center gap-2 text-[11px]" title={FOLDER_TOOLTIP}>
+            {folderName ? (
+              <>
+                <span className="text-white/40">📁</span>
+                <span className="text-white/50 max-w-[200px] truncate" title={folderName}>
+                  {folderName}
+                </span>
+                <button
+                  onClick={pickFolder}
+                  title={FOLDER_TOOLTIP}
+                  className="text-white/40 hover:text-white/70 underline transition-colors"
+                >
+                  change
+                </button>
+                <button
+                  onClick={clearFolder}
+                  title="Stop auto-saving to this folder"
+                  className="text-white/30 hover:text-white/60 transition-colors"
+                >
+                  ✕
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="text-white/30">📁 No save folder —</span>
+                <button
+                  onClick={pickFolder}
+                  title={FOLDER_TOOLTIP}
+                  className="text-white/50 hover:text-white/80 underline transition-colors"
+                >
+                  set up auto-save
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

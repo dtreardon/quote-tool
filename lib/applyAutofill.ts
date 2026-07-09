@@ -96,10 +96,12 @@ export function applyExtractedData(
       const uid = Date.now() + i + 1
       const ins: InsuredData = {
         uid,
+        insuredType:  'individual',
         first:        ci.first          ?? '',
         middle:       ci.middle         ?? '',
         last:         ci.last           ?? '',
         suffix:       normalizeSuffix(ci.suffix) ?? '',
+        nickname:     '',
         dob:          ci.dob            ?? '',
         ssn:          ci.ssn_last4      ?? '',
         marital:      ci.marital_status ?? '',
@@ -108,6 +110,7 @@ export function applyExtractedData(
         phone:        ci.phone          ?? '',
         email:        ci.email          ?? '',
         showContact:  !!(ci.phone || ci.email),
+        entityName: '', entityType: '', entityTypeOther: '', ein: '',
       }
       autoFields.forEach(f => { if (ins[f]) flashKeys.push(`ins_${uid}_${f}`) })
       return ins

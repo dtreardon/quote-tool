@@ -45,3 +45,9 @@ export function expandMedPay(value: string): string {
   if (v === '10') return '10,000'
   return formatDollar(v)
 }
+
+export function formatEIN(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 9)
+  if (digits.length <= 2) return digits
+  return `${digits.slice(0, 2)}-${digits.slice(2)}`
+}

@@ -3,7 +3,7 @@
 import { useQuoteForm } from './QuoteFormContext'
 import { SectionCard } from '../ui/SectionCard'
 import { Field, inputCls, selectCls } from '../ui/Field'
-import { formatPhone, formatSSN, formatDate } from '@/lib/formatters'
+import { formatPhone, formatSSN, formatDate, formatEIN } from '@/lib/formatters'
 import type { InsuredData } from '@/app/types/form'
 
 let nextUid = 2
@@ -11,17 +11,18 @@ let nextUid = 2
 function blankInsured(): InsuredData {
   return {
     uid: nextUid++,
-    first: '', middle: '', last: '', suffix: '',
+    insuredType: 'individual',
+    first: '', middle: '', last: '', suffix: '', nickname: '',
     dob: '', ssn: '', marital: '', occupation: '',
     relationship: '', phone: '', email: '',
     showContact: false,
+    entityName: '', entityType: '', entityTypeOther: '', ein: '',
   }
 }
 
 export function Section2() {
   const { form, update, autofilledFields, clearAutofilled } = useQuoteForm()
 
-  // Check autofill status for a specific insured field by uid + field name
   const a = (uid: number, field: string) => autofilledFields.has(`ins_${uid}_${field}`)
 
   function addInsured() {
@@ -36,7 +37,6 @@ export function Section2() {
     update({
       insureds: form.insureds.map(i => i.uid === uid ? { ...i, ...patch } : i),
     })
-    // Clear autofill indicator for any manually-edited fields
     const patchKeys = Object.keys(patch) as (keyof InsuredData)[]
     clearAutofilled(patchKeys.map(f => `ins_${uid}_${f}`))
   }
@@ -48,6 +48,7 @@ export function Section2() {
           const isPrimary = idx === 0
           const title = isPrimary ? 'Primary Insured' : `Co-Insured ${idx}`
           const u = (patch: Partial<InsuredData>) => updateInsured(ins.uid, patch)
+          const isEntity = ins.insuredType === 'entity'
           return (
             <div key={ins.uid} className="border border-[#d0cdc8] rounded p-4 bg-[#fdfcfa]" style={{ position: 'relative' }}>
               <div className="flex items-center justify-between mb-3">
@@ -62,62 +63,127 @@ export function Section2() {
                 )}
               </div>
 
-              {/* Row 1: Name */}
-              <div className="flex gap-3.5 flex-wrap mb-3">
-                <Field label="First Name" className="flex-[2] min-w-28" autofilled={a(ins.uid, 'first')}>
-                  <input value={ins.first} onChange={e => u({ first: e.target.value })} className={inputCls(a(ins.uid, 'first'))} />
-                </Field>
-                <Field label="Middle Name" className="flex-[2] min-w-24" autofilled={a(ins.uid, 'middle')}>
-                  <input value={ins.middle} onChange={e => u({ middle: e.target.value })} className={inputCls(a(ins.uid, 'middle'))} />
-                </Field>
-                <Field label="Last Name" className="flex-[3] min-w-32" autofilled={a(ins.uid, 'last')}>
-                  <input value={ins.last} onChange={e => u({ last: e.target.value })} className={inputCls(a(ins.uid, 'last'))} />
-                </Field>
-                <Field label="Suffix" className="w-20" autofilled={a(ins.uid, 'suffix')} badgeRight="right-7">
-                  <select value={ins.suffix} onChange={e => u({ suffix: e.target.value })} className={selectCls(a(ins.uid, 'suffix'))}>
-                    <option value=""></option>
-                    {['Jr','Sr','II','III','IV'].map(s => <option key={s}>{s}</option>)}
-                  </select>
-                </Field>
+              {/* Insured Type Toggle */}
+              <div className="mb-3">
+                <div className="text-[10px] font-bold text-[#999] uppercase tracking-[0.08em] mb-1.5">Insured Type</div>
+                <div className="inline-flex border border-[#d0cdc8] rounded overflow-hidden">
+                  {(['individual', 'entity'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => u({ insuredType: t })}
+                      className={`px-3 py-1 text-[12px] font-bold transition-colors ${
+                        ins.insuredType === t
+                          ? 'bg-navy text-white'
+                          : 'bg-white text-[#555] hover:bg-[#f0ede8]'
+                      }`}
+                    >
+                      {t === 'individual' ? 'Individual' : 'Entity (LLC/Trust/Other)'}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Row 2: DOB, SSN, Marital, Occupation, Relationship */}
-              <div className="flex gap-3.5 flex-wrap mb-3">
-                <Field label="Date of Birth" className="w-32" autofilled={a(ins.uid, 'dob')}>
-                  <input
-                    value={ins.dob}
-                    onChange={e => u({ dob: formatDate(e.target.value) })}
-                    placeholder="MM/DD/YYYY"
-                    maxLength={10}
-                    className={inputCls(a(ins.uid, 'dob'))}
-                  />
-                </Field>
-                <Field label="Social Security #" className="w-36" autofilled={a(ins.uid, 'ssn')}>
-                  <input
-                    value={ins.ssn}
-                    onChange={e => u({ ssn: formatSSN(e.target.value) })}
-                    placeholder="XXX-XX-XXXX"
-                    maxLength={11}
-                    className={inputCls(a(ins.uid, 'ssn'))}
-                  />
-                </Field>
-                <Field label="Marital Status" className="flex-1 min-w-32" autofilled={a(ins.uid, 'marital')} badgeRight="right-7">
-                  <select value={ins.marital} onChange={e => u({ marital: e.target.value })} className={selectCls(a(ins.uid, 'marital'))}>
-                    <option value="">Select…</option>
-                    {['Married','Single','Divorced','Widowed'].map(m => <option key={m}>{m}</option>)}
-                  </select>
-                </Field>
-                <Field label="Occupation" className="flex-[2] min-w-36" autofilled={a(ins.uid, 'occupation')}>
-                  <input value={ins.occupation} onChange={e => u({ occupation: e.target.value })} className={inputCls(a(ins.uid, 'occupation'))} />
-                </Field>
-                {!isPrimary && (
-                  <Field label="Relationship to Primary" className="flex-[2] min-w-36" autofilled={a(ins.uid, 'relationship')}>
-                    <input value={ins.relationship} onChange={e => u({ relationship: e.target.value })} className={inputCls(a(ins.uid, 'relationship'))} />
-                  </Field>
-                )}
-              </div>
+              {isEntity ? (
+                <>
+                  {/* Entity Name, Type, EIN */}
+                  <div className="flex gap-3.5 flex-wrap mb-3">
+                    <Field label="Entity Name" className="flex-[3] min-w-48">
+                      <input value={ins.entityName} onChange={e => u({ entityName: e.target.value })} className={inputCls()} />
+                    </Field>
+                    <Field label="Entity Type" className="flex-1 min-w-32" badgeRight="right-7">
+                      <select value={ins.entityType} onChange={e => u({ entityType: e.target.value })} className={selectCls()}>
+                        <option value="">Select…</option>
+                        {['LLC', 'Trust', 'Other'].map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </Field>
+                    {ins.entityType === 'Other' && (
+                      <Field label="Specify" className="flex-1 min-w-28">
+                        <input value={ins.entityTypeOther} onChange={e => u({ entityTypeOther: e.target.value })} className={inputCls()} />
+                      </Field>
+                    )}
+                    <Field label="EIN" className="w-32">
+                      <input
+                        value={ins.ein}
+                        onChange={e => u({ ein: formatEIN(e.target.value) })}
+                        placeholder="XX-XXXXXXX"
+                        maxLength={10}
+                        className={inputCls()}
+                      />
+                    </Field>
+                  </div>
+                  {/* Relationship for entity co-insured */}
+                  {!isPrimary && (
+                    <div className="flex gap-3.5 flex-wrap mb-3">
+                      <Field label="Relationship to Primary" className="flex-[2] min-w-36" autofilled={a(ins.uid, 'relationship')}>
+                        <input value={ins.relationship} onChange={e => u({ relationship: e.target.value })} className={inputCls(a(ins.uid, 'relationship'))} />
+                      </Field>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Row 1: Name */}
+                  <div className="flex gap-3.5 flex-wrap mb-3">
+                    <Field label="First Name" className="flex-[2] min-w-28" autofilled={a(ins.uid, 'first')}>
+                      <input value={ins.first} onChange={e => u({ first: e.target.value })} className={inputCls(a(ins.uid, 'first'))} />
+                    </Field>
+                    <Field label="Middle Name" className="flex-[2] min-w-24" autofilled={a(ins.uid, 'middle')}>
+                      <input value={ins.middle} onChange={e => u({ middle: e.target.value })} className={inputCls(a(ins.uid, 'middle'))} />
+                    </Field>
+                    <Field label="Last Name" className="flex-[3] min-w-32" autofilled={a(ins.uid, 'last')}>
+                      <input value={ins.last} onChange={e => u({ last: e.target.value })} className={inputCls(a(ins.uid, 'last'))} />
+                    </Field>
+                    <Field label="Nickname / Goes By" className="flex-[2] min-w-28">
+                      <input value={ins.nickname} onChange={e => u({ nickname: e.target.value })} className={inputCls()} />
+                    </Field>
+                    <Field label="Suffix" className="w-20" autofilled={a(ins.uid, 'suffix')} badgeRight="right-7">
+                      <select value={ins.suffix} onChange={e => u({ suffix: e.target.value })} className={selectCls(a(ins.uid, 'suffix'))}>
+                        <option value=""></option>
+                        {['Jr','Sr','II','III','IV'].map(s => <option key={s}>{s}</option>)}
+                      </select>
+                    </Field>
+                  </div>
 
-              {/* Row 3: Phone / Email */}
+                  {/* Row 2: DOB, SSN, Marital, Occupation, Relationship */}
+                  <div className="flex gap-3.5 flex-wrap mb-3">
+                    <Field label="Date of Birth" className="w-32" autofilled={a(ins.uid, 'dob')}>
+                      <input
+                        value={ins.dob}
+                        onChange={e => u({ dob: formatDate(e.target.value) })}
+                        placeholder="MM/DD/YYYY"
+                        maxLength={10}
+                        className={inputCls(a(ins.uid, 'dob'))}
+                      />
+                    </Field>
+                    <Field label="Social Security #" className="w-36" autofilled={a(ins.uid, 'ssn')}>
+                      <input
+                        value={ins.ssn}
+                        onChange={e => u({ ssn: formatSSN(e.target.value) })}
+                        placeholder="XXX-XX-XXXX"
+                        maxLength={11}
+                        className={inputCls(a(ins.uid, 'ssn'))}
+                      />
+                    </Field>
+                    <Field label="Marital Status" className="flex-1 min-w-32" autofilled={a(ins.uid, 'marital')} badgeRight="right-7">
+                      <select value={ins.marital} onChange={e => u({ marital: e.target.value })} className={selectCls(a(ins.uid, 'marital'))}>
+                        <option value="">Select…</option>
+                        {['Married','Single','Divorced','Widowed'].map(m => <option key={m}>{m}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Occupation" className="flex-[2] min-w-36" autofilled={a(ins.uid, 'occupation')}>
+                      <input value={ins.occupation} onChange={e => u({ occupation: e.target.value })} className={inputCls(a(ins.uid, 'occupation'))} />
+                    </Field>
+                    {!isPrimary && (
+                      <Field label="Relationship to Primary" className="flex-[2] min-w-36" autofilled={a(ins.uid, 'relationship')}>
+                        <input value={ins.relationship} onChange={e => u({ relationship: e.target.value })} className={inputCls(a(ins.uid, 'relationship'))} />
+                      </Field>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Phone / Email */}
               {isPrimary ? (
                 <div className="flex gap-3.5 flex-wrap">
                   <Field label="Phone" className="w-44" autofilled={a(ins.uid, 'phone')}>

@@ -19,9 +19,14 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
   const today = new Date()
   const dateStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`
 
-  const firstN = form.insureds[0]?.first || ''
-  const lastN  = form.insureds[0]?.last || ''
-  const suggested = `${lastN.toUpperCase()}, ${firstN.toUpperCase()} ${form.policy_type || 'HO'} QUOTE SHEET ${form.prop_street || ''}`
+  const primaryIns = form.insureds[0]
+  const isEntityPrimary = primaryIns?.insuredType === 'entity'
+  const firstN = primaryIns?.first || ''
+  const lastN  = primaryIns?.last || ''
+  const entityN = primaryIns?.entityName || ''
+  const suggested = isEntityPrimary
+    ? `${entityN.toUpperCase()} ${form.policy_type || 'HO'} QUOTE SHEET ${form.prop_street || ''}`
+    : `${lastN.toUpperCase()}, ${firstN.toUpperCase()} ${form.policy_type || 'HO'} QUOTE SHEET ${form.prop_street || ''}`
 
   const isNew    = form.new_purchase === 'yes'
   const hasFlood = form.flood_quote === 'yes'
@@ -35,10 +40,29 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
   // Insured rows
   const insuredRows = form.insureds.map((ins, idx) => {
     const isFirst = idx === 0
-    const fullName = [ins.first, ins.middle, ins.last, ins.suffix].filter(Boolean).join(' ')
     const phone = ins.phone
     const email = ins.email
     const showPhone = isFirst || phone || email
+
+    if (ins.insuredType === 'entity') {
+      const entityTypeDisplay = ins.entityType === 'Other' && ins.entityTypeOther
+        ? `Other – ${ins.entityTypeOther}`
+        : ins.entityType
+      return `
+        <div class="info-row">
+          <div class="info-card" style="flex:2.5"><div class="card-label">${isFirst ? 'Insured' : 'Co-Insured'}</div><div class="card-value large">${ins.entityName}</div></div>
+          <div class="info-card" style="flex:1.5"><div class="card-label">Entity Type</div><div class="card-value">${entityTypeDisplay}</div></div>
+          <div class="info-card" style="flex:1.5"><div class="card-label">EIN</div><div class="card-value">${ins.ein}</div></div>
+          ${!isFirst ? `<div class="info-card"><div class="card-label">Relationship</div><div class="card-value">${ins.relationship}</div></div>` : ''}
+        </div>
+        ${showPhone ? `<div class="info-row" style="margin-top:2px">
+          <div class="info-card" style="flex:1.5"><div class="card-label">Phone</div><div class="card-value">${phone}</div></div>
+          <div class="info-card" style="flex:2.5"><div class="card-label">Email</div><div class="card-value">${email}</div></div>
+        </div>` : ''}`
+    }
+
+    const nameParts = [ins.first, ins.nickname ? `(${ins.nickname})` : '', ins.middle, ins.last, ins.suffix]
+    const fullName = nameParts.filter(Boolean).join(' ')
     return `
       <div class="info-row">
         <div class="info-card" style="flex:2.5"><div class="card-label">${isFirst ? 'Insured' : 'Co-Insured'}</div><div class="card-value large">${fullName}</div></div>
