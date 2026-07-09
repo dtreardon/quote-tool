@@ -70,7 +70,7 @@ export default function QuoteForm({
       const next = { ...prev }
       for (const [k, v] of Object.entries(partial)) {
         const key = k as keyof FormState
-        if (!prev[key]) (next as Record<string, unknown>)[key] = v
+        if (prev[key] === null || prev[key] === undefined || prev[key] === '') (next as Record<string, unknown>)[key] = v
       }
       return next
     })
