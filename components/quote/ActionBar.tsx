@@ -50,14 +50,6 @@ export function ActionBar({ onClear }: ActionBarProps) {
     const html = buildPrintHTML(form, logoUrl)
     const filename = buildFilename(form)
 
-    // If File System Access API is not supported, fall back to window.print()
-    if (!isSupported) {
-      printFallback(html)
-      setSaving(false)
-      return
-    }
-
-    // Request server-side PDF, then write to the saved folder
     try {
       const res = await fetch('/api/pdf', {
         method: 'POST',
@@ -68,14 +60,17 @@ export function ActionBar({ onClear }: ActionBarProps) {
       if (!res.ok) throw new Error(await res.text())
 
       const buffer = await res.arrayBuffer()
-      const result = await saveFile(filename, buffer)
 
-      if (result === 'failed') {
-        // User cancelled the folder picker — download as fallback
+      if (isSupported) {
+        // FS API available — save to folder; fall back to download if user cancels picker
+        const result = await saveFile(filename, buffer)
+        if (result === 'failed') downloadPDF(buffer, filename)
+      } else {
+        // FS API not available — direct browser download
         downloadPDF(buffer, filename)
       }
     } catch (err) {
-      // Server PDF unavailable — fall back to print dialog
+      // Server PDF unavailable — last-resort print dialog
       console.warn('[ActionBar] PDF server failed, falling back to print:', err)
       printFallback(html)
     } finally {

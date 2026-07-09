@@ -48,12 +48,6 @@ export function AutoActionBar({ onClear }: AutoActionBarProps) {
     const html = buildAutoPrintHTML(form, logoUrl)
     const filename = buildFilename(form)
 
-    if (!isSupported) {
-      printFallback(html)
-      setSaving(false)
-      return
-    }
-
     try {
       const res = await fetch('/api/pdf', {
         method: 'POST',
@@ -64,9 +58,11 @@ export function AutoActionBar({ onClear }: AutoActionBarProps) {
       if (!res.ok) throw new Error(await res.text())
 
       const buffer = await res.arrayBuffer()
-      const result = await saveFile(filename, buffer)
 
-      if (result === 'failed') {
+      if (isSupported) {
+        const result = await saveFile(filename, buffer)
+        if (result === 'failed') downloadPDF(buffer, filename)
+      } else {
         downloadPDF(buffer, filename)
       }
     } catch (err) {
