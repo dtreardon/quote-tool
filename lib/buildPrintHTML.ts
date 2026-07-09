@@ -15,6 +15,15 @@ function dedFmt(v: string, mode: '$' | '%'): string {
   return mode === '$' ? `$${v}` : `${v}%`
 }
 
+// Chrome/Edge/Firefox built-in PDF viewers auto-detect email-shaped text and render it
+// as a clickable mailto: link, even though the PDF itself has no link annotation.
+// A zero-width non-joiner after the "@" breaks that pattern match while remaining
+// invisible on render and inert when the text is selected/copied.
+function deLinkifyEmail(v: string): string {
+  if (!v) return ''
+  return v.replace('@', '@‌')
+}
+
 export function buildPrintHTML(form: FormState, logoUrl: string): string {
   const today = new Date()
   const dateStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`
@@ -41,7 +50,7 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
   const insuredRows = form.insureds.map((ins, idx) => {
     const isFirst = idx === 0
     const phone = ins.phone
-    const email = ins.email
+    const email = deLinkifyEmail(ins.email)
     const showPhone = isFirst || phone || email
 
     if (ins.insuredType === 'entity') {
