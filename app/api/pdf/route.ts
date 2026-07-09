@@ -13,7 +13,7 @@ async function launchBrowser() {
     return puppeteer.launch({
       executablePath,
       args: chromium.args,
-      headless: true,
+      headless: 'shell',
     })
   }
 
