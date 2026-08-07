@@ -43,7 +43,10 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillP
       const res = await fetch('/api/autofill', { method: 'POST', body })
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        throw new Error((errData as { error?: string }).error || `HTTP ${res.status}`)
+        const { error, errorDetail } = errData as { error?: string; errorDetail?: string }
+        const thrown = new Error(error || `HTTP ${res.status}`) as Error & { detail?: string }
+        thrown.detail = errorDetail
+        throw thrown
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -100,8 +103,9 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillP
           })
         }).catch(() => {})
       }
-    } catch {
-      setStatus('Auto-fill failed. Please fill in manually.')
+    } catch (err) {
+      const detail = (err as { detail?: string } | undefined)?.detail
+      setStatus(`Auto-fill failed. Please fill in manually.${detail ? ` (${detail})` : ''}`)
       setStatusType('err')
     } finally {
       setLoading(false)
