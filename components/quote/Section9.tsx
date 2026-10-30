@@ -151,9 +151,9 @@ export function Section9() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-bold text-navy leading-tight">{c.label}</div>
-                  <div className="text-[11px] text-gray-500 leading-snug mt-0.5">{c.reason}</div>
+                  <div className="text-[11px] text-gray-500 leading-snug mt-0.5 break-words">{c.reason}</div>
                   {c.alerts.map((a, i) => (
-                    <div key={i} className="text-[11px] text-amber-600 font-semibold mt-0.5">⚠ {a}</div>
+                    <div key={i} className="text-[11px] text-amber-600 font-semibold mt-0.5 break-words">⚠ {a}</div>
                   ))}
                 </div>
               </div>
@@ -188,15 +188,17 @@ export function Section9() {
                 </span>
               </button>
               {showIneligible && visibleIneligible.map(c => (
-                <div key={c.key} className="flex items-center gap-3 px-4 py-1.5 border-b border-[#ede9e3] last:border-0">
+                <div key={c.key} className="flex items-start gap-3 px-4 py-1.5 border-b border-[#ede9e3] last:border-0">
                   <span
                     className="flex-shrink-0 text-[11px] font-bold rounded px-1.5 py-0.5 bg-gray-100 text-gray-400 border border-gray-200"
                     style={{ minWidth: 36, textAlign: 'center' }}
                   >
                     —
                   </span>
-                  <span className="text-[12px] font-semibold text-gray-400 w-40 flex-shrink-0">{c.label}</span>
-                  <span className="text-[11px] text-gray-400 leading-snug">{c.reason}</span>
+                  <div className="flex-1 min-w-0 flex flex-wrap gap-x-3">
+                    <span className="text-[12px] font-semibold text-gray-400 w-40 flex-shrink-0">{c.label}</span>
+                    <span className="text-[11px] text-gray-400 leading-snug min-w-0 break-words">{c.reason}</span>
+                  </div>
                 </div>
               ))}
             </>

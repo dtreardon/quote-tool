@@ -18,7 +18,7 @@ export function ConditionalHeader() {
 
   return (
     <header className="bg-navy sticky top-0 z-50 shadow-lg print:hidden">
-      <div className="max-w-[980px] mx-auto px-6 py-3 flex items-center justify-between">
+      <div className={`max-w-[980px] ${pathname === '/' ? 'xl:max-w-[1440px]' : ''} mx-auto px-6 py-3 flex items-center justify-between`}>
         <div className="flex items-center gap-4">
           <Image src="/logo-blue.png" alt="Robinson & Associates" height={56} width={140} className="object-contain" priority />
         </div>

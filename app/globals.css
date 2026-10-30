@@ -14,6 +14,13 @@
   --shadow-navy: 0 2px 12px rgba(51, 78, 133, 0.10);
 }
 
+/* HO sticky right panel: sits below the sticky site header, above the sticky action bar
+   (heights include a small gap). */
+:root {
+  --qsp-header-h: 100px;
+  --qsp-actionbar-h: 92px;
+}
+
 * {
   box-sizing: border-box;
 }
