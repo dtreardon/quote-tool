@@ -6,6 +6,7 @@ import type { AutoFormState } from '@/app/types/autoForm'
 import { INITIAL_FORM } from '@/app/types/form'
 import type { FormState } from '@/app/types/form'
 import { applyExtractedData } from '@/lib/applyAutofill'
+import { loadSavedAgent } from '@/lib/agentMemory'
 import { loadGoogleMaps, type GoogleWindow } from '@/lib/googleMaps'
 import { calcMilesToCoast, runPropertyLookups } from '@/lib/addressEnrichment'
 import { Banner } from './Banner'
@@ -74,6 +75,14 @@ export default function QuoteForm({
       }
       return next
     })
+  }, [])
+
+  // New blank sheet — default the Agent to the last one picked on this browser.
+  // Runs after mount (localStorage isn't available during SSR).
+  useEffect(() => {
+    const saved = loadSavedAgent()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage after hydration
+    if (saved) setForm(prev => prev.agent ? prev : { ...prev, agent: saved })
   }, [])
 
   // Auto-apply extracted data from an Outlook add-in session
@@ -145,7 +154,7 @@ export default function QuoteForm({
 
   function clearForm() {
     if (!window.confirm('Clear all fields and start over?')) return
-    setForm({ ...INITIAL_FORM, insureds: [{ ...INITIAL_FORM.insureds[0] }] })
+    setForm({ ...INITIAL_FORM, insureds: [{ ...INITIAL_FORM.insureds[0] }], agent: loadSavedAgent() })
     setAutofilledFields(new Set())
   }
 

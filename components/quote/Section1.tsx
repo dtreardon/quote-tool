@@ -7,8 +7,7 @@ import { StateSelect } from '../ui/StateSelect'
 import { YesNo } from '../ui/RadioGroup'
 import { DollarInput } from '../ui/DollarInput'
 import { formatDate } from '@/lib/formatters'
-
-const AGENTS = ['Becca','GA/Danny','Jennie','Mallory','Rob','Sam']
+import { AGENTS, saveAgent } from '@/lib/agentMemory'
 
 export function Section1() {
   const { form, update, autofilledFields } = useQuoteForm()
@@ -18,7 +17,7 @@ export function Section1() {
     <SectionCard number={1} title="File & Referral Info">
       <div className="flex gap-3.5 flex-wrap mb-3">
         <Field label="Agent" className="w-40">
-          <select value={form.agent} onChange={e => update({ agent: e.target.value })} className={selectCls()}>
+          <select value={form.agent} onChange={e => { update({ agent: e.target.value }); saveAgent(e.target.value) }} className={selectCls()}>
             <option value="">Select…</option>
             {AGENTS.map(a => <option key={a}>{a}</option>)}
           </select>

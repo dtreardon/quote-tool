@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { AutoFormContext } from './AutoFormContext'
 import { INITIAL_AUTO_FORM, INITIAL_DRIVER, INITIAL_VEHICLE } from '@/app/types/autoForm'
 import type { AutoFormState } from '@/app/types/autoForm'
+import { loadSavedAgent } from '@/lib/agentMemory'
 import { AutoAutofillPanel } from './AutoAutofillPanel'
 import { AutoNotes } from './AutoNotes'
 import { Section1 } from './Section1'
@@ -51,20 +52,25 @@ export default function AutoForm({ autofillEnabled = false }: { autofillEnabled?
     })
   }, [])
 
-  // Apply data copied from the HO form via sessionStorage
+  // New blank sheet — default the Agent to the last one picked on this browser,
+  // then apply data copied from the HO form via sessionStorage (its agent wins if set)
   useEffect(() => {
+    const saved = loadSavedAgent()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage after hydration
+    if (saved) setForm(prev => prev.agent ? prev : { ...prev, agent: saved })
     try {
       const raw = sessionStorage.getItem('copiedData')
       if (!raw) return
       sessionStorage.removeItem('copiedData')
       const data = JSON.parse(raw) as Partial<AutoFormState>
+      if (!data.agent) delete data.agent
       setForm(prev => ({ ...prev, ...data }))
     } catch { /* ignore */ }
   }, [])
 
   function clearForm() {
     if (!window.confirm('Clear all fields and start over?')) return
-    setForm(makeInitialForm())
+    setForm({ ...makeInitialForm(), agent: loadSavedAgent() })
     setAutofilledFields(new Set())
   }
 
