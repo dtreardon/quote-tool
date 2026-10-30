@@ -1,4 +1,5 @@
 import type { AutoFormState } from '@/app/types/autoForm'
+import { printMoney } from './formatters'
 
 function yn(v: string): string {
   if (!v) return ''
@@ -47,8 +48,8 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
   // Vehicle rows
   const vehicleRows = form.vehicles.map((veh, idx) => {
     const covs: string[] = []
-    if (veh.comp === 'yes') covs.push(`Comp $${veh.comp_ded || '—'}`)
-    if (veh.collision === 'yes') covs.push(`Collision $${veh.collision_ded || '—'}`)
+    if (veh.comp === 'yes') covs.push(`Comp ${printMoney(veh.comp_ded, 'whole') || '—'}`)
+    if (veh.collision === 'yes') covs.push(`Collision ${printMoney(veh.collision_ded, 'whole') || '—'}`)
     const covStr = covs.join(' / ') || 'Liability Only'
     const typeStr = [veh.type, veh.commercial_use ? '(Commercial)' : ''].filter(Boolean).join(' ')
     const hasLien = !!veh.lienholder_name
@@ -79,7 +80,7 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
     <div class="quote-item">
       <div class="quote-num">${idx + 1}</div>
       <div class="quote-carrier">${q.carrier}</div>
-      <div class="quote-premium">${q.premium ? '$' + q.premium : ''}</div>
+      <div class="quote-premium">${printMoney(q.premium, 'cents')}</div>
     </div>`).join('')
 
   const isNew       = form.new_purchase === 'yes'
@@ -173,10 +174,10 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
   <div class="info-row">
     ${isNew ? `
       <div class="info-card"><div class="card-label">Purchase Date</div><div class="card-value">${form.closing_date}</div></div>
-      <div class="info-card"><div class="card-label">Purchase Price</div><div class="card-value">${form.sales_price ? '$' + form.sales_price : ''}</div></div>
+      <div class="info-card"><div class="card-label">Purchase Price</div><div class="card-value">${printMoney(form.sales_price, 'cents')}</div></div>
     ` : `
       <div class="info-card" style="flex:2"><div class="card-label">Current Carrier</div><div class="card-value">${form.current_carrier}</div></div>
-      <div class="info-card"><div class="card-label">Current Premium</div><div class="card-value">${form.premium ? '$' + form.premium : ''}</div></div>
+      <div class="info-card"><div class="card-label">Current Premium</div><div class="card-value">${printMoney(form.premium, 'cents')}</div></div>
     `}
   </div>
 </div>
@@ -209,7 +210,7 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
       <div class="section-head">Coverage</div>
       <div class="cov-box">
         ${form.cov_bi ? `<div class="cov-item"><div class="cov-label">BI / PD</div><div class="cov-value">${form.cov_bi}</div></div>` : ''}
-        ${form.cov_pd ? `<div class="cov-item"><div class="cov-label">Prop. Damage</div><div class="cov-value">$${form.cov_pd}</div></div>` : ''}
+        ${form.cov_pd ? `<div class="cov-item"><div class="cov-label">Prop. Damage</div><div class="cov-value">${printMoney(form.cov_pd, 'whole')}</div></div>` : ''}
         ${(form.cov_um_bi || form.cov_um_pd) ? `<div class="cov-item"><div class="cov-label">UM</div><div class="cov-value">${[form.cov_um_bi, form.cov_um_pd].filter(Boolean).join(' / ')}</div></div>` : ''}
         ${(form.cov_uim_bi || form.cov_uim_pd) ? `<div class="cov-item"><div class="cov-label">UIM</div><div class="cov-value">${[form.cov_uim_bi, form.cov_uim_pd].filter(Boolean).join(' / ')}</div></div>` : ''}
         ${form.pip_med_pay ? `<div class="cov-item"><div class="cov-label">PIP / Med Pay</div><div class="cov-value">${form.pip_med_pay}</div></div>` : ''}

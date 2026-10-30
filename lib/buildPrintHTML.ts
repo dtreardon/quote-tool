@@ -1,18 +1,19 @@
 import type { FormState } from '@/app/types/form'
+import { printMoney } from './formatters'
 
 function yn(v: string): string {
   if (!v) return ''
   return v.toLowerCase() === 'yes' ? 'Yes' : v.toLowerCase() === 'no' ? 'No' : v
 }
 
+// Coverage limits print as whole dollars: $86,000
 function covFmt(v: string): string {
-  if (!v) return ''
-  return '$' + String(v).replace(/^\$+/, '')
+  return printMoney(v, 'whole')
 }
 
 function dedFmt(v: string, mode: '$' | '%'): string {
   if (!v) return ''
-  return mode === '$' ? `$${v}` : `${v}%`
+  return mode === '$' ? printMoney(v, 'whole') : `${v.replace(/%/g, '').trim()}%`
 }
 
 // Chrome/Edge/Firefox built-in PDF viewers auto-detect email-shaped text and render it
@@ -92,7 +93,7 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
     <div class="info-row">
       <div class="info-card w50"><div class="card-label">Date</div><div class="card-value">${c.date}</div></div>
       <div class="info-card" style="flex:2"><div class="card-label">Type</div><div class="card-value">${c.type}</div></div>
-      <div class="info-card"><div class="card-label">Amount</div><div class="card-value">${c.amount ? '$' + c.amount : ''}</div></div>
+      <div class="info-card"><div class="card-label">Amount</div><div class="card-value">${printMoney(c.amount, 'cents')}</div></div>
       <div class="info-card" style="flex:2"><div class="card-label">Carrier</div><div class="card-value">${c.carrier}</div></div>
       <div class="info-card"><div class="card-label">Status</div><div class="card-value">${c.status}</div></div>
     </div>`).join('') : ''
@@ -102,7 +103,7 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
     <div class="quote-item">
       <div class="quote-num">${idx + 1}</div>
       <div class="quote-carrier">${q.carrier}</div>
-      <div class="quote-premium">${q.premium ? '$' + q.premium : ''}</div>
+      <div class="quote-premium">${printMoney(q.premium, 'cents')}</div>
     </div>`).join('')
 
   const mhSection = isMH ? `
@@ -123,7 +124,7 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
     <div class="quote-item">
       <div class="quote-num">${idx + 1}</div>
       <div class="quote-carrier">${q.carrier}</div>
-      <div class="quote-premium">${q.premium ? '$' + q.premium : ''}</div>
+      <div class="quote-premium">${printMoney(q.premium, 'cents')}</div>
     </div>`).join('')
 
   const floodSection = hasFlood ? `
@@ -247,11 +248,11 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
   <div class="info-row">
     ${isNew ? `
       <div class="info-card" style="flex:1.5"><div class="card-label">Closing Date</div><div class="card-value">${form.closing_date}</div></div>
-      <div class="info-card" style="flex:1.5"><div class="card-label">Sales Price</div><div class="card-value">${form.sales_price ? '$' + form.sales_price : ''}</div></div>
+      <div class="info-card" style="flex:1.5"><div class="card-label">Sales Price</div><div class="card-value">${printMoney(form.sales_price, 'cents')}</div></div>
       <div class="info-card" style="flex:3"><div class="card-label">Contact (Atty/Lender)</div><div class="card-value">${form.closing_contact}</div></div>
     ` : `
       <div class="info-card" style="flex:2"><div class="card-label">Current Carrier</div><div class="card-value">${form.current_carrier}</div></div>
-      <div class="info-card"><div class="card-label">Current Premium</div><div class="card-value">${form.premium ? '$' + form.premium : ''}</div></div>
+      <div class="info-card"><div class="card-label">Current Premium</div><div class="card-value">${printMoney(form.premium, 'cents')}</div></div>
       <div class="info-card"><div class="card-label">Purchase Year</div><div class="card-value">${form.purchase_year}</div></div>
     `}
   </div>

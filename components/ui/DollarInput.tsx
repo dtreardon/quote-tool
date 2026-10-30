@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { formatDollar } from '@/lib/formatters'
+import { useState } from 'react'
+import { formatMoney, type MoneyFormat } from '@/lib/formatters'
 
 interface DollarInputProps {
   value: string
@@ -8,28 +8,24 @@ interface DollarInputProps {
   onBlur?: () => void
   placeholder?: string
   className?: string
+  // 'cents' → 1,500.00 (premiums, sales price) · 'whole' → 86,000 (coverage limits, deductibles)
+  format?: MoneyFormat
 }
 
-export function DollarInput({ value, onChange, onBlur, placeholder, className = '' }: DollarInputProps) {
-  const [inputValue, setInputValue] = useState(value)
-  const [focused, setFocused] = useState(false)
-
-  // Sync external value changes (e.g. autofill) when the field is not focused
-  useEffect(() => {
-    if (!focused) setInputValue(value)
-  }, [value, focused])
+export function DollarInput({ value, onChange, onBlur, placeholder, className = '', format = 'cents' }: DollarInputProps) {
+  // While focused the agent edits their raw text; otherwise the field always shows the
+  // formatted value — including values set by auto-fill, ZLLW, or Recall.
+  const [draft, setDraft] = useState<string | null>(null)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value
-    setInputValue(raw)
-    onChange(raw)
+    setDraft(e.target.value)
+    onChange(e.target.value)
   }
 
   function handleBlur() {
-    setFocused(false)
-    const formatted = formatDollar(inputValue)
-    setInputValue(formatted)
-    onChange(formatted)
+    const formatted = formatMoney(draft ?? value, format)
+    setDraft(null)
+    if (formatted !== value) onChange(formatted)
     onBlur?.()
   }
 
@@ -40,10 +36,11 @@ export function DollarInput({ value, onChange, onBlur, placeholder, className = 
       </span>
       <input
         type="text"
-        value={inputValue}
+        inputMode="decimal"
+        value={draft ?? formatMoney(value, format)}
         placeholder={placeholder}
         onChange={handleChange}
-        onFocus={() => setFocused(true)}
+        onFocus={() => setDraft(formatMoney(value, format))}
         onBlur={handleBlur}
         className={`flex-1 min-w-0 rounded-r border border-[#d0cdc8] px-2.5 py-[7px] text-sm focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold transition-colors bg-white ${className}`}
       />

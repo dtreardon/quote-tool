@@ -93,10 +93,10 @@ export function Section10() {
       {/* Row 3: Dwelling Coverage, Contents Coverage */}
       <div className="flex gap-3.5 flex-wrap mb-4">
         <Field label="Dwelling Coverage" className="flex-1 min-w-36">
-          <DollarInput value={form.flood_cov_dwelling} onChange={v => update({ flood_cov_dwelling: v })} />
+          <DollarInput format="whole" value={form.flood_cov_dwelling} onChange={v => update({ flood_cov_dwelling: v })} />
         </Field>
         <Field label="Contents Coverage" className="flex-1 min-w-36">
-          <DollarInput value={form.flood_cov_contents} onChange={v => update({ flood_cov_contents: v })} />
+          <DollarInput format="whole" value={form.flood_cov_contents} onChange={v => update({ flood_cov_contents: v })} />
         </Field>
       </div>
 

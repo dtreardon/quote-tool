@@ -1,4 +1,5 @@
 import type { FormState, InsuredData } from '@/app/types/form'
+import { formatCurrency } from './formatters'
 
 export type ApplyResult = {
   updates: Partial<FormState>
@@ -58,7 +59,7 @@ export function applyExtractedData(
   }
 
   set('closing_date', x.closing_date)
-  set('sales_price',  x.sales_price != null ? String(x.sales_price) : null)
+  set('sales_price',  x.sales_price != null ? formatCurrency(x.sales_price) : null)
 
   if (x.closing_date != null && !currentNewPurchase) {
     updates.new_purchase = 'yes'

@@ -5,7 +5,7 @@ import { useQuoteForm } from './QuoteFormContext'
 import { SectionCard } from '../ui/SectionCard'
 import { Field } from '../ui/Field'
 import { DollarInput } from '../ui/DollarInput'
-import { expandLiability, expandMedPay } from '@/lib/formatters'
+import { expandLiability, expandMedPay, formatWholeDollars, parseMoney } from '@/lib/formatters'
 
 const LIABILITY_OPTIONS = ['100,000', '300,000', '500,000', '1,000,000']
 const MED_PAY_OPTIONS  = ['1,000', '3,000', '5,000', '10,000']
@@ -66,7 +66,7 @@ function CovInput({
 
 function calcPctDollar(pctStr: string, baseStr: string): string {
   const pct = parseFloat(pctStr)
-  const base = parseFloat(baseStr.replace(/,/g, ''))
+  const base = parseMoney(baseStr) ?? NaN
   if (!pct || !base || isNaN(pct) || isNaN(base)) return ''
   const equiv = Math.round(base * pct / 100)
   return `≈ $${equiv.toLocaleString('en-US', { maximumFractionDigits: 0 })} based on dwelling`
@@ -142,15 +142,16 @@ function DedField({
           onChange={e => onChange(e.target.value)}
           onBlur={() => {
             if (mode === '$') {
-              const stripped = value.replace(/[,$\s]/g, '')
-              const n = parseInt(stripped, 10)
-              if (!isNaN(n) && n > 0) onChange(n.toLocaleString('en-US'))
+              const formatted = formatWholeDollars(value)
+              if (formatted !== value) onChange(formatted)
             }
           }}
           className="flex-1 min-w-0 rounded border border-[#d0cdc8] px-2.5 py-[7px] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gold/20 focus:border-gold transition-colors"
         />
         <DedToggle mode={mode} onModeChange={m => {
-          if (m === '%' && mode === '$') onChange(value.replace(/,/g, ''))
+          if (m === '%' && mode === '$') onChange(value.replace(/[,$\s]/g, ''))
+          // e.g. 5000 typed in % mode then switched to $ → 5,000
+          if (m === '$' && mode === '%' && value) onChange(formatWholeDollars(value))
           onModeChange(m)
         }} />
       </div>
@@ -168,16 +169,16 @@ export function Section6() {
     <SectionCard number={6} title="Desired Coverage Amounts">
       <div className="flex gap-3.5 flex-wrap mb-3">
         <Field label="Dwelling (Cov A)" className="flex-1 min-w-36">
-          <DollarInput value={form.cov_dwelling} onChange={v => update({ cov_dwelling: v })} />
+          <DollarInput format="whole" value={form.cov_dwelling} onChange={v => update({ cov_dwelling: v })} />
         </Field>
         <Field label="Other Structures (Cov B)" className="flex-1 min-w-36">
-          <DollarInput value={form.cov_other_structures} onChange={v => update({ cov_other_structures: v })} />
+          <DollarInput format="whole" value={form.cov_other_structures} onChange={v => update({ cov_other_structures: v })} />
         </Field>
         <Field label="Contents (Cov C)" className="flex-1 min-w-36">
-          <DollarInput value={form.cov_contents} onChange={v => update({ cov_contents: v })} />
+          <DollarInput format="whole" value={form.cov_contents} onChange={v => update({ cov_contents: v })} />
         </Field>
         <Field label="Loss of Use (Cov D)" className="flex-1 min-w-36">
-          <DollarInput value={form.cov_loss_of_use} onChange={v => update({ cov_loss_of_use: v })} />
+          <DollarInput format="whole" value={form.cov_loss_of_use} onChange={v => update({ cov_loss_of_use: v })} />
         </Field>
       </div>
       <div className="flex gap-3.5 flex-wrap">

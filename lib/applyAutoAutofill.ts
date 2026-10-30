@@ -1,4 +1,5 @@
 import type { AutoFormState, DriverData, VehicleData } from '@/app/types/autoForm'
+import { formatWholeDollars } from './formatters'
 
 export type AutoApplyResult = {
   updates: Partial<AutoFormState>
@@ -103,8 +104,9 @@ export function applyAutoExtractedData(
         flashKeys.push(`veh_${fv.uid}_${field}`)
       }
 
-      setVehIf('comp_ded',      ev.comp_ded)
-      setVehIf('collision_ded', ev.collision_ded)
+      // Extracted as "$500" — match the dropdown options ("500", "1,000")
+      setVehIf('comp_ded',      ev.comp_ded != null ? formatWholeDollars(ev.comp_ded) : null)
+      setVehIf('collision_ded', ev.collision_ded != null ? formatWholeDollars(ev.collision_ded) : null)
       setVehIf('notes',         ev.notes)
 
       if (Object.keys(patch).length > 0) {

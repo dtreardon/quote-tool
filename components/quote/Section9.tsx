@@ -7,6 +7,7 @@ import { Field, inputCls } from '../ui/Field'
 import { DollarInput } from '../ui/DollarInput'
 import type { QuoteData } from '@/app/types/form'
 import { runEligibility, type EligibleCarrier, type IneligibleCarrier } from '@/lib/carrierEngine'
+import { parseMoney } from '@/lib/formatters'
 
 let nextQuoteUid = 2
 
@@ -49,7 +50,7 @@ export function Section9() {
       policyType:      form.policy_type,
       mobileHome:      form.policy_type === 'MH',
       barrierIsland:   form.barrier_island,
-      dwellingCov:     form.cov_dwelling ? parseFloat(form.cov_dwelling.replace(/,/g, '')) : null,
+      dwellingCov:     parseMoney(form.cov_dwelling),
     })
     setEligible(result.eligible)
     setIneligible(result.ineligible)
