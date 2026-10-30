@@ -8,7 +8,6 @@ import { autoFileNameAuto, saveFileName } from '@/lib/fileName'
 import { FileNameInput } from '../ui/FileNameInput'
 import { APP_VERSION } from '@/lib/version'
 import { embedSheetData } from '@/lib/sheetData'
-import type { AutoFormState } from '@/app/types/autoForm'
 
 interface AutoActionBarProps {
   onClear: () => void
