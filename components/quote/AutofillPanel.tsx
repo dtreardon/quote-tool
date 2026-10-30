@@ -5,7 +5,7 @@ import { SectionCard } from '../ui/SectionCard'
 import { useQuoteForm } from './QuoteFormContext'
 import type { FormState } from '@/app/types/form'
 import { loadGoogleMaps, type GoogleWindow } from '@/lib/googleMaps'
-import { calcMilesToCoast, runPropertyLookups } from '@/lib/addressEnrichment'
+import { calcMilesToCoast, runPropertyLookups, cancelPendingFloodLookup, FLOOD_RESET } from '@/lib/addressEnrichment'
 import { applyExtractedData } from '@/lib/applyAutofill'
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
@@ -60,7 +60,14 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillP
         return
       }
 
-      update(updates)
+      // A newly extracted subject address invalidates the previous flood zone;
+      // FEMA re-fires below once the address is geocoded.
+      if (updates.prop_street) {
+        cancelPendingFloodLookup()
+        update({ ...FLOOD_RESET, ...updates })
+      } else {
+        update(updates)
+      }
       if (flashKeys.length > 0) onAutofill(flashKeys)
 
       setStatus(`Auto-filled ${flashKeys.length} field${flashKeys.length !== 1 ? 's' : ''}.`)

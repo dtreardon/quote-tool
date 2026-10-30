@@ -2,6 +2,28 @@ import { point, pointToLineDistance } from '@turf/turf'
 import coastline from '@/data/coastline.json'
 import type { FormState } from '@/app/types/form'
 
+// FEMA NFHL fields — cleared together whenever the subject address changes
+export const FLOOD_RESET: Partial<FormState> = {
+  flood_zone: '', bfe: '', firm_panel: '', firm_eff_date: '', flood_zone_description: '',
+}
+
+// Special Flood Hazard Areas (1% annual chance) — lender will likely require flood coverage
+const SFHA_ZONES = new Set(['A', 'AE', 'AH', 'AO', 'AR', 'A99', 'V', 'VE'])
+
+export function isSpecialFloodHazardArea(zone: string | null | undefined): boolean {
+  return !!zone && SFHA_ZONES.has(zone.trim().toUpperCase())
+}
+
+// Incremented on every FEMA request so a slow response for a previous address
+// can never overwrite the results for the current one.
+let femaRequestSeq = 0
+
+// Call when the subject address changes without a new lookup being fired yet,
+// so any in-flight FEMA response for the old address is discarded.
+export function cancelPendingFloodLookup() {
+  femaRequestSeq++
+}
+
 export function calcMilesToCoast(lat: number, lng: number): number {
   const propertyPoint = point([lng, lat])
   const filtered = (coastline as { features: Array<{ geometry: { coordinates: number[][] } }> }).features.filter(feat =>
@@ -41,6 +63,7 @@ export function runPropertyLookups(
       .catch(() => {})
   } catch { /* ignore */ }
 
+  const femaSeq = ++femaRequestSeq
   try {
     void fetch('/api/fema-flood', {
       method: 'POST',
@@ -49,6 +72,7 @@ export function runPropertyLookups(
     })
       .then(r => r.ok ? r.json() : null)
       .then((data: Record<string, string | null> | null) => {
+        if (femaSeq !== femaRequestSeq) return
         if (!data || data.floodZone == null) return
         const updates: Record<string, string> = {
           flood_zone:             data.floodZone as string,

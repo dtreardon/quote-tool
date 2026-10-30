@@ -6,7 +6,7 @@ import { SectionCard } from '../ui/SectionCard'
 import { Field, inputCls } from '../ui/Field'
 import { StateSelect } from '../ui/StateSelect'
 import { loadGoogleMaps, getPlaceComponent, streetFromPlace, type AcInstance, type GoogleWindow } from '@/lib/googleMaps'
-import { calcMilesToCoast, runPropertyLookups } from '@/lib/addressEnrichment'
+import { calcMilesToCoast, runPropertyLookups, cancelPendingFloodLookup, FLOOD_RESET } from '@/lib/addressEnrichment'
 import { INITIAL_FORM } from '@/app/types/form'
 import type { FormState } from '@/app/types/form'
 
@@ -23,7 +23,7 @@ const ENRICHMENT_RESET: Partial<FormState> = {
   heat_air: '', fireplaces: INITIAL_FORM.fireplaces,
   pool: '', burglar_alarm: '', gated: '',
   // FEMA flood
-  flood_zone: '', bfe: '', firm_panel: '', firm_eff_date: '', flood_zone_description: '',
+  ...FLOOD_RESET,
   // Geocoding
   prop_lat: null, prop_lng: null, miles_coast: '', prop_county: '',
 }
@@ -146,11 +146,18 @@ export function Section3() {
             <input
               ref={inputRef}
               value={form.prop_street}
-              onChange={e => update({
-                prop_street: e.target.value,
-                prop_zip: '', prop_city: '', prop_state: '', prop_county: '',
-                prop_lat: null, prop_lng: null,
-              })}
+              onChange={e => {
+                // Address is being re-entered — drop the old flood zone (and its SFHA warning)
+                // right away and allow enrichment to re-fire for the new address on blur.
+                cancelPendingFloodLookup()
+                lastEnrichedRef.current = ''
+                update({
+                  prop_street: e.target.value,
+                  prop_zip: '', prop_city: '', prop_state: '', prop_county: '',
+                  prop_lat: null, prop_lng: null,
+                  ...FLOOD_RESET,
+                })
+              }}
               onBlur={e => {
                 const street = e.target.value.trim()
                 if (street && form.prop_zip)
@@ -169,7 +176,12 @@ export function Section3() {
           <Field label="ZIP" className="w-20" autofilled={a('prop_zip')}>
             <input
               value={form.prop_zip}
-              onChange={e => update({ prop_zip: e.target.value })}
+              onChange={e => {
+                if (e.target.value === form.prop_zip) return
+                cancelPendingFloodLookup()
+                lastEnrichedRef.current = ''
+                update({ prop_zip: e.target.value, ...FLOOD_RESET })
+              }}
               maxLength={10}
               onBlur={e => {
                 const zip = e.target.value.trim()
