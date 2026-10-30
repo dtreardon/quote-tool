@@ -214,7 +214,7 @@ export const INITIAL_FORM: FormState = {
   policy_type: '',
   occupancy: '',
   rental_term: '',
-  flood_quote: '',
+  flood_quote: 'no',
   notes: '',
   file_name: '',
   agent: '',
