@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, type ReactNode } from 'react'
 import { SectionCard } from '../ui/SectionCard'
 import { useQuoteForm } from './QuoteFormContext'
 import type { FormState } from '@/app/types/form'
 import { loadGoogleMaps, type GoogleWindow } from '@/lib/googleMaps'
-import { calcMilesToCoast, runPropertyLookups, cancelPendingFloodLookup, FLOOD_RESET } from '@/lib/addressEnrichment'
+import { calcMilesToCoast, runPropertyLookups, cancelPendingLookups, currentLookupGeneration, FLOOD_RESET } from '@/lib/addressEnrichment'
 import { applyExtractedData } from '@/lib/applyAutofill'
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
@@ -13,9 +13,11 @@ const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
 interface AutofillPanelProps {
   onAutofill: (fields: string[]) => void
   autofillEnabled?: boolean
+  // Recall button, rendered at the end of the action row
+  recall?: ReactNode
 }
 
-export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillPanelProps) {
+export function AutofillPanel({ onAutofill, autofillEnabled = false, recall }: AutofillPanelProps) {
   const { form, update, updateIfEmpty, lookupMortgagee } = useQuoteForm()
   const [file, setFile] = useState<File | null>(null)
   const [pasteText, setPasteText] = useState('')
@@ -63,7 +65,7 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillP
       // A newly extracted subject address invalidates the previous flood zone;
       // FEMA re-fires below once the address is geocoded.
       if (updates.prop_street) {
-        cancelPendingFloodLookup()
+        cancelPendingLookups()
         update({ ...FLOOD_RESET, ...updates })
       } else {
         update(updates)
@@ -86,8 +88,10 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillP
           const ggl = (window as unknown as GoogleWindow)['google'] as any
           const geocoder = new ggl.maps.Geocoder()
           const fullAddr = [street, city, state, zip].filter(Boolean).join(', ')
+          const gen = currentLookupGeneration()
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           geocoder.geocode({ address: fullAddr }, (results: any[] | null, status: string) => {
+            if (gen !== currentLookupGeneration()) return
             if (status !== 'OK' || !results?.[0]) return
             const r = results[0]
             const lat: number = r.geometry.location.lat()
@@ -204,6 +208,7 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillP
               {status}
             </span>
           )}
+          {recall && <div className="ml-auto">{recall}</div>}
         </div>
       </div>
     </SectionCard>

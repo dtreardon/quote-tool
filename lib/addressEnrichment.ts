@@ -14,14 +14,19 @@ export function isSpecialFloodHazardArea(zone: string | null | undefined): boole
   return !!zone && SFHA_ZONES.has(zone.trim().toUpperCase())
 }
 
-// Incremented on every FEMA request so a slow response for a previous address
-// can never overwrite the results for the current one.
-let femaRequestSeq = 0
+// Incremented whenever lookups start or the subject address is replaced, so a slow
+// geocode / ZLLW / FEMA response for a previous address (or a previous sheet, before
+// a Recall) can never land on the current one.
+let lookupSeq = 0
 
-// Call when the subject address changes without a new lookup being fired yet,
-// so any in-flight FEMA response for the old address is discarded.
-export function cancelPendingFloodLookup() {
-  femaRequestSeq++
+export function currentLookupGeneration() {
+  return lookupSeq
+}
+
+// Call when the subject address changes (or a sheet is recalled) without a new
+// lookup being fired yet, so any in-flight responses for the old address are discarded.
+export function cancelPendingLookups() {
+  lookupSeq++
 }
 
 export function calcMilesToCoast(lat: number, lng: number): number {
@@ -49,10 +54,12 @@ export function runPropertyLookups(
   markAutofilled: (keys: string[]) => void,
   updateIfEmpty: (partial: Partial<FormState>) => void
 ) {
+  const seq = ++lookupSeq
   try {
     void fetch(`/api/property-details?${new URLSearchParams({ street, city, state, zip })}`)
       .then(r => r.ok ? r.json() : {})
       .then((data: Record<string, string>) => {
+        if (seq !== lookupSeq) return
         const keys = Object.keys(data)
         if (keys.length) {
           if (data.year_built && !data.reno_roof) data.reno_roof = data.year_built
@@ -63,7 +70,6 @@ export function runPropertyLookups(
       .catch(() => {})
   } catch { /* ignore */ }
 
-  const femaSeq = ++femaRequestSeq
   try {
     void fetch('/api/fema-flood', {
       method: 'POST',
@@ -72,7 +78,7 @@ export function runPropertyLookups(
     })
       .then(r => r.ok ? r.json() : null)
       .then((data: Record<string, string | null> | null) => {
-        if (femaSeq !== femaRequestSeq) return
+        if (seq !== lookupSeq) return
         if (!data || data.floodZone == null) return
         const updates: Record<string, string> = {
           flood_zone:             data.floodZone as string,

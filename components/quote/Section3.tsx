@@ -6,7 +6,7 @@ import { SectionCard } from '../ui/SectionCard'
 import { Field, inputCls } from '../ui/Field'
 import { StateSelect } from '../ui/StateSelect'
 import { loadGoogleMaps, getPlaceComponent, streetFromPlace, type AcInstance, type GoogleWindow } from '@/lib/googleMaps'
-import { calcMilesToCoast, runPropertyLookups, cancelPendingFloodLookup, FLOOD_RESET } from '@/lib/addressEnrichment'
+import { calcMilesToCoast, runPropertyLookups, cancelPendingLookups, currentLookupGeneration, FLOOD_RESET } from '@/lib/addressEnrichment'
 import { INITIAL_FORM } from '@/app/types/form'
 import type { FormState } from '@/app/types/form'
 
@@ -37,7 +37,8 @@ export function Section3() {
   const geocoderRef     = useRef<any>(null)
   // Tracks the last street||zip we ran enrichment for — prevents double-firing when
   // Google Maps autocomplete selection is followed immediately by a blur event.
-  const lastEnrichedRef = useRef('')
+  // Seeded from the current address so a recalled sheet doesn't re-run lookups on blur.
+  const lastEnrichedRef = useRef(form.prop_street && form.prop_zip ? `${form.prop_street}||${form.prop_zip}` : '')
   const [showSatellite, setShowSatellite] = useState(false)
 
   // Geocode a manually-entered address, then run all three lookups.
@@ -52,8 +53,11 @@ export function Section3() {
     update({ ...ENRICHMENT_RESET })
 
     const fullAddr = [street, city, state, zip].filter(Boolean).join(', ')
+    cancelPendingLookups()
+    const gen = currentLookupGeneration()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     geocoderRef.current.geocode({ address: fullAddr }, (results: any[], status: string) => {
+      if (gen !== currentLookupGeneration()) return
       if (status !== 'OK' || !results?.[0]) return
       const r = results[0]
       const lat: number = r.geometry.location.lat()
@@ -149,7 +153,7 @@ export function Section3() {
               onChange={e => {
                 // Address is being re-entered — drop the old flood zone (and its SFHA warning)
                 // right away and allow enrichment to re-fire for the new address on blur.
-                cancelPendingFloodLookup()
+                cancelPendingLookups()
                 lastEnrichedRef.current = ''
                 update({
                   prop_street: e.target.value,
@@ -178,7 +182,7 @@ export function Section3() {
               value={form.prop_zip}
               onChange={e => {
                 if (e.target.value === form.prop_zip) return
-                cancelPendingFloodLookup()
+                cancelPendingLookups()
                 lastEnrichedRef.current = ''
                 update({ prop_zip: e.target.value, ...FLOOD_RESET })
               }}

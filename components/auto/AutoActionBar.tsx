@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useAutoForm } from './AutoFormContext'
 import { buildAutoPrintHTML } from '@/lib/buildAutoPrintHTML'
 import { useSaveFolder } from '@/lib/useSaveFolder'
+import { embedSheetData } from '@/lib/sheetData'
 import type { AutoFormState } from '@/app/types/autoForm'
 
 interface AutoActionBarProps {
@@ -57,7 +58,14 @@ export function AutoActionBar({ onClear }: AutoActionBarProps) {
 
       if (!res.ok) throw new Error(await res.text())
 
-      const buffer = await res.arrayBuffer()
+      const pdf = await res.arrayBuffer()
+
+      // Embed the full sheet as qsp-data.json so Recall can restore it later.
+      // Pages are untouched; if embedding fails the plain PDF is still saved.
+      const buffer = await embedSheetData(pdf, 'Auto', form).catch(err => {
+        console.warn('[AutoActionBar] Could not embed sheet data for Recall:', err)
+        return pdf
+      })
 
       if (isSupported) {
         const result = await saveFile(filename, buffer)

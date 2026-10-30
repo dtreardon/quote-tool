@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useQuoteForm } from './QuoteFormContext'
 import { buildPrintHTML } from '@/lib/buildPrintHTML'
 import { useSaveFolder } from '@/lib/useSaveFolder'
+import { embedSheetData } from '@/lib/sheetData'
 import type { FormState } from '@/app/types/form'
 import { MORTGAGEE_MEMORY_KEYS } from '@/lib/mortgageeMemory'
 
@@ -75,7 +76,14 @@ export function ActionBar({ onClear }: ActionBarProps) {
 
       rememberMortgagee(form)
 
-      const buffer = await res.arrayBuffer()
+      const pdf = await res.arrayBuffer()
+
+      // Embed the full sheet as qsp-data.json so Recall can restore it later.
+      // Pages are untouched; if embedding fails the plain PDF is still saved.
+      const buffer = await embedSheetData(pdf, 'HO', form).catch(err => {
+        console.warn('[ActionBar] Could not embed sheet data for Recall:', err)
+        return pdf
+      })
 
       if (isSupported) {
         // FS API available — save to folder; fall back to download if user cancels picker

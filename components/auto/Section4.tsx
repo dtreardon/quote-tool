@@ -31,8 +31,12 @@ const VEHICLE_TYPES = [
 
 function useVinDecode(vin: string, onResult: (year: string, make: string, model: string) => void) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Only decode VINs typed/changed after mount — a recalled vehicle keeps its saved year/make/model
+  const mountVinRef = useRef(vin)
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
+    if (vin === mountVinRef.current) return
+    mountVinRef.current = ''
     if (vin.length !== 17) return
     timerRef.current = setTimeout(async () => {
       try {
@@ -61,7 +65,9 @@ interface VehicleCardProps {
 
 function VehicleCard({ veh, index, onUpdate, onRemove, flashKeys }: VehicleCardProps) {
   const [open, setOpen] = useState(true)
-  const [lienOpen, setLienOpen] = useState(false)
+  const [lienOpen, setLienOpen] = useState(() => [
+    veh.lienholder_name, veh.lienholder_street, veh.lienholder_city, veh.lienholder_state, veh.lienholder_zip, veh.loan_number,
+  ].some(Boolean))
   const isFlashing = (f: string) => flashKeys.has(`veh_${veh.uid}_${f}`)
 
   useVinDecode(veh.vin, (year, make, model) => {

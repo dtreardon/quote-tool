@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { Fragment, useState, useCallback, useEffect, useRef } from 'react'
 import { AutoFormContext } from './AutoFormContext'
 import { INITIAL_AUTO_FORM, INITIAL_DRIVER, INITIAL_VEHICLE } from '@/app/types/autoForm'
 import type { AutoFormState } from '@/app/types/autoForm'
 import { loadSavedAgent } from '@/lib/agentMemory'
+import { restoreAutoForm } from '@/lib/restoreSheet'
+import type { SheetPayload } from '@/lib/sheetData'
+import { RecallButton, takeRecallHandoff } from '../ui/RecallButton'
 import { AutoAutofillPanel } from './AutoAutofillPanel'
 import { AutoNotes } from './AutoNotes'
 import { Section1 } from './Section1'
@@ -52,12 +55,31 @@ export default function AutoForm({ autofillEnabled = false }: { autofillEnabled?
     })
   }, [])
 
+  // Recall: replaces the whole sheet with a saved one. Sections are remounted
+  // (keyed on restoreCount) so no local state carries over; no check circles.
+  const formRef = useRef(form)
+  useEffect(() => { formRef.current = form }, [form])
+  const [restoreCount, setRestoreCount] = useState(0)
+  const restoreSheet = useCallback((payload: SheetPayload) => {
+    setForm(restoreAutoForm(payload.form as Partial<AutoFormState>))
+    setAutofilledFields(new Set())
+    setRestoreCount(n => n + 1)
+  }, [])
+  const isDirty = useCallback(() =>
+    JSON.stringify(formRef.current) !== JSON.stringify({ ...makeInitialForm(), agent: formRef.current.agent }),
+  [])
+
   // New blank sheet — default the Agent to the last one picked on this browser,
   // then apply data copied from the HO form via sessionStorage (its agent wins if set)
   useEffect(() => {
     const saved = loadSavedAgent()
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage after hydration
     if (saved) setForm(prev => prev.agent ? prev : { ...prev, agent: saved })
+
+    // Auto sheet recalled from the HO sheet's Recall button
+    const handoff = takeRecallHandoff('Auto')
+    if (handoff) { restoreSheet(handoff); return }
+
     try {
       const raw = sessionStorage.getItem('copiedData')
       if (!raw) return
@@ -66,7 +88,7 @@ export default function AutoForm({ autofillEnabled = false }: { autofillEnabled?
       if (!data.agent) delete data.agent
       setForm(prev => ({ ...prev, ...data }))
     } catch { /* ignore */ }
-  }, [])
+  }, [restoreSheet])
 
   function clearForm() {
     if (!window.confirm('Clear all fields and start over?')) return
@@ -77,7 +99,12 @@ export default function AutoForm({ autofillEnabled = false }: { autofillEnabled?
   return (
     <AutoFormContext.Provider value={{ form, update, autofilledFields, markAutofilled, clearAutofilled }}>
       <div className="max-w-[980px] mx-auto px-4 pt-7 pb-20">
-        <AutoAutofillPanel onAutofill={markAutofilled} autofillEnabled={autofillEnabled} />
+        <AutoAutofillPanel
+          onAutofill={markAutofilled}
+          autofillEnabled={autofillEnabled}
+          recall={<RecallButton sheet="Auto" isDirty={isDirty} onRestore={restoreSheet} />}
+        />
+        <Fragment key={restoreCount}>
         <AutoNotes />
         <Section1 />
         <Section2 />
@@ -86,6 +113,7 @@ export default function AutoForm({ autofillEnabled = false }: { autofillEnabled?
         <Section5 />
         <Section6 />
         <Section7 />
+        </Fragment>
       </div>
       <AutoActionBar onClear={clearForm} />
     </AutoFormContext.Provider>

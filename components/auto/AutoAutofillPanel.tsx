@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, type ReactNode } from 'react'
 import { SectionCard } from '../ui/SectionCard'
 import { useAutoForm } from './AutoFormContext'
 import { applyAutoExtractedData } from '@/lib/applyAutoAutofill'
@@ -8,9 +8,11 @@ import { applyAutoExtractedData } from '@/lib/applyAutoAutofill'
 interface AutoAutofillPanelProps {
   onAutofill: (fields: string[]) => void
   autofillEnabled?: boolean
+  // Recall button, rendered at the end of the action row
+  recall?: ReactNode
 }
 
-export function AutoAutofillPanel({ onAutofill, autofillEnabled = false }: AutoAutofillPanelProps) {
+export function AutoAutofillPanel({ onAutofill, autofillEnabled = false, recall }: AutoAutofillPanelProps) {
   const { form, update } = useAutoForm()
   const [file, setFile] = useState<File | null>(null)
   const [pasteText, setPasteText] = useState('')
@@ -153,6 +155,7 @@ export function AutoAutofillPanel({ onAutofill, autofillEnabled = false }: AutoA
               {status}
             </span>
           )}
+          {recall && <div className="ml-auto">{recall}</div>}
         </div>
       </div>
     </SectionCard>

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { Fragment, useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { QuoteFormContext } from './QuoteFormContext'
 import type { AutoFormState } from '@/app/types/autoForm'
@@ -9,7 +9,10 @@ import { applyExtractedData } from '@/lib/applyAutofill'
 import { loadSavedAgent } from '@/lib/agentMemory'
 import { MORTGAGEE_MEMORY_KEYS, normalizeCompany, type MortgageeMemory } from '@/lib/mortgageeMemory'
 import { loadGoogleMaps, type GoogleWindow } from '@/lib/googleMaps'
-import { calcMilesToCoast, runPropertyLookups } from '@/lib/addressEnrichment'
+import { calcMilesToCoast, runPropertyLookups, cancelPendingLookups, currentLookupGeneration } from '@/lib/addressEnrichment'
+import { restoreHOForm } from '@/lib/restoreSheet'
+import type { SheetPayload } from '@/lib/sheetData'
+import { RecallButton, takeRecallHandoff } from '../ui/RecallButton'
 import { Banner } from './Banner'
 import { NotesSection } from './NotesSection'
 import { AutofillPanel } from './AutofillPanel'
@@ -82,16 +85,36 @@ export default function QuoteForm({
   const formRef = useRef(form)
   useEffect(() => { formRef.current = form }, [form])
 
+  // Recall: replaces the whole sheet with a saved one. No lookups fire — pending
+  // ones are cancelled, and the sections below are remounted (keyed on restoreCount)
+  // so no local state (eligibility results, enrichment de-dupe keys, uid-keyed rows)
+  // carries over from the previous sheet. Restored values get no check circles.
+  const [restoreCount, setRestoreCount] = useState(0)
+  const restoreCountRef = useRef(0)
+  const restoreSheet = useCallback((payload: SheetPayload) => {
+    cancelPendingLookups()
+    restoreCountRef.current++
+    setForm(restoreHOForm(payload.form as Partial<FormState>))
+    setAutofilledFields(new Set())
+    setRestoreCount(restoreCountRef.current)
+  }, [])
+
+  const isDirty = useCallback(() =>
+    JSON.stringify(formRef.current) !== JSON.stringify({ ...INITIAL_FORM, agent: formRef.current.agent }),
+  [])
+
   // Mortgagee memory: when Referred By Company is populated and the clause is
   // completely empty, fill it from the last saved sheet for that company.
   // Only empty fields are filled; failures are silent.
   const lookupMortgagee = useCallback((company: string) => {
     if (!normalizeCompany(company)) return
     if (MORTGAGEE_MEMORY_KEYS.some(k => formRef.current[k])) return
+    const sheetGen = restoreCountRef.current
     fetch(`/api/mortgagee-memory?${new URLSearchParams({ company })}`)
       .then(r => r.ok ? r.json() : {})
       .then((m: Partial<MortgageeMemory>) => {
         if (!m.mortgagee_name) return
+        if (sheetGen !== restoreCountRef.current) return // a different sheet was recalled meanwhile
         // Re-check: the agent or auto-fill may have started the clause meanwhile
         if (MORTGAGEE_MEMORY_KEYS.some(k => formRef.current[k])) return
         const patch: Partial<FormState> = {}
@@ -109,7 +132,11 @@ export default function QuoteForm({
     const saved = loadSavedAgent()
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage after hydration
     if (saved) setForm(prev => prev.agent ? prev : { ...prev, agent: saved })
-  }, [])
+
+    // HO sheet recalled from the Auto sheet's Recall button
+    const handoff = takeRecallHandoff('HO')
+    if (handoff) restoreSheet(handoff)
+  }, [restoreSheet])
 
   // Auto-apply extracted data from an Outlook add-in session
   useEffect(() => {
@@ -141,8 +168,10 @@ export default function QuoteForm({
             const ggl = (window as unknown as GoogleWindow)['google'] as any
             const geocoder = new ggl.maps.Geocoder()
             const fullAddr = [street, city, state, zip].filter(Boolean).join(', ')
+            const gen = currentLookupGeneration()
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             geocoder.geocode({ address: fullAddr }, (results: any[] | null, geocodeStatus: string) => {
+              if (gen !== currentLookupGeneration()) return
               if (geocodeStatus !== 'OK' || !results?.[0]) return
               const r = results[0]
               const lat: number = r.geometry.location.lat()
@@ -231,7 +260,12 @@ export default function QuoteForm({
   return (
     <QuoteFormContext.Provider value={{ form, update, updateIfEmpty, autofilledFields, markAutofilled, clearAutofilled, lookupMortgagee }}>
       <div className="max-w-[980px] mx-auto px-4 pt-7 pb-20">
-        <AutofillPanel onAutofill={markAutofilled} autofillEnabled={autofillEnabled} />
+        <AutofillPanel
+          onAutofill={markAutofilled}
+          autofillEnabled={autofillEnabled}
+          recall={<RecallButton sheet="HO" isDirty={isDirty} onRestore={restoreSheet} />}
+        />
+        <Fragment key={restoreCount}>
         <Banner />
         <NotesSection />
         <Section1 />
@@ -244,6 +278,7 @@ export default function QuoteForm({
         <Section8 />
         <Section9 />
         {form.flood_quote === 'yes' && <Section10 />}
+        </Fragment>
 
         {/* Copy to Another Sheet */}
         <div className="flex justify-center mt-2 mb-2 print:hidden">
