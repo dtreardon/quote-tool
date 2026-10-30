@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { QuoteFormContext } from './QuoteFormContext'
 import type { AutoFormState } from '@/app/types/autoForm'
@@ -7,6 +7,7 @@ import { INITIAL_FORM } from '@/app/types/form'
 import type { FormState } from '@/app/types/form'
 import { applyExtractedData } from '@/lib/applyAutofill'
 import { loadSavedAgent } from '@/lib/agentMemory'
+import { MORTGAGEE_MEMORY_KEYS, normalizeCompany, type MortgageeMemory } from '@/lib/mortgageeMemory'
 import { loadGoogleMaps, type GoogleWindow } from '@/lib/googleMaps'
 import { calcMilesToCoast, runPropertyLookups } from '@/lib/addressEnrichment'
 import { Banner } from './Banner'
@@ -77,6 +78,31 @@ export default function QuoteForm({
     })
   }, [])
 
+  // Latest form for async callbacks (mortgagee lookup) that resolve after later edits
+  const formRef = useRef(form)
+  useEffect(() => { formRef.current = form }, [form])
+
+  // Mortgagee memory: when Referred By Company is populated and the clause is
+  // completely empty, fill it from the last saved sheet for that company.
+  // Only empty fields are filled; failures are silent.
+  const lookupMortgagee = useCallback((company: string) => {
+    if (!normalizeCompany(company)) return
+    if (MORTGAGEE_MEMORY_KEYS.some(k => formRef.current[k])) return
+    fetch(`/api/mortgagee-memory?${new URLSearchParams({ company })}`)
+      .then(r => r.ok ? r.json() : {})
+      .then((m: Partial<MortgageeMemory>) => {
+        if (!m.mortgagee_name) return
+        // Re-check: the agent or auto-fill may have started the clause meanwhile
+        if (MORTGAGEE_MEMORY_KEYS.some(k => formRef.current[k])) return
+        const patch: Partial<FormState> = {}
+        for (const k of MORTGAGEE_MEMORY_KEYS) if (m[k]) patch[k] = m[k]
+        updateIfEmpty(patch)
+        setForm(prev => ({ ...prev, mortgagee_open: true }))
+        markAutofilled(Object.keys(patch))
+      })
+      .catch(() => {})
+  }, [updateIfEmpty, markAutofilled])
+
   // New blank sheet — default the Agent to the last one picked on this browser.
   // Runs after mount (localStorage isn't available during SSR).
   useEffect(() => {
@@ -102,6 +128,7 @@ export default function QuoteForm({
           update(updates)
           markAutofilled(flashKeys)
         }
+        if (updates.referred_by_company) lookupMortgagee(updates.referred_by_company)
 
         // Geocode the subject address and run property lookups
         const street = x.subject_address as string | null
@@ -202,7 +229,7 @@ export default function QuoteForm({
   }
 
   return (
-    <QuoteFormContext.Provider value={{ form, update, updateIfEmpty, autofilledFields, markAutofilled, clearAutofilled }}>
+    <QuoteFormContext.Provider value={{ form, update, updateIfEmpty, autofilledFields, markAutofilled, clearAutofilled, lookupMortgagee }}>
       <div className="max-w-[980px] mx-auto px-4 pt-7 pb-20">
         <AutofillPanel onAutofill={markAutofilled} autofillEnabled={autofillEnabled} />
         <Banner />

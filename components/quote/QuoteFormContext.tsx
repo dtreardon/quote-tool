@@ -9,6 +9,8 @@ interface QuoteFormContextType {
   autofilledFields: Set<string>
   markAutofilled: (fields: string[]) => void
   clearAutofilled: (fields: string[]) => void
+  // Fills an empty mortgagee clause from agency-wide memory for this referring company
+  lookupMortgagee: (company: string) => void
 }
 
 export const QuoteFormContext = createContext<QuoteFormContextType | null>(null)

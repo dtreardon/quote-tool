@@ -16,7 +16,7 @@ interface AutofillPanelProps {
 }
 
 export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillPanelProps) {
-  const { form, update, updateIfEmpty } = useQuoteForm()
+  const { form, update, updateIfEmpty, lookupMortgagee } = useQuoteForm()
   const [file, setFile] = useState<File | null>(null)
   const [pasteText, setPasteText] = useState('')
   const [status, setStatus] = useState('')
@@ -69,6 +69,7 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false }: AutofillP
         update(updates)
       }
       if (flashKeys.length > 0) onAutofill(flashKeys)
+      if (updates.referred_by_company) lookupMortgagee(updates.referred_by_company)
 
       setStatus(`Auto-filled ${flashKeys.length} field${flashKeys.length !== 1 ? 's' : ''}.`)
       setStatusType('ok')

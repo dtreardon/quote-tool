@@ -5,6 +5,7 @@ import { useQuoteForm } from './QuoteFormContext'
 import { buildPrintHTML } from '@/lib/buildPrintHTML'
 import { useSaveFolder } from '@/lib/useSaveFolder'
 import type { FormState } from '@/app/types/form'
+import { MORTGAGEE_MEMORY_KEYS } from '@/lib/mortgageeMemory'
 
 interface ActionBarProps {
   onClear: () => void
@@ -29,6 +30,19 @@ function downloadPDF(bytes: ArrayBuffer, filename: string) {
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+}
+
+// Agency-wide mortgagee memory: latest saved clause wins for this referring company.
+// Fire-and-forget — never blocks or fails the save. Loan number is never sent.
+function rememberMortgagee(form: FormState) {
+  if (!form.referred_by_company.trim() || !form.mortgagee_name.trim()) return
+  const body: Record<string, string> = { company: form.referred_by_company }
+  for (const k of MORTGAGEE_MEMORY_KEYS) body[k] = form[k]
+  fetch('/api/mortgagee-memory', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).catch(() => {})
 }
 
 function printFallback(html: string) {
@@ -58,6 +72,8 @@ export function ActionBar({ onClear }: ActionBarProps) {
       })
 
       if (!res.ok) throw new Error(await res.text())
+
+      rememberMortgagee(form)
 
       const buffer = await res.arrayBuffer()
 

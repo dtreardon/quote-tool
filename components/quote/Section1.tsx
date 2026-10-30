@@ -10,7 +10,7 @@ import { formatDate } from '@/lib/formatters'
 import { AGENTS, saveAgent } from '@/lib/agentMemory'
 
 export function Section1() {
-  const { form, update, autofilledFields } = useQuoteForm()
+  const { form, update, autofilledFields, lookupMortgagee } = useQuoteForm()
   const a = (key: string) => autofilledFields.has(key)
 
   return (
@@ -26,7 +26,13 @@ export function Section1() {
           <input value={form.referred_by_name} onChange={e => update({ referred_by_name: e.target.value })} placeholder="Name" className={inputCls(a('referred_by_name'))} />
         </Field>
         <Field label="Company" className="flex-1 min-w-36" autofilled={a('referred_by_company')}>
-          <input value={form.referred_by_company} onChange={e => update({ referred_by_company: e.target.value })} placeholder="Company" className={inputCls(a('referred_by_company'))} />
+          <input
+            value={form.referred_by_company}
+            onChange={e => update({ referred_by_company: e.target.value })}
+            onBlur={e => lookupMortgagee(e.target.value)}
+            placeholder="Company"
+            className={inputCls(a('referred_by_company'))}
+          />
         </Field>
         <Field label="New Purchase?" autofilled={a('new_purchase')} badgeOutside>
           <YesNo name="new_purchase" value={form.new_purchase} onChange={v => update({ new_purchase: v })} />
