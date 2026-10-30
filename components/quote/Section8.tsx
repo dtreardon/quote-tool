@@ -9,7 +9,7 @@ export function Section8() {
   const a = (key: string) => autofilledFields.has(key)
 
   return (
-    <SectionCard number={8} title="Location & Rating Info">
+    <SectionCard number={7} title="Location & Rating Info">
       <div className="flex gap-3.5 flex-wrap">
         <Field label="Protection Class" className="w-36">
           <input value={form.protection_class} onChange={e => update({ protection_class: e.target.value })} className={inputCls()} />

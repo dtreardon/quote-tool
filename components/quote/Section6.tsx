@@ -166,7 +166,7 @@ export function Section6() {
   const { form, update } = useQuoteForm()
 
   return (
-    <SectionCard number={6} title="Desired Coverage Amounts">
+    <SectionCard number={8} title="Desired Coverage Amounts">
       <div className="flex gap-3.5 flex-wrap mb-3">
         <Field label="Dwelling (Cov A)" className="flex-1 min-w-36">
           <DollarInput format="whole" value={form.cov_dwelling} onChange={v => update({ cov_dwelling: v })} />

@@ -39,7 +39,7 @@ export function Section7() {
   }
 
   return (
-    <SectionCard number={7} title="Underwriting Questions">
+    <SectionCard number={6} title="Underwriting Questions">
       <div className="flex gap-3.5 flex-wrap mb-3.5">
         <Field label="Bankruptcy, Foreclosure, or Felony (last 5 years)?" className="flex-[3] min-w-64">
           <YesNo name="bankruptcy" value={form.bankruptcy} onChange={v => update({ bankruptcy: v })} />

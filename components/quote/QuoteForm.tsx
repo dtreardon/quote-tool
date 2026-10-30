@@ -261,8 +261,8 @@ export default function QuoteForm({
     <QuoteFormContext.Provider value={{ form, update, updateIfEmpty, autofilledFields, markAutofilled, clearAutofilled, lookupMortgagee }}>
       {/* Screen layout mirrors the PDF on wide screens: everything else on the left,
           Rating / Coverage / Quotes in a sticky right panel. Below xl the column wrappers
-          are display:contents and the order-* classes restore the single-column sequence
-          (…, 5, 6, 7, 8, 9, 10). Print uses buildPrintHTML, so it is unaffected. */}
+          are display:contents and the order-* classes stack sections in number order
+          (1–5, 6 Underwriting, 7 Rating, 8 Coverage, 9 Quotes, 10 Flood). Print uses buildPrintHTML, so it is unaffected. */}
       <div className="max-w-[980px] xl:max-w-[1440px] mx-auto px-4 pt-7 pb-20 flex flex-col xl:grid xl:grid-cols-[minmax(0,1fr)_440px] xl:gap-x-5 xl:items-start">
         <div className="contents xl:block xl:min-w-0">
           <div className="order-1">
@@ -280,7 +280,7 @@ export default function QuoteForm({
             <div className="order-6"><Section3 /></div>
             <div className="order-7"><Section4 /></div>
             <div className="order-8"><Section5 /></div>
-            <div className="order-10"><Section7 /></div>
+            <div className="order-9"><Section7 /></div>
             {form.flood_quote === 'yes' && <div className="order-[13]"><Section10 /></div>}
           </Fragment>
 
@@ -299,8 +299,8 @@ export default function QuoteForm({
             than the space between the header and the bottom action bar */}
         <aside className="contents xl:block xl:sticky xl:top-[var(--qsp-header-h)] xl:max-h-[calc(100vh-var(--qsp-header-h)-var(--qsp-actionbar-h))] xl:overflow-y-auto xl:overflow-x-hidden xl:overscroll-contain xl:pr-1">
           <Fragment key={restoreCount}>
-            <div className="order-11 xl:order-none"><Section8 /></div>
-            <div className="order-9 xl:order-none"><Section6 /></div>
+            <div className="order-10 xl:order-none"><Section8 /></div>
+            <div className="order-11 xl:order-none"><Section6 /></div>
             <div className="order-12 xl:order-none"><Section9 /></div>
           </Fragment>
         </aside>
