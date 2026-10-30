@@ -8,18 +8,11 @@ import { APP_VERSION } from '@/lib/version'
 import { embedSheetData } from '@/lib/sheetData'
 import type { FormState } from '@/app/types/form'
 import { MORTGAGEE_MEMORY_KEYS } from '@/lib/mortgageeMemory'
+import { autoFileNameHO, saveFileName } from '@/lib/fileName'
+import { FileNameInput } from '../ui/FileNameInput'
 
 interface ActionBarProps {
   onClear: () => void
-}
-
-function buildFilename(form: FormState): string {
-  const primary = form.insureds[0]
-  const isEntity = primary?.insuredType === 'entity'
-  const base = isEntity
-    ? `${(primary?.entityName || '').toUpperCase()} ${form.policy_type || 'HO'} QUOTE SHEET ${form.prop_street || ''}`
-    : `${(primary?.last || '').toUpperCase()}, ${(primary?.first || '').toUpperCase()} ${form.policy_type || 'HO'} QUOTE SHEET ${form.prop_street || ''}`
-  return base.trim() + '.pdf'
 }
 
 function downloadPDF(bytes: ArrayBuffer, filename: string) {
@@ -56,15 +49,16 @@ function printFallback(html: string) {
 }
 
 export function ActionBar({ onClear }: ActionBarProps) {
-  const { form } = useQuoteForm()
+  const { form, update } = useQuoteForm()
+  const autoName = autoFileNameHO(form)
   const { isSupported, folderName, pickFolder, clearFolder, saveFile } = useSaveFolder()
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
     setSaving(true)
     const logoUrl = `${window.location.origin}/logo-white.png`
-    const html = buildPrintHTML(form, logoUrl)
-    const filename = buildFilename(form)
+    const filename = saveFileName(form.file_name, autoName)
+    const html = buildPrintHTML(form, logoUrl, filename.replace(/.pdf$/, ''))
 
     try {
       const res = await fetch('/api/pdf', {
@@ -119,13 +113,14 @@ export function ActionBar({ onClear }: ActionBarProps) {
 
       <div className="flex flex-col items-end gap-1.5">
         {/* Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-end">
           <button
             onClick={onClear}
             className="border border-white/30 text-white px-[22px] py-2.5 rounded text-sm font-bold hover:bg-white/10 transition-colors"
           >
             Clear Form
           </button>
+          <FileNameInput value={form.file_name} autoName={autoName} onChange={v => update({ file_name: v })} />
           <button
             onClick={handleSave}
             disabled={saving}

@@ -47,6 +47,9 @@ export interface AutoFormState {
   // Notes
   notes: string
 
+  // Saved PDF name — empty = auto-generated (screen only, never printed)
+  file_name: string
+
   // Section 1 - File & Referral
   agent: string
   referred_by_name: string
@@ -140,6 +143,7 @@ export const INITIAL_DRIVER: DriverData = {
 
 export const INITIAL_AUTO_FORM: AutoFormState = {
   notes: '',
+  file_name: '',
   agent: '',
   referred_by_name: '',
   referred_by_company: '',

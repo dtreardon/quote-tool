@@ -25,18 +25,9 @@ function deLinkifyEmail(v: string): string {
   return v.replace('@', '@‌')
 }
 
-export function buildPrintHTML(form: FormState, logoUrl: string): string {
+export function buildPrintHTML(form: FormState, logoUrl: string, title: string): string {
   const today = new Date()
   const dateStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`
-
-  const primaryIns = form.insureds[0]
-  const isEntityPrimary = primaryIns?.insuredType === 'entity'
-  const firstN = primaryIns?.first || ''
-  const lastN  = primaryIns?.last || ''
-  const entityN = primaryIns?.entityName || ''
-  const suggested = isEntityPrimary
-    ? `${entityN.toUpperCase()} ${form.policy_type || 'HO'} QUOTE SHEET ${form.prop_street || ''}`
-    : `${lastN.toUpperCase()}, ${firstN.toUpperCase()} ${form.policy_type || 'HO'} QUOTE SHEET ${form.prop_street || ''}`
 
   const isNew    = form.new_purchase === 'yes'
   const hasFlood = form.flood_quote === 'yes'
@@ -171,7 +162,7 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>${suggested}</title>
+<title>${title}</title>
 <style>
   @page { size: letter portrait; margin: 0.25in 0.25in 0.2in 0.25in; }
   * { box-sizing: border-box; margin:0; padding:0; }
@@ -228,7 +219,6 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
 
   /* ── FOOTER ── */
   .footer { margin-top:6px; padding-top:3px; border-top:0.5pt solid #ccc; display:flex; justify-content:space-between; font-size:6pt; color:#aaa; }
-  .footer .filename { color:#334e85; font-weight:bold; }
 
   @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 </style>
@@ -417,7 +407,6 @@ ${showOtherAddresses ? `
 
 <div class="footer">
   <span>QuoteSheetPRO is a product of Reardon Insurance, LLC &copy; 2026 &mdash; All Rights Reserved</span>
-  <span class="filename">Suggested: ${suggested}.pdf</span>
 </div>
 
 </body>

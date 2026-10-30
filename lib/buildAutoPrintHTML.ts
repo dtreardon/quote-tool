@@ -6,14 +6,9 @@ function yn(v: string): string {
   return v.toLowerCase() === 'yes' ? 'Yes' : v.toLowerCase() === 'no' ? 'No' : v
 }
 
-export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string {
+export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string, title: string): string {
   const today = new Date()
   const dateStr = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`
-
-  const primary = form.drivers[0]
-  const firstN  = primary?.first || ''
-  const lastN   = primary?.last  || ''
-  const suggested = `${lastN.toUpperCase()}, ${firstN.toUpperCase()} AUTO QUOTE SHEET`
 
   const referredBy = form.referred_by_name
     ? form.referred_by_name + (form.referred_by_company ? ` (${form.referred_by_company})` : '')
@@ -95,7 +90,7 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
 <html>
 <head>
 <meta charset="UTF-8">
-<title>${suggested}</title>
+<title>${title}</title>
 <style>
   @page { size: letter portrait; margin: 0.25in 0.25in 0.2in 0.25in; }
   * { box-sizing: border-box; margin:0; padding:0; }
@@ -143,7 +138,6 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
   .quote-premium { font-size:10pt; font-weight:bold; color:#334e85; text-align:right; }
 
   .footer { margin-top:6px; padding-top:3px; border-top:0.5pt solid #ccc; display:flex; justify-content:space-between; font-size:6pt; color:#aaa; }
-  .footer .filename { color:#334e85; font-weight:bold; }
 
   @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 </style>
@@ -240,7 +234,6 @@ export function buildAutoPrintHTML(form: AutoFormState, logoUrl: string): string
 
 <!-- FOOTER -->
 <div class="footer">
-  <span class="filename">${suggested}</span>
   <span>QuoteSheetPRO — Reardon Insurance, LLC &copy; 2026 — All Rights Reserved</span>
 </div>
 

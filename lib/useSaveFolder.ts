@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useSyncExternalStore } from 'react'
 
 const DB_NAME = 'QuoteSheetPRO'
 const DB_VERSION = 1
@@ -66,6 +66,10 @@ async function verifyPermission(handle: FileSystemDirectoryHandle): Promise<bool
 
 // ── Hook ──────────────────────────────────────────────────────────────────
 
+const subscribeNever = () => () => {}
+const detectFolderPicker = () =>
+  'showDirectoryPicker' in window && typeof window.showDirectoryPicker === 'function'
+
 export type SaveResult = 'saved' | 'downloaded' | 'failed'
 
 // Accepts ArrayBuffer so callers can pass res.arrayBuffer() directly without
@@ -74,11 +78,10 @@ export function useSaveFolder() {
   const [handle, setHandle] = useState<FileSystemDirectoryHandle | null>(null)
   const [folderName, setFolderName] = useState<string | null>(null)
 
-  // Feature detection — works in Chrome/Edge; not Safari/Firefox
-  const isSupported =
-    typeof window !== 'undefined' &&
-    'showDirectoryPicker' in window &&
-    typeof window.showDirectoryPicker === 'function'
+  // Feature detection — works in Chrome/Edge; not Safari/Firefox.
+  // Server render (and hydration) always report false, then the browser value is
+  // used — avoids the hydration mismatch from checking `window` during render.
+  const isSupported = useSyncExternalStore(subscribeNever, detectFolderPicker, () => false)
 
   // Load stored handle from IndexedDB on mount
   useEffect(() => {

@@ -47,6 +47,9 @@ export interface FormState {
   // Notes
   notes: string
 
+  // Saved PDF name — empty = auto-generated (screen only, never printed)
+  file_name: string
+
   // Section 1 - File & Referral
   agent: string
   referred_by_name: string
@@ -213,6 +216,7 @@ export const INITIAL_FORM: FormState = {
   rental_term: '',
   flood_quote: '',
   notes: '',
+  file_name: '',
   agent: '',
   referred_by_name: '',
   referred_by_company: '',
