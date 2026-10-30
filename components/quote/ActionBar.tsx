@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useQuoteForm } from './QuoteFormContext'
 import { buildPrintHTML } from '@/lib/buildPrintHTML'
 import { useSaveFolder } from '@/lib/useSaveFolder'
+import { APP_VERSION } from '@/lib/version'
 import { embedSheetData } from '@/lib/sheetData'
 import type { FormState } from '@/app/types/form'
 import { MORTGAGEE_MEMORY_KEYS } from '@/lib/mortgageeMemory'
@@ -111,7 +112,7 @@ export function ActionBar({ onClear }: ActionBarProps) {
       <div className="flex flex-col gap-0.5">
         <span className="text-white/60 text-xs">
           Robinson &amp; Associates — Homeowners &amp; Flood Quote Sheet{' '}
-          <span className="text-[11px] ml-2" style={{ color: '#e8b44a' }}>v3.2</span>
+          <span className="text-[11px] ml-2" style={{ color: '#e8b44a' }}>v{APP_VERSION}</span>
         </span>
         <span className="text-white/40 text-[11px]">QuoteSheetPRO is a product of Reardon Insurance, LLC © 2026 — All Rights Reserved</span>
       </div>
