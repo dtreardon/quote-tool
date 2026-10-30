@@ -1,4 +1,4 @@
-import { INITIAL_FORM, INITIAL_INSURED, type FormState } from '@/app/types/form'
+import { INITIAL_FORM, INITIAL_INSURED, homeUpdatedPatch, type FormState } from '@/app/types/form'
 import { INITIAL_AUTO_FORM, INITIAL_DRIVER, INITIAL_VEHICLE, type AutoFormState } from '@/app/types/autoForm'
 import { freshUids } from './sheetData'
 
@@ -22,6 +22,9 @@ export function restoreHOForm(saved: Partial<FormState>): FormState {
   f.mortgagee_open = f.mortgagee_open || [
     f.mortgagee_name, f.mortgagee_street, f.mortgagee_city, f.mortgagee_state, f.mortgagee_zip, f.loan_number,
   ].some(Boolean)
+
+  // Recalled renovation data is always shown (Home Updated row opens when it holds data)
+  Object.assign(f, homeUpdatedPatch(f))
 
   return f
 }

@@ -149,38 +149,44 @@ export function Section5() {
         </Field>
       </div>
 
-      {/* Electrical, HVAC, Plumbing, Water Heater */}
+      {/* Home updated toggle (+ Tankless, always visible — it's a discount).
+          Yes reveals Electrical, HVAC, Plumbing, Water Heater; No hides them without clearing. */}
       <div className="flex gap-3.5 flex-wrap mb-3">
-        <Field label="Elec Year" className="w-[70px]">
-          <input value={form.reno_elec} onChange={e => update({ reno_elec: e.target.value })} placeholder="YYYY" className={inputCls()} />
+        <Field label="Has home been updated?">
+          <YesNo name="home_updated" value={form.home_updated} onChange={v => update({ home_updated: v })} />
         </Field>
-        <Field label="Scope" className="w-[100px]">
-          <select value={form.reno_elec_scope} onChange={e => update({ reno_elec_scope: e.target.value })} className={selectCls()}>
-            <option value="">Select…</option>
-            <option>Full</option><option>Partial</option>
-          </select>
-        </Field>
-        <Field label="HVAC Year" className="w-[70px]">
-          <input value={form.reno_hvac} onChange={e => update({ reno_hvac: e.target.value })} placeholder="YYYY" className={inputCls()} />
-        </Field>
-        <Field label="Scope" className="w-[100px]">
-          <select value={form.reno_hvac_scope} onChange={e => update({ reno_hvac_scope: e.target.value })} className={selectCls()}>
-            <option value="">Select…</option>
-            <option>Full</option><option>Partial</option>
-          </select>
-        </Field>
-        <Field label="Plumb Year" className="w-[70px]">
-          <input value={form.reno_plum} onChange={e => update({ reno_plum: e.target.value })} placeholder="YYYY" className={inputCls()} />
-        </Field>
-        <Field label="Scope" className="w-[100px]">
-          <select value={form.reno_plum_scope} onChange={e => update({ reno_plum_scope: e.target.value })} className={selectCls()}>
-            <option value="">Select…</option>
-            <option>Full</option><option>Partial</option>
-          </select>
-        </Field>
-        <Field label="Water Htr" className="w-[70px]">
-          <input value={form.water_heater} onChange={e => update({ water_heater: e.target.value })} placeholder="YYYY" className={inputCls()} />
-        </Field>
+        {form.home_updated === 'yes' && (<>
+          <Field label="Elec Year" className="w-[70px]">
+            <input value={form.reno_elec} onChange={e => update({ reno_elec: e.target.value })} placeholder="YYYY" className={inputCls()} />
+          </Field>
+          <Field label="Scope" className="w-[100px]">
+            <select value={form.reno_elec_scope} onChange={e => update({ reno_elec_scope: e.target.value })} className={selectCls()}>
+              <option value="">Select…</option>
+              <option>Full</option><option>Partial</option>
+            </select>
+          </Field>
+          <Field label="HVAC Year" className="w-[70px]">
+            <input value={form.reno_hvac} onChange={e => update({ reno_hvac: e.target.value })} placeholder="YYYY" className={inputCls()} />
+          </Field>
+          <Field label="Scope" className="w-[100px]">
+            <select value={form.reno_hvac_scope} onChange={e => update({ reno_hvac_scope: e.target.value })} className={selectCls()}>
+              <option value="">Select…</option>
+              <option>Full</option><option>Partial</option>
+            </select>
+          </Field>
+          <Field label="Plumb Year" className="w-[70px]">
+            <input value={form.reno_plum} onChange={e => update({ reno_plum: e.target.value })} placeholder="YYYY" className={inputCls()} />
+          </Field>
+          <Field label="Scope" className="w-[100px]">
+            <select value={form.reno_plum_scope} onChange={e => update({ reno_plum_scope: e.target.value })} className={selectCls()}>
+              <option value="">Select…</option>
+              <option>Full</option><option>Partial</option>
+            </select>
+          </Field>
+          <Field label="Water Htr" className="w-[70px]">
+            <input value={form.water_heater} onChange={e => update({ water_heater: e.target.value })} placeholder="YYYY" className={inputCls()} />
+          </Field>
+        </>)}
         <Field label="Tankless?">
           <div className="flex gap-3 mt-1">
             {['yes','no'].map(v => (

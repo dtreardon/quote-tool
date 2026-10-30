@@ -113,6 +113,7 @@ export interface FormState {
   roof_shape: string
   roof_type: string
   reno_roof_scope: string
+  home_updated: string
   reno_elec: string
   reno_elec_scope: string
   reno_hvac: string
@@ -181,6 +182,19 @@ export interface FormState {
   flood_cov_dwelling: string
   flood_cov_contents: string
   flood_quotes: QuoteData[]
+}
+
+// Renovation fields shown only when "Has home been updated?" is Yes.
+// Tankless is excluded — it always stays visible (discount) and defaults to "no".
+export const HOME_UPDATE_FIELDS = [
+  'reno_elec', 'reno_elec_scope', 'reno_hvac', 'reno_hvac_scope',
+  'reno_plum', 'reno_plum_scope', 'water_heater',
+] as const satisfies readonly (keyof FormState)[]
+
+// When auto-fill / lookups / Recall populate any renovation field, the toggle switches to Yes
+// so the data is visible. Returns the extra patch to merge (or nothing).
+export function homeUpdatedPatch(values: Partial<FormState>): Partial<FormState> {
+  return HOME_UPDATE_FIELDS.some(k => values[k]) ? { home_updated: 'yes' } : {}
 }
 
 export const INITIAL_INSURED: InsuredData = {
@@ -256,6 +270,7 @@ export const INITIAL_FORM: FormState = {
   roof_shape: '',
   roof_type: '',
   reno_roof_scope: '',
+  home_updated: 'no',
   reno_elec: '',
   reno_elec_scope: '',
   reno_hvac: '',

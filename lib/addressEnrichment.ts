@@ -1,6 +1,6 @@
 import { point, pointToLineDistance } from '@turf/turf'
 import coastline from '@/data/coastline.json'
-import type { FormState } from '@/app/types/form'
+import { homeUpdatedPatch, type FormState } from '@/app/types/form'
 
 // FEMA NFHL fields — cleared together whenever the subject address changes
 export const FLOOD_RESET: Partial<FormState> = {
@@ -64,6 +64,9 @@ export function runPropertyLookups(
         if (keys.length) {
           if (data.year_built && !data.reno_roof) data.reno_roof = data.year_built
           updateIfEmpty(data as Partial<FormState>)
+          // home_updated defaults to "no" (not empty), so it is switched explicitly
+          const homeUpdated = homeUpdatedPatch(data as Partial<FormState>)
+          if (homeUpdated.home_updated) update(homeUpdated)
           markAutofilled(keys)
         }
       })

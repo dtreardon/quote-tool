@@ -150,6 +150,17 @@ export function buildPrintHTML(form: FormState, logoUrl: string): string {
       </div>
     </div>` : ''
 
+  // Renovation systems — only cards with values print; the row is omitted when all are empty
+  const renoCell = (label: string, year: string, extra: string) =>
+    year || extra ? `<div class="info-card"><div class="card-label">${label}</div><div class="card-value">${[year, extra].filter(Boolean).join(' ')}</div></div>` : ''
+  const renoCells = [
+    renoCell('Electrical',   form.reno_elec,    form.reno_elec_scope ? `(${form.reno_elec_scope})` : ''),
+    renoCell('HVAC',         form.reno_hvac,    form.reno_hvac_scope ? `(${form.reno_hvac_scope})` : ''),
+    renoCell('Plumbing',     form.reno_plum,    form.reno_plum_scope ? `(${form.reno_plum_scope})` : ''),
+    renoCell('Water Heater', form.water_heater, form.tankless === 'yes' ? (form.water_heater ? '(Tankless)' : 'Tankless') : ''),
+  ].join('')
+  const renoSystemsRow = renoCells ? `<div class="info-row" style="margin-top:2px">${renoCells}</div>` : ''
+
   const showOtherAddresses = form.mail_same_as_subject || form.mail_street || form.prev_street
 
   const referredBy = form.referred_by_name
@@ -337,12 +348,7 @@ ${showOtherAddresses ? `
         <div class="info-card" style="flex:1.5"><div class="card-label">Type</div><div class="card-value">${form.roof_type}</div></div>
         <div class="info-card"><div class="card-label">Scope</div><div class="card-value">${form.reno_roof_scope}</div></div>
       </div>
-      <div class="info-row" style="margin-top:2px">
-        <div class="info-card"><div class="card-label">Electrical</div><div class="card-value">${form.reno_elec}${form.reno_elec_scope ? ' (' + form.reno_elec_scope + ')' : ''}</div></div>
-        <div class="info-card"><div class="card-label">HVAC</div><div class="card-value">${form.reno_hvac}${form.reno_hvac_scope ? ' (' + form.reno_hvac_scope + ')' : ''}</div></div>
-        <div class="info-card"><div class="card-label">Plumbing</div><div class="card-value">${form.reno_plum}${form.reno_plum_scope ? ' (' + form.reno_plum_scope + ')' : ''}</div></div>
-        <div class="info-card"><div class="card-label">Water Heater</div><div class="card-value">${form.water_heater}${form.tankless === 'yes' ? ' (Tankless)' : ''}</div></div>
-      </div>
+      ${renoSystemsRow}
     </div>
 
     <!-- SAFETY & FEATURES -->

@@ -1,4 +1,4 @@
-import type { FormState, InsuredData } from '@/app/types/form'
+import { homeUpdatedPatch, type FormState, type InsuredData } from '@/app/types/form'
 import { formatCurrency } from './formatters'
 
 export type ApplyResult = {
@@ -122,6 +122,8 @@ export function applyExtractedData(
   if (JSON.stringify(updatedInsureds) !== JSON.stringify(currentInsureds)) {
     updates.insureds = updatedInsureds
   }
+
+  Object.assign(updates, homeUpdatedPatch(updates))
 
   return { updates, flashKeys }
 }
