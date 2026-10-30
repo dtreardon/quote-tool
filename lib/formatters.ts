@@ -56,6 +56,15 @@ export function printMoney(value: string | null | undefined, format: MoneyFormat
   return parseMoney(value) === null ? s : `$${s}`
 }
 
+// Dwelling (Cov A) ÷ square footage, whole dollars: "$153 / sq ft".
+// Derived only (never stored); '' when either value is blank or zero.
+export function dwellingCostPerSqFt(dwelling: string, sqft: string): string {
+  const d = parseMoney(dwelling)
+  const s = parseMoney(sqft)
+  if (!d || !s) return ''
+  return `$${Math.round(d / s).toLocaleString('en-US')} / sq ft`
+}
+
 export function expandLiability(value: string): string {
   const v = value.trim()
   if (v === '1') return '100,000'

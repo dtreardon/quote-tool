@@ -1,5 +1,5 @@
 import type { FormState } from '@/app/types/form'
-import { printMoney } from './formatters'
+import { printMoney, dwellingCostPerSqFt } from './formatters'
 
 function yn(v: string): string {
   if (!v) return ''
@@ -152,6 +152,9 @@ export function buildPrintHTML(form: FormState, logoUrl: string, title: string):
   ].join('')
   const renoSystemsRow = renoCells ? `<div class="info-row" style="margin-top:2px">${renoCells}</div>` : ''
 
+  // Dwelling ÷ Sq Footage, shown under the Dwelling (A) value
+  const dwellingPerSqFt = dwellingCostPerSqFt(form.cov_dwelling, form.sqft)
+
   const showOtherAddresses = form.mail_same_as_subject || form.mail_street || form.prev_street
 
   const referredBy = form.referred_by_name
@@ -208,6 +211,7 @@ export function buildPrintHTML(form: FormState, logoUrl: string, title: string):
   .cov-item:last-child { border-bottom:none; }
   .cov-label { font-size:6pt; color:#888; text-transform:uppercase; letter-spacing:0.05em; }
   .cov-value { font-size:9.5pt; font-weight:bold; color:#111; }
+  .cov-sub { display:block; font-size:6pt; font-weight:normal; color:#888; text-align:right; line-height:1.1; }
   .cov-box { border:0.5pt solid #ccc; border-radius:2px; margin-bottom:5px; }
 
   /* ── QUOTES ── */
@@ -388,7 +392,7 @@ ${showOtherAddresses ? `
 
     <div class="section-head">Desired Coverage</div>
     <div class="cov-box" style="margin-bottom:5px">
-      <div class="cov-item"><span class="cov-label">Dwelling (A)</span><span class="cov-value">${covFmt(form.cov_dwelling)}</span></div>
+      <div class="cov-item"><span class="cov-label">Dwelling (A)</span><span class="cov-value">${covFmt(form.cov_dwelling)}${dwellingPerSqFt ? `<span class="cov-sub">${dwellingPerSqFt}</span>` : ''}</span></div>
       <div class="cov-item"><span class="cov-label">Other Structures (B)</span><span class="cov-value">${covFmt(form.cov_other_structures)}</span></div>
       <div class="cov-item"><span class="cov-label">Contents (C)</span><span class="cov-value">${covFmt(form.cov_contents)}</span></div>
       <div class="cov-item"><span class="cov-label">Loss of Use (D)</span><span class="cov-value">${covFmt(form.cov_loss_of_use)}</span></div>

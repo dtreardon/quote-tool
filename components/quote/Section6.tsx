@@ -5,7 +5,7 @@ import { useQuoteForm } from './QuoteFormContext'
 import { SectionCard } from '../ui/SectionCard'
 import { Field } from '../ui/Field'
 import { DollarInput } from '../ui/DollarInput'
-import { expandLiability, expandMedPay, formatWholeDollars, parseMoney } from '@/lib/formatters'
+import { expandLiability, expandMedPay, formatWholeDollars, parseMoney, dwellingCostPerSqFt } from '@/lib/formatters'
 
 const LIABILITY_OPTIONS = ['100,000', '300,000', '500,000', '1,000,000']
 const MED_PAY_OPTIONS  = ['1,000', '3,000', '5,000', '10,000']
@@ -164,12 +164,15 @@ function DedField({
 
 export function Section6() {
   const { form, update } = useQuoteForm()
+  // Dwelling ÷ Sq Footage (Section 5) — derived, updates live
+  const perSqFt = dwellingCostPerSqFt(form.cov_dwelling, form.sqft)
 
   return (
     <SectionCard number={8} title="Desired Coverage Amounts">
       <div className="flex gap-3.5 flex-wrap mb-3">
         <Field label="Dwelling (Cov A)" className="flex-1 min-w-36">
           <DollarInput format="whole" value={form.cov_dwelling} onChange={v => update({ cov_dwelling: v })} />
+          {perSqFt && <div className="mt-1 text-[11px] font-semibold text-gold italic">{perSqFt}</div>}
         </Field>
         <Field label="Other Structures (Cov B)" className="flex-1 min-w-36">
           <DollarInput format="whole" value={form.cov_other_structures} onChange={v => update({ cov_other_structures: v })} />
