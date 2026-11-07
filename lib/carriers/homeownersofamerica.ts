@@ -1,6 +1,7 @@
 export const homeownersofamerica = {
   key: "homeownersofamerica",
   label: "Homeowners of America",
+  policyNumberTemplate: "41-{YYrev}{HHMMrev}-00",
 
   evaluate(input: any) {
     const {

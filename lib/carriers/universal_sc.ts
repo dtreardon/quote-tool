@@ -1,6 +1,7 @@
 export const universal_sc = {
   key: "universal_sc",
   label: "Universal (SC)",
+  policyNumberTemplate: "6701-{YYYYrev}-{HHMMrev}",
 
   evaluate(input: any) {
     const {

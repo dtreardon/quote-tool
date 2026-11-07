@@ -1,6 +1,7 @@
 export const universal_ga = {
   key: "universal_ga",
   label: "Universal (GA)",
+  policyNumberTemplate: "6701-{YYYYrev}-{HHMMrev}",
 
   evaluate(input: any) {
     const {

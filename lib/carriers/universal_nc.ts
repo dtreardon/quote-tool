@@ -1,6 +1,7 @@
 export const universal_nc = {
   key: "universal_nc",
   label: "Universal (NC)",
+  policyNumberTemplate: "6701-{YYYYrev}-{HHMMrev}",
 
   evaluate(input: any) {
     const {

@@ -1,6 +1,7 @@
 export const americanintegrity = {
   key: "americanintegrity",
   label: "American Integrity",
+  policyNumberTemplate: "AGH{ST}{YYrev}2{HHMMrev}-01",
 
   evaluate(input: any) {
     const { state, distanceToCoast, buildYear, roofYear, mobileHome, barrierIsland } = input;

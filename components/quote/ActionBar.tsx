@@ -10,6 +10,8 @@ import type { FormState } from '@/app/types/form'
 import { MORTGAGEE_MEMORY_KEYS } from '@/lib/mortgageeMemory'
 import { autoFileNameHO, saveFileName } from '@/lib/fileName'
 import { FileNameInput } from '../ui/FileNameInput'
+import { BindPanel } from './BindPanel'
+import { openBindPatch } from '@/lib/bind'
 
 interface ActionBarProps {
   onClear: () => void
@@ -40,6 +42,17 @@ function rememberMortgagee(form: FormState) {
   }).catch(() => {})
 }
 
+// Server-side render through headless Chrome (/api/pdf)
+async function renderPDF(html: string, filename: string): Promise<ArrayBuffer> {
+  const res = await fetch('/api/pdf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ html, filename }),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return res.arrayBuffer()
+}
+
 function printFallback(html: string) {
   const win = window.open('', '_blank', 'width=900,height=1100')
   if (!win) { alert('Please allow pop-ups for this site to print.'); return }
@@ -53,45 +66,47 @@ export function ActionBar({ onClear }: ActionBarProps) {
   const autoName = autoFileNameHO(form)
   const { isSupported, folderName, pickFolder, clearFolder, saveFile } = useSaveFolder()
   const [saving, setSaving] = useState(false)
+  const [showBind, setShowBind] = useState(false)
+
+  async function writePDF(buffer: ArrayBuffer, filename: string) {
+    if (isSupported) {
+      // FS API available — save to folder; fall back to download if user cancels picker
+      const result = await saveFile(filename, buffer)
+      if (result === 'failed') downloadPDF(buffer, filename)
+    } else {
+      // FS API not available — direct browser download
+      downloadPDF(buffer, filename)
+    }
+  }
+
+  function sheetHTML(f: FormState) {
+    const logoUrl = `${window.location.origin}/logo-white.png`
+    const filename = saveFileName(f.file_name, autoFileNameHO(f))
+    return { filename, html: buildPrintHTML(f, logoUrl, filename.replace(/.pdf$/, '')) }
+  }
+
+  // Renders and saves the quote sheet with the full sheet embedded as qsp-data.json
+  // so Recall can restore it later. Pages are untouched; if embedding fails the
+  // plain PDF is still saved. Throws if the PDF server fails.
+  async function saveSheet(f: FormState) {
+    const { html, filename } = sheetHTML(f)
+    const pdf = await renderPDF(html, filename)
+    rememberMortgagee(f)
+    const buffer = await embedSheetData(pdf, 'HO', f).catch(err => {
+      console.warn('[ActionBar] Could not embed sheet data for Recall:', err)
+      return pdf
+    })
+    await writePDF(buffer, filename)
+  }
 
   async function handleSave() {
     setSaving(true)
-    const logoUrl = `${window.location.origin}/logo-white.png`
-    const filename = saveFileName(form.file_name, autoName)
-    const html = buildPrintHTML(form, logoUrl, filename.replace(/.pdf$/, ''))
-
     try {
-      const res = await fetch('/api/pdf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html, filename }),
-      })
-
-      if (!res.ok) throw new Error(await res.text())
-
-      rememberMortgagee(form)
-
-      const pdf = await res.arrayBuffer()
-
-      // Embed the full sheet as qsp-data.json so Recall can restore it later.
-      // Pages are untouched; if embedding fails the plain PDF is still saved.
-      const buffer = await embedSheetData(pdf, 'HO', form).catch(err => {
-        console.warn('[ActionBar] Could not embed sheet data for Recall:', err)
-        return pdf
-      })
-
-      if (isSupported) {
-        // FS API available — save to folder; fall back to download if user cancels picker
-        const result = await saveFile(filename, buffer)
-        if (result === 'failed') downloadPDF(buffer, filename)
-      } else {
-        // FS API not available — direct browser download
-        downloadPDF(buffer, filename)
-      }
+      await saveSheet(form)
     } catch (err) {
       // Server PDF unavailable — last-resort print dialog
       console.warn('[ActionBar] PDF server failed, falling back to print:', err)
-      printFallback(html)
+      printFallback(sheetHTML(form).html)
     } finally {
       setSaving(false)
     }
@@ -102,6 +117,7 @@ export function ActionBar({ onClear }: ActionBarProps) {
     'each machine/browser you use needs to be set up once.'
 
   return (
+    <>
     <div className="sticky bottom-0 bg-navy flex items-center justify-between px-6 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-50 print:hidden">
       <div className="flex flex-col gap-0.5">
         <span className="text-white/60 text-xs">
@@ -119,6 +135,12 @@ export function ActionBar({ onClear }: ActionBarProps) {
             className="border border-white/30 text-white px-[22px] py-2.5 rounded text-sm font-bold hover:bg-white/10 transition-colors"
           >
             Clear Form
+          </button>
+          <button
+            onClick={() => { update(openBindPatch(form)); setShowBind(true) }}
+            className="border border-gold text-gold-light px-[22px] py-2.5 rounded text-sm font-bold hover:bg-white/10 transition-colors"
+          >
+            Bind
           </button>
           <FileNameInput value={form.file_name} autoName={autoName} onChange={v => update({ file_name: v })} />
           <button
@@ -173,5 +195,14 @@ export function ActionBar({ onClear }: ActionBarProps) {
         )}
       </div>
     </div>
+
+    {showBind && (
+      <BindPanel
+        onClose={() => setShowBind(false)}
+        savePDF={async (html, filename) => writePDF(await renderPDF(html, filename), filename)}
+        resaveSheet={saveSheet}
+      />
+    )}
+    </>
   )
 }

@@ -1,6 +1,7 @@
 export const orion180_sc = {
   key: "orion180_sc",
   label: "Orion180 (SC)",
+  policyNumberTemplate: "OIC{FORM}{ST}_0{YYrev}2{HHMMrev}-01",
 
   evaluate(input: any) {
     const {

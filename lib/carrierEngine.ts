@@ -119,3 +119,22 @@ export function runEligibility(input: CarrierInput): EligibilityResults {
   eligible.sort((a, b) => b.score - a.score)
   return { eligible, ineligible }
 }
+
+// ── Policy number templates (Bind panel) ────────────────────────────────
+// Section 9 carrier names are free text (usually an eligibility label like
+// "Orion180 (SC)"). An exact label wins; otherwise the name is matched on the
+// label without its state suffix, ignoring case/spaces/punctuation, so
+// "Orion 180" or "American Integrity Insurance" still find their template.
+
+const normName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+
+export function policyNumberTemplateFor(carrierName: string): string | undefined {
+  const name = normName(carrierName)
+  if (!name) return undefined
+  const withTemplate = ALL_CARRIERS.filter(
+    (c): c is typeof c & { policyNumberTemplate: string } => 'policyNumberTemplate' in c,
+  )
+  const exact = withTemplate.find(c => normName(c.label) === name)
+  if (exact) return exact.policyNumberTemplate
+  return withTemplate.find(c => name.startsWith(normName(c.label.replace(/\s*\(.*\)\s*$/, ''))))?.policyNumberTemplate
+}

@@ -1,6 +1,7 @@
 export const frontline_ga = {
   key: "frontline_ga",
   label: "Frontline (GA)",
+  policyNumberTemplate: "{YYrev}{MMDDrev}{HHMMrev}",
 
   evaluate(input: any) {
     const {

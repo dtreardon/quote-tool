@@ -5,6 +5,7 @@ const EXCLUDED_COUNTIES = [
 export const orion180_ga = {
   key: "orion180_ga",
   label: "Orion180 (GA)",
+  policyNumberTemplate: "OIC{FORM}{ST}_0{YYrev}2{HHMMrev}-01",
 
   evaluate(input: any) {
     const {

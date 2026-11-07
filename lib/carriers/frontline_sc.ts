@@ -1,6 +1,7 @@
 export const frontline_sc = {
   key: "frontline_sc",
   label: "Frontline (SC)",
+  policyNumberTemplate: "{YYrev}{MMDDrev}{HHMMrev}",
 
   evaluate(input: any) {
     const {

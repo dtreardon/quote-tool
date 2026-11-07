@@ -1,4 +1,4 @@
-import { INITIAL_FORM, INITIAL_INSURED, homeUpdatedPatch, type FormState } from '@/app/types/form'
+import { INITIAL_BIND, INITIAL_FORM, INITIAL_INSURED, homeUpdatedPatch, type FormState } from '@/app/types/form'
 import { INITIAL_AUTO_FORM, INITIAL_DRIVER, INITIAL_VEHICLE, type AutoFormState } from '@/app/types/autoForm'
 import { freshUids } from './sheetData'
 
@@ -22,6 +22,10 @@ export function restoreHOForm(saved: Partial<FormState>): FormState {
   f.mortgagee_open = f.mortgagee_open || [
     f.mortgagee_name, f.mortgagee_street, f.mortgagee_city, f.mortgagee_state, f.mortgagee_zip, f.loan_number,
   ].some(Boolean)
+
+  // Sheets saved before Bind existed have no bind data; partial data gets defaults
+  f.bind_ho    = { ...INITIAL_BIND, ...saved.bind_ho }
+  f.bind_flood = { ...INITIAL_BIND, ...saved.bind_flood }
 
   // Recalled renovation data is always shown (Home Updated row opens when it holds data)
   Object.assign(f, homeUpdatedPatch(f))

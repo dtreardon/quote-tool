@@ -1,6 +1,7 @@
 export const universal_fl = {
   key: "universal_fl",
   label: "Universal (FL)",
+  policyNumberTemplate: "6701-{YYYYrev}-{HHMMrev}",
 
   evaluate(input: any) {
     const {

@@ -37,6 +37,24 @@ export interface QuoteData {
   premium: string
 }
 
+// Bind panel data for one policy (Homeowners or Flood). Screen only — feeds the invoice
+// (and later the ACORD 27). Carrier, closing date and mortgagee live in the sheet fields.
+export interface BindData {
+  carrier: string               // name of the selected Section 9 / 10 row
+  premium: string               // premium invoiced (snapshot at invoice time)
+  effective_date: string        // MM/DD/YYYY
+  policy_number: string
+  policy_number_edited: boolean // agent typed in it → never auto-regenerated
+  bill_to: '' | 'mortgagee' | 'insured' // '' = default rule (see defaultBillTo)
+  status: 'due' | 'paid'
+  invoice_number: string        // RA-YYYY-NNNN, assigned once
+}
+
+export const INITIAL_BIND: BindData = {
+  carrier: '', premium: '', effective_date: '', policy_number: '', policy_number_edited: false,
+  bill_to: '', status: 'due', invoice_number: '',
+}
+
 export interface FormState {
   // Banner
   policy_type: string
@@ -185,6 +203,10 @@ export interface FormState {
   flood_cov_dwelling: string
   flood_cov_contents: string
   flood_quotes: QuoteData[]
+
+  // Bind (screen only, never printed on the quote sheet)
+  bind_ho: BindData
+  bind_flood: BindData
 }
 
 // Renovation fields shown only when "Has home been updated?" is Yes.
@@ -331,4 +353,6 @@ export const INITIAL_FORM: FormState = {
   flood_cov_dwelling: '',
   flood_cov_contents: '',
   flood_quotes: [{ uid: 1, carrier: '', premium: '' }],
+  bind_ho: { ...INITIAL_BIND },
+  bind_flood: { ...INITIAL_BIND },
 }
