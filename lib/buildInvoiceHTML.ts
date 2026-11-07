@@ -9,7 +9,7 @@ import {
 // Invoice PDF (Invoice panel), rendered through /api/pdf like the quote sheet.
 // Modeled on the top half of a carrier-issued policy invoice: plain, office-made —
 // Arial, black text, #d9d9d9 label cells, 1px black borders, square corners.
-// All text is 11pt (title 18pt); one cell padding and one section gap throughout.
+// All body text is 9pt (title 16pt); one cell padding and one section gap throughout.
 // Letter portrait, one page. HO and flood always get separate invoices.
 
 const esc = (v: string) =>
@@ -67,35 +67,35 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
 <style>
   @page { size: letter portrait; margin: 0.25in 0.25in 0.2in 0.25in; }
   /* One font everywhere — nothing may inherit an app/web font */
-  html, body, body * { font-family: Arial, Helvetica, sans-serif; }
+  html, body, body * { font-family: Arial, "Liberation Sans", Helvetica, sans-serif; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
-  body { font-size: 11pt; line-height: 1.3; color: #000; background: white; }
-  :root { --gap: 16px; --pad: 4px 8px; }
+  body { font-size: 9pt; line-height: 1.3; color: #000; background: white; }
+  :root { --gap: 12px; --pad: 3px 6px; }
   .page { min-height: 100%; display: flex; flex-direction: column; padding: 0.15in 0.25in 0; }
   .section { margin-top: var(--gap); }
 
-  table { border-collapse: collapse; font-size: 11pt; line-height: 1.3; }
+  table { border-collapse: collapse; font-size: 9pt; line-height: 1.3; }
   th, td { border: 1px solid #000; padding: var(--pad); text-align: left; vertical-align: top; font-weight: 400; }
   th { background: #d9d9d9; font-weight: 700; }
 
   .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
   .agency img { width: 2.5in; height: auto; display: block; margin-bottom: 8px; }
   .doc { text-align: right; }
-  .doc-title { font-size: 18pt; line-height: 1.2; font-weight: 700; }
-  .issued { font-weight: 700; margin: 8px 0; }
+  .doc-title { font-size: 16pt; line-height: 1.2; font-weight: 700; }
+  .issued { font-weight: 700; margin: 6px 0; }
   .info { margin-left: auto; }
 
   .full { width: 100%; table-layout: fixed; }
 
   .amount-wrap { position: relative; display: flex; justify-content: center; }
-  .amounts td { min-width: 1.4in; text-align: right; }
+  .amounts td { min-width: 1.15in; text-align: right; }
 
   .closing { font-weight: 700; }
 
   /* Red rubber stamp: double border, slight tilt, warped edges and ink gaps (SVG filter) */
-  .stamp { position: absolute; left: calc(50% + 1.6in); top: 4px; transform: rotate(-9deg);
-           color: #c4161c; border: 5px double #c4161c; padding: 4px 10px 2px; font-size: 16pt; font-weight: 900;
+  .stamp { position: absolute; left: calc(50% + 1.35in); top: 3px; transform: rotate(-9deg);
+           color: #c4161c; border: 4px double #c4161c; padding: 3px 8px 2px; font-size: 13pt; font-weight: 900;
            letter-spacing: 0.06em; white-space: nowrap; opacity: 0.85; mix-blend-mode: multiply; filter: url(#rubber); }
 
   .spacer { flex: 1; }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -44,6 +45,28 @@ async function launchBrowser() {
   })
 }
 
+// Serverless Chromium has no Arial, so pages that list "Liberation Sans" (the free
+// metric match for Arial, bundled in lib/fonts) get it injected as an @font-face.
+// Local Chrome still uses the installed Arial first. Pages that don't name the
+// family (the quote sheets) are left untouched.
+let fontFaceCSS: string | null = null
+function liberationSansCSS(): string {
+  if (fontFaceCSS === null) {
+    const face = (file: string, weight: number) => {
+      const b64 = readFileSync(join(process.cwd(), 'lib/fonts', file)).toString('base64')
+      return `@font-face { font-family: "Liberation Sans"; font-weight: ${weight}; font-style: normal; src: url(data:font/ttf;base64,${b64}) format("truetype"); }`
+    }
+    fontFaceCSS = face('LiberationSans-Regular.ttf', 400) + face('LiberationSans-Bold.ttf', 700)
+  }
+  return fontFaceCSS
+}
+
+function withBundledFonts(html: string): string {
+  if (!html.includes('Liberation Sans')) return html
+  const style = `<style>${liberationSansCSS()}</style>`
+  return html.includes('</head>') ? html.replace('</head>', `${style}</head>`) : style + html
+}
+
 export async function POST(req: NextRequest) {
   let browser
   try {
@@ -52,7 +75,8 @@ export async function POST(req: NextRequest) {
 
     browser = await launchBrowser()
     const page = await browser.newPage()
-    await page.setContent(html, { waitUntil: 'load' })
+    await page.setContent(withBundledFonts(html), { waitUntil: 'load' })
+    await page.evaluate(() => document.fonts.ready)
 
     const pdfUint8 = await page.pdf({
       format: 'Letter',

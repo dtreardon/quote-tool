@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
   // never statically imported, so @vercel/nft's file tracer misses them.
   // This tells the tracer to explicitly include them for the /api/pdf route.
   outputFileTracingIncludes: {
-    '/api/pdf': ['./node_modules/@sparticuz/chromium/bin/**'],
+    // lib/fonts holds Liberation Sans, read with fs and injected into invoice pages.
+    '/api/pdf': ['./node_modules/@sparticuz/chromium/bin/**', './lib/fonts/**'],
   },
 };
 
