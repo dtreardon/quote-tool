@@ -93,8 +93,8 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
 
   /* Payment block: the most important text on the page — boxed, light fill, bold */
   .payment { border: 1px solid #000; background: #f2f2f2; padding: var(--pad); font-weight: 700; }
-  /* Due: one blank line above the mailing address, indented 0.5in */
-  .payment .remit { margin-top: 1.3em; padding-left: 0.5in; }
+  /* Due: exactly one blank line above the mailing address, flush left with the sentence */
+  .payment .remit { margin-top: 1lh; }
 
   .closing { font-weight: 700; }
 
