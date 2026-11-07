@@ -53,7 +53,7 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
   const payment = paid
     ? `<p>Annual premium of ${premium} has been paid in full.</p>`
     : `<p>Annual premium of ${premium} is due in full on ${effective}. Please make check payable to and mail to:</p>
-       <p>Robinson &amp; Associates<br>5 Retreat Pl<br>St Simons Island, GA 31522</p>`
+       <p class="remit">Robinson &amp; Associates<br>5 Retreat Pl<br>St Simons Island, GA 31522</p>`
 
   const amounts: [string, string][] = paid
     ? [['Annual Premium', premium], ['Amount Paid', premium], ['Balance Due', '$0.00']]
@@ -93,6 +93,8 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
 
   /* Payment block: the most important text on the page — boxed, light fill, bold */
   .payment { border: 1px solid #000; background: #f2f2f2; padding: var(--pad); font-weight: 700; }
+  /* Due: one blank line above the mailing address, indented 0.5in */
+  .payment .remit { margin-top: 1.3em; padding-left: 0.5in; }
 
   .closing { font-weight: 700; }
 
