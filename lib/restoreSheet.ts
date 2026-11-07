@@ -1,10 +1,18 @@
-import { INITIAL_BIND, INITIAL_FORM, INITIAL_INSURED, homeUpdatedPatch, type FormState } from '@/app/types/form'
+import { INITIAL_BIND, INITIAL_FORM, INITIAL_INSURED, homeUpdatedPatch, type BindData, type FormState } from '@/app/types/form'
 import { INITIAL_AUTO_FORM, INITIAL_DRIVER, INITIAL_VEHICLE, type AutoFormState } from '@/app/types/autoForm'
 import { freshUids } from './sheetData'
 
 // Builds a complete form from a recalled payload: every saved value is kept as-is,
 // fields added to the form after the sheet was saved fall back to their defaults,
 // list rows get fresh uids, and collapsible sections open when they hold data.
+
+function restoreBind(saved: Partial<BindData> | undefined): BindData {
+  const b = { ...INITIAL_BIND }
+  for (const k of Object.keys(INITIAL_BIND) as (keyof BindData)[]) {
+    if (saved?.[k] !== undefined) (b as Record<string, unknown>)[k] = saved[k]
+  }
+  return b
+}
 
 export function restoreHOForm(saved: Partial<FormState>): FormState {
   const base = Date.now()
@@ -23,9 +31,10 @@ export function restoreHOForm(saved: Partial<FormState>): FormState {
     f.mortgagee_name, f.mortgagee_street, f.mortgagee_city, f.mortgagee_state, f.mortgagee_zip, f.loan_number,
   ].some(Boolean)
 
-  // Sheets saved before Bind existed have no bind data; partial data gets defaults
-  f.bind_ho    = { ...INITIAL_BIND, ...saved.bind_ho }
-  f.bind_flood = { ...INITIAL_BIND, ...saved.bind_flood }
+  // Sheets saved before the Invoice panel existed have no bind data; partial data gets
+  // defaults. Fields no longer used (early 3.6 test sheets' bill_to) are dropped.
+  f.bind_ho    = restoreBind(saved.bind_ho)
+  f.bind_flood = restoreBind(saved.bind_flood)
 
   // Recalled renovation data is always shown (Home Updated row opens when it holds data)
   Object.assign(f, homeUpdatedPatch(f))

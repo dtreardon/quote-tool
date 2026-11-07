@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQuoteForm } from './QuoteFormContext'
 import { Field, inputCls, selectCls } from '../ui/Field'
 import { DollarInput } from '../ui/DollarInput'
@@ -8,17 +8,23 @@ import { StateSelect } from '../ui/StateSelect'
 import type { BindData, FormState } from '@/app/types/form'
 import { formatDate, parseMoney } from '@/lib/formatters'
 import {
-  bindKey, quotesKey, carrierOptions, selectedRow, selectCarrierPatch, billTo, expirationDate, parseMDY,
-  invoiceFileName, type BindKind,
+  bindKey, quotesKey, carrierOptions, selectedRow, selectCarrierPatch, regeneratePolicyNumberPatch,
+  isLocked, hasPolicyTemplate, closingDatePatch, expirationDate, parseMDY, invoiceFileName, type BindKind,
 } from '@/lib/bind'
 import { buildInvoiceHTML } from '@/lib/buildInvoiceHTML'
 
-interface BindPanelProps {
+export interface SaveOutcome {
+  filename: string
+  result: 'saved' | 'downloaded'   // written to the save folder, or a browser download
+}
+
+interface InvoicePanelProps {
   onClose: () => void
-  // Renders HTML through /api/pdf and saves it to the sheet's save folder (or downloads)
-  savePDF: (html: string, filename: string) => Promise<void>
-  // Re-saves the quote sheet so its embedded qsp-data.json carries the bind data for Recall
-  resaveSheet: (form: FormState) => Promise<void>
+  // Renders HTML through /api/pdf and saves it to the sheet's save folder (or downloads).
+  // Throws if the PDF can't be rendered.
+  savePDF: (html: string, filename: string) => Promise<SaveOutcome>
+  // Re-saves the quote sheet so its embedded qsp-data.json carries the invoice data for Recall
+  resaveSheet: (form: FormState) => Promise<SaveOutcome>
 }
 
 const LABELS: Record<BindKind, string> = { ho: 'Homeowners', flood: 'Flood' }
@@ -72,15 +78,18 @@ function problems(form: FormState, kind: BindKind): string[] {
   if (!row) out.push('carrier')
   else if (!((parseMoney(row.premium) ?? 0) > 0)) out.push('premium')
   if (!parseMDY(b.effective_date)) out.push('effective date (MM/DD/YYYY)')
-  if (billTo(form, b) === 'mortgagee' && !form.mortgagee_name.trim()) out.push('mortgagee name (Bill To is Mortgagee)')
   return out
 }
 
-export function BindPanel({ onClose, savePDF, resaveSheet }: BindPanelProps) {
+const outcomeLine = (o: SaveOutcome, note = '') =>
+  `${o.result === 'saved' ? 'Saved' : 'Downloaded'}: ${o.filename}${note}`
+
+export function InvoicePanel({ onClose, savePDF, resaveSheet }: InvoicePanelProps) {
   const { form, update } = useQuoteForm()
   const [busy, setBusy] = useState(false)
+  const busyRef = useRef(false) // blocks a second click before the re-render disables the button
   const [error, setError] = useState('')
-  const [done, setDone] = useState('')
+  const [done, setDone] = useState<string[]>([])
 
   const hasFlood  = form.flood_quote === 'yes'
   const isNew     = form.new_purchase === 'yes'
@@ -90,16 +99,6 @@ export function BindPanel({ onClose, savePDF, resaveSheet }: BindPanelProps) {
 
   function setBind(kind: BindKind, patch: Partial<BindData>) {
     update({ [bindKey(kind)]: { ...form[bindKey(kind)], ...patch } })
-  }
-
-  // Closing date: effective dates that still follow it (blank or equal) follow the change
-  function setClosingDate(v: string) {
-    const patch: Partial<FormState> = { closing_date: v }
-    for (const k of ['ho', 'flood'] as BindKind[]) {
-      const b = form[bindKey(k)]
-      if (!b.effective_date || b.effective_date === form.closing_date) patch[bindKey(k)] = { ...b, effective_date: v }
-    }
-    update(patch)
   }
 
   function setMortgagee(patch: Partial<FormState>) {
@@ -112,54 +111,55 @@ export function BindPanel({ onClose, savePDF, resaveSheet }: BindPanelProps) {
     update({ [quotesKey(kind)]: form[quotesKey(kind)].map(q => q.uid === row.uid ? { ...q, premium: v } : q) })
   }
 
-  async function handleGenerate() {
+  async function handleCreate() {
+    if (busyRef.current) return
     setError('')
-    setDone('')
+    setDone([])
     if (!kinds.length) { setError('Nothing to invoice — add a carrier and premium in Section 9 or 10.'); return }
     const missing = kinds.flatMap(k => problems(form, k).map(p => `${LABELS[k]}: ${p}`))
     if (missing.length) { setError(`Missing ${missing.join('; ')}.`); return }
 
+    busyRef.current = true
     setBusy(true)
-    // Work on a local copy so every step sees the latest values; write back as we go
-    let f: FormState = form
     try {
-      // Invoice numbers are assigned once — reprints reuse the stored number.
-      // Each new number is written to the sheet as soon as it is issued.
-      for (const k of kinds) {
-        const b = f[bindKey(k)]
-        const invoice_number = b.invoice_number || await fetchInvoiceNumber()
-        const next: BindData = { ...b, invoice_number, premium: selectedRow(f, k)!.premium }
-        f = { ...f, [bindKey(k)]: next }
-        update({ [bindKey(k)]: next })
+      // Work on a local copy so every step sees the latest values; write back as we go
+      let f: FormState = form
+      try {
+        // Invoice numbers are assigned once — re-creating reuses the stored number.
+        // Each new number is written to the sheet as soon as it is issued.
+        for (const k of kinds) {
+          const b = f[bindKey(k)]
+          const invoice_number = b.invoice_number || await fetchInvoiceNumber()
+          const next: BindData = { ...b, invoice_number, premium: selectedRow(f, k)!.premium }
+          f = { ...f, [bindKey(k)]: next }
+          update({ [bindKey(k)]: next })
+        }
+      } catch (err) {
+        setError(`Could not get an invoice number: ${err instanceof Error ? err.message : 'unknown error'} No invoice was created.`)
+        return
       }
-    } catch (err) {
-      setError(`${err instanceof Error ? err.message : 'Invoice number failed.'} No invoice was created.`)
-      setBusy(false)
-      return
-    }
 
-    const saved: string[] = []
-    try {
+      const lines: string[] = []
       const logoUrl = `${window.location.origin}/logo-white.png`
       for (const k of kinds) {
         const filename = invoiceFileName(f, k)
-        await savePDF(buildInvoiceHTML(f, k, logoUrl, filename.replace(/\.pdf$/, '')), filename)
-        saved.push(`${filename} (${f[bindKey(k)].invoice_number})`)
+        try {
+          lines.push(outcomeLine(await savePDF(buildInvoiceHTML(f, k, logoUrl, filename.replace(/\.pdf$/, '')), filename)))
+          setDone([...lines])
+        } catch (err) {
+          setError(`Could not create ${filename}: ${err instanceof Error ? err.message : 'the PDF service failed'}`)
+          return
+        }
       }
-    } catch (err) {
-      setError(`Could not create the invoice PDF: ${err instanceof Error ? err.message : 'unknown error'}`)
-      setBusy(false)
-      return
-    }
 
-    const created = `Created ${saved.join(' and ')}.`
-    setDone(`${created} Updating the quote sheet's Recall data…`)
-    try {
-      await resaveSheet(f)
-      setDone(`${created} Quote sheet re-saved with the bind info.`)
-    } catch {
-      setDone(`${created} The quote sheet could not be re-saved — click Print / Save PDF to keep the bind info for Recall.`)
+      try {
+        lines.push(outcomeLine(await resaveSheet(f), ' (quote sheet, invoice info kept for Recall)'))
+        setDone([...lines])
+      } catch {
+        setError('The invoice was saved, but the quote sheet could not be re-saved. Click Print / Save PDF to keep the invoice info for Recall.')
+      }
     } finally {
+      busyRef.current = false
       setBusy(false)
     }
   }
@@ -169,16 +169,17 @@ export function BindPanel({ onClose, savePDF, resaveSheet }: BindPanelProps) {
     const b       = form[bindKey(kind)]
     const options = carrierOptions(form[quotesKey(kind)])
     const row     = selectedRow(form, kind)
-    const bt      = billTo(form, b)
     const exp     = expirationDate(b.effective_date)
+    // After the first invoice a generated policy number is locked; "Regenerate" is the only way to change it
+    const locked  = isLocked(b) && hasPolicyTemplate(kind, b.carrier)
 
     return (
       <div className="border border-[#d0cdc8] rounded-lg p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-[13px] font-bold text-navy uppercase tracking-[0.05em]">{LABELS[kind]}</h3>
           {b.invoice_number && (
-            <span className="text-[11px] text-gray-500" title="Reprints reuse this invoice number">
-              Invoice {b.invoice_number}
+            <span className="text-[11px] text-gray-500" title="Re-creating the invoice keeps this number">
+              🔒 Invoice {b.invoice_number}
             </span>
           )}
         </div>
@@ -213,7 +214,7 @@ export function BindPanel({ onClose, savePDF, resaveSheet }: BindPanelProps) {
             <div className="flex gap-3 flex-wrap mb-3">
               {kind === 'ho' && isNew && (
                 <Field label="Closing Date" className="w-32">
-                  <input value={form.closing_date} onChange={e => setClosingDate(formatDate(e.target.value))} placeholder="MM/DD/YYYY" maxLength={10} className={inputCls()} />
+                  <input value={form.closing_date} onChange={e => update(closingDatePatch(form, formatDate(e.target.value)))} placeholder="MM/DD/YYYY" maxLength={10} className={inputCls()} />
                 </Field>
               )}
               <Field label="Effective Date" className="w-32">
@@ -223,23 +224,35 @@ export function BindPanel({ onClose, savePDF, resaveSheet }: BindPanelProps) {
                 <input value={exp} readOnly tabIndex={-1} className={`${inputCls()} bg-gray-50 text-gray-500`} />
               </Field>
               <Field label="Policy Number" className="flex-1 min-w-44">
-                <input
-                  value={b.policy_number}
-                  onChange={e => setBind(kind, { policy_number: e.target.value, policy_number_edited: e.target.value !== '' })}
-                  placeholder={kind === 'flood' ? 'Enter flood policy #' : row ? 'No template — enter policy #' : ''}
-                  className={inputCls()}
-                />
+                {locked ? (
+                  <div className="flex items-center gap-2">
+                    <input value={b.policy_number} readOnly title="Locked after the first invoice" className={`${inputCls()} bg-gray-50`} />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm('Replace the locked policy number with a new one for the selected carrier?')) {
+                          update(regeneratePolicyNumberPatch(form, kind))
+                        }
+                      }}
+                      className="text-[11px] text-navy/70 hover:text-navy underline whitespace-nowrap"
+                    >
+                      Regenerate
+                    </button>
+                  </div>
+                ) : (
+                  <input
+                    value={b.policy_number}
+                    onChange={e => setBind(kind, { policy_number: e.target.value, policy_number_edited: e.target.value !== '' })}
+                    placeholder={kind === 'flood' ? 'Enter flood policy #' : row ? 'No template — enter policy #' : ''}
+                    className={inputCls()}
+                  />
+                )}
               </Field>
             </div>
 
-            <div className="flex gap-6 flex-wrap">
-              <Field label="Bill To">
-                <Toggle value={bt} options={[['mortgagee', 'Mortgagee'], ['insured', 'Insured']]} onChange={v => setBind(kind, { bill_to: v })} />
-              </Field>
-              <Field label="Status">
-                <Toggle value={b.status} options={[['due', 'Due'], ['paid', 'Paid in Full']]} onChange={v => setBind(kind, { status: v })} />
-              </Field>
-            </div>
+            <Field label="Status">
+              <Toggle value={b.status} options={[['due', 'Due'], ['paid', 'Paid in Full']]} onChange={v => setBind(kind, { status: v })} />
+            </Field>
           </>
         )}
       </div>
@@ -250,7 +263,7 @@ export function BindPanel({ onClose, savePDF, resaveSheet }: BindPanelProps) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 print:hidden" onMouseDown={e => { if (e.target === e.currentTarget && !busy) onClose() }}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[92vh] flex flex-col">
         <div className="px-6 pt-5 pb-3 border-b border-[#ede9e3] flex items-center justify-between">
-          <h2 className="text-lg font-bold text-navy">Bind</h2>
+          <h2 className="text-lg font-bold text-navy">Invoice</h2>
           <button onClick={onClose} disabled={busy} className="text-gray-400 hover:text-gray-600 text-xl leading-none disabled:opacity-40" aria-label="Close">✕</button>
         </div>
 
@@ -290,17 +303,21 @@ export function BindPanel({ onClose, savePDF, resaveSheet }: BindPanelProps) {
 
         <div className="px-6 py-4 border-t border-[#ede9e3] space-y-3">
           {error && <div className="text-[13px] text-[#b42318] bg-[#fef3f2] border border-[#fecdca] rounded px-3 py-2">{error}</div>}
-          {done && !error && <div className="text-[13px] text-[#1a7f37] bg-[#f0fdf4] border border-[#bbf7d0] rounded px-3 py-2">{done}</div>}
+          {done.length > 0 && (
+            <div className="text-[13px] text-[#1a7f37] bg-[#f0fdf4] border border-[#bbf7d0] rounded px-3 py-2 space-y-0.5">
+              {done.map(line => <div key={line} className="break-all">✓ {line}</div>)}
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <button onClick={onClose} disabled={busy} className="border border-[#d0cdc8] rounded px-5 py-2.5 text-[13px] text-gray-600 hover:bg-[#f7f4ee] transition-colors disabled:opacity-40">
               Close
             </button>
             <button
-              onClick={handleGenerate}
+              onClick={handleCreate}
               disabled={busy}
               className="bg-gold hover:bg-gold-light text-white px-5 py-2.5 rounded text-sm font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {busy ? 'Creating…' : 'Bind & Create Invoice'}
+              {busy ? 'Creating invoice…' : 'Create Invoice'}
             </button>
           </div>
         </div>

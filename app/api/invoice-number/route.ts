@@ -4,7 +4,7 @@ import { Redis } from '@upstash/redis'
 // Agency-wide invoice numbers: RA-YYYY-NNNN, one counter per year
 // (invoice-seq:2026, invoice-seq:2027, …) so numbering restarts each January.
 // Protected by the app password proxy. Unlike mortgagee memory, failures are
-// reported as errors — the Bind panel must not create an invoice without a number.
+// reported as errors — the Invoice panel must not create an invoice without a number.
 
 function getRedis(): Redis | null {
   const url   = process.env.UPSTASH_REDIS_REST_URL

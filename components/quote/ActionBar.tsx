@@ -10,7 +10,7 @@ import type { FormState } from '@/app/types/form'
 import { MORTGAGEE_MEMORY_KEYS } from '@/lib/mortgageeMemory'
 import { autoFileNameHO, saveFileName } from '@/lib/fileName'
 import { FileNameInput } from '../ui/FileNameInput'
-import { BindPanel } from './BindPanel'
+import { InvoicePanel, type SaveOutcome } from './InvoicePanel'
 import { openBindPatch } from '@/lib/bind'
 
 interface ActionBarProps {
@@ -66,17 +66,17 @@ export function ActionBar({ onClear }: ActionBarProps) {
   const autoName = autoFileNameHO(form)
   const { isSupported, folderName, pickFolder, clearFolder, saveFile } = useSaveFolder()
   const [saving, setSaving] = useState(false)
-  const [showBind, setShowBind] = useState(false)
+  const [showInvoice, setShowInvoice] = useState(false)
 
-  async function writePDF(buffer: ArrayBuffer, filename: string) {
+  async function writePDF(buffer: ArrayBuffer, filename: string): Promise<'saved' | 'downloaded'> {
     if (isSupported) {
       // FS API available — save to folder; fall back to download if user cancels picker
       const result = await saveFile(filename, buffer)
-      if (result === 'failed') downloadPDF(buffer, filename)
-    } else {
-      // FS API not available — direct browser download
-      downloadPDF(buffer, filename)
+      if (result === 'saved') return 'saved'
     }
+    // FS API not available (or picker cancelled) — direct browser download
+    downloadPDF(buffer, filename)
+    return 'downloaded'
   }
 
   function sheetHTML(f: FormState) {
@@ -88,7 +88,7 @@ export function ActionBar({ onClear }: ActionBarProps) {
   // Renders and saves the quote sheet with the full sheet embedded as qsp-data.json
   // so Recall can restore it later. Pages are untouched; if embedding fails the
   // plain PDF is still saved. Throws if the PDF server fails.
-  async function saveSheet(f: FormState) {
+  async function saveSheet(f: FormState): Promise<SaveOutcome> {
     const { html, filename } = sheetHTML(f)
     const pdf = await renderPDF(html, filename)
     rememberMortgagee(f)
@@ -96,7 +96,7 @@ export function ActionBar({ onClear }: ActionBarProps) {
       console.warn('[ActionBar] Could not embed sheet data for Recall:', err)
       return pdf
     })
-    await writePDF(buffer, filename)
+    return { filename, result: await writePDF(buffer, filename) }
   }
 
   async function handleSave() {
@@ -136,12 +136,6 @@ export function ActionBar({ onClear }: ActionBarProps) {
           >
             Clear Form
           </button>
-          <button
-            onClick={() => { update(openBindPatch(form)); setShowBind(true) }}
-            className="border border-gold text-gold-light px-[22px] py-2.5 rounded text-sm font-bold hover:bg-white/10 transition-colors"
-          >
-            Bind
-          </button>
           <FileNameInput value={form.file_name} autoName={autoName} onChange={v => update({ file_name: v })} />
           <button
             onClick={handleSave}
@@ -152,6 +146,17 @@ export function ActionBar({ onClear }: ActionBarProps) {
             onMouseLeave={e => { e.currentTarget.style.transform = '' }}
           >
             {saving ? 'Saving…' : '🖨 Print / Save PDF'}
+          </button>
+          {/* Invoice is a separate action — set apart by a divider */}
+          <span className="self-stretch w-px bg-white/25 mx-2" aria-hidden />
+          <button
+            onClick={() => { update(openBindPatch(form)); setShowInvoice(true) }}
+            className="bg-gold hover:bg-gold-light text-white px-[22px] py-2.5 rounded text-sm font-bold transition-colors"
+            style={{ transition: 'background-color 0.15s, transform 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = '' }}
+          >
+            🧾 Invoice
           </button>
         </div>
 
@@ -196,10 +201,10 @@ export function ActionBar({ onClear }: ActionBarProps) {
       </div>
     </div>
 
-    {showBind && (
-      <BindPanel
-        onClose={() => setShowBind(false)}
-        savePDF={async (html, filename) => writePDF(await renderPDF(html, filename), filename)}
+    {showInvoice && (
+      <InvoicePanel
+        onClose={() => setShowInvoice(false)}
+        savePDF={async (html, filename) => ({ filename, result: await writePDF(await renderPDF(html, filename), filename) })}
         resaveSheet={saveSheet}
       />
     )}

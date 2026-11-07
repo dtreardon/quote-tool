@@ -7,6 +7,7 @@ import { StateSelect } from '../ui/StateSelect'
 import { YesNo } from '../ui/RadioGroup'
 import { DollarInput } from '../ui/DollarInput'
 import { formatDate } from '@/lib/formatters'
+import { closingDatePatch } from '@/lib/bind'
 import { AGENTS, saveAgent } from '@/lib/agentMemory'
 
 export function Section1() {
@@ -45,7 +46,7 @@ export function Section1() {
           <Field label="Closing Date" className="w-32" autofilled={a('closing_date')}>
             <input
               value={form.closing_date}
-              onChange={e => update({ closing_date: formatDate(e.target.value) })}
+              onChange={e => update(closingDatePatch(form, formatDate(e.target.value)))}
               placeholder="MM/DD/YYYY"
               maxLength={10}
               className={inputCls(a('closing_date'))}
