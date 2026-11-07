@@ -30,12 +30,10 @@ export function RecallButton({ sheet, isDirty, onRestore }: RecallButtonProps) {
     setMsg('')
     try {
       const result = await readSheetData(file)
-      if (result.status === 'unreadable') {
-        show("That file couldn't be opened as a PDF.", 'err')
-        return
-      }
-      if (result.status === 'no-data') {
-        show("This sheet was saved before Recall was added and can't be restored. Try running it through Auto-Fill instead.", 'err')
+      // Only PDFs carrying qsp-data.json are quote sheets. Invoices, pre-3.5 sheets,
+      // print-dialog PDFs, other PDFs and non-PDFs all get the same message.
+      if (result.status !== 'ok') {
+        show('Recall only works with quote sheets saved in QuoteSheetPRO 3.5 or later.', 'err')
         return
       }
 
