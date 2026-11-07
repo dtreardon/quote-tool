@@ -8,11 +8,12 @@ import type { AutoFormState } from '@/app/types/autoForm'
 // Names missing → no stray ", " or double spaces ("HO QUOTE SHEET" rather than ",  HO QUOTE SHEET")
 const tidy = (s: string) => s.replace(/^\s*,\s*/, '').replace(/\s+/g, ' ').trim()
 
-export function autoFileNameHO(form: FormState): string {
+// Invoices reuse this with their own labels: "{name} HO INVOICE {street}", "{name} FLOOD INVOICE {street}"
+export function autoFileNameHO(form: FormState, typeLabel = form.policy_type || 'HO', docLabel = 'QUOTE SHEET'): string {
   const primary = form.insureds[0]
   const base = primary?.insuredType === 'entity'
-    ? `${(primary?.entityName || '').toUpperCase()} ${form.policy_type || 'HO'} QUOTE SHEET ${form.prop_street || ''}`
-    : `${(primary?.last || '').toUpperCase()}, ${(primary?.first || '').toUpperCase()} ${form.policy_type || 'HO'} QUOTE SHEET ${form.prop_street || ''}`
+    ? `${(primary?.entityName || '').toUpperCase()} ${typeLabel} ${docLabel} ${form.prop_street || ''}`
+    : `${(primary?.last || '').toUpperCase()}, ${(primary?.first || '').toUpperCase()} ${typeLabel} ${docLabel} ${form.prop_street || ''}`
   return tidy(base)
 }
 

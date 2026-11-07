@@ -2,7 +2,7 @@ import type { BindData, FormState, QuoteData } from '@/app/types/form'
 import { policyNumberTemplateFor } from './carrierEngine'
 import { buildPolicyNumber, policyFormToken } from './policyNumber'
 import { parseMoney } from './formatters'
-import { saveFileName } from './fileName'
+import { autoFileNameHO, saveFileName } from './fileName'
 
 // Invoice panel helpers (HO sheet). Data keys keep the original "bind" names. Everything here is derived from the sheet so the
 // sheet, the invoice and the future ACORD 27 always agree.
@@ -151,15 +151,9 @@ export function invoiceTitle(form: FormState, kind: BindKind): string {
 
 // ── File names ───────────────────────────────────────────────────────────
 
-const FORM_CODES: Record<string, string> = { HO: 'HO3', DP: 'DP3', Condo: 'HO6', Renters: 'HO4', MH: 'MH' }
-
+// Same structure as the quote sheet's auto name (never its custom file name box),
+// with "INVOICE" for "QUOTE SHEET" and "FLOOD" as the type on the flood invoice
 export function invoiceFileName(form: FormState, kind: BindKind): string {
-  const primary = form.insureds[0]
-  const who = primary?.insuredType === 'entity'
-    ? (primary.entityName || '').toUpperCase()
-    : `${(primary?.last || '').toUpperCase()}, ${(primary?.first || '').toUpperCase()}`
-  const code = kind === 'flood' ? 'FLOOD' : (FORM_CODES[form.policy_type] ?? 'HO3')
-  const base = `${who} ${code} INVOICE ${form.prop_street || ''}`
-    .replace(/^\s*,\s*/, '').replace(/\s+/g, ' ').trim()
-  return saveFileName(undefined, base)
+  const typeLabel = kind === 'flood' ? 'FLOOD' : (form.policy_type || 'HO')
+  return saveFileName(undefined, autoFileNameHO(form, typeLabel, 'INVOICE'))
 }
