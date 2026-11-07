@@ -8,12 +8,19 @@ import type { AutoFormState } from '@/app/types/autoForm'
 // Names missing → no stray ", " or double spaces ("HO QUOTE SHEET" rather than ",  HO QUOTE SHEET")
 const tidy = (s: string) => s.replace(/^\s*,\s*/, '').replace(/\s+/g, ' ').trim()
 
-// Invoices reuse this with their own labels: "{name} HO INVOICE {street}", "{name} FLOOD INVOICE {street}"
+// Policy type as written in file names (the on-screen dropdown keeps its own labels).
+// Anything not listed (e.g. the flood invoice's "FLOOD") is used as given.
+const FILE_TYPE_LABELS: Record<string, string> = {
+  HO: 'HO', DP: 'DP', Condo: 'CONDO', Renters: 'RENTERS', MH: 'MH', 'Mono Flood': 'FLOOD',
+}
+
+// Invoices reuse this with their own labels: "{name} CONDO INVOICE {street}", "{name} FLOOD INVOICE {street}"
 export function autoFileNameHO(form: FormState, typeLabel = form.policy_type || 'HO', docLabel = 'QUOTE SHEET'): string {
   const primary = form.insureds[0]
+  const type = FILE_TYPE_LABELS[typeLabel] ?? typeLabel
   const base = primary?.insuredType === 'entity'
-    ? `${(primary?.entityName || '').toUpperCase()} ${typeLabel} ${docLabel} ${form.prop_street || ''}`
-    : `${(primary?.last || '').toUpperCase()}, ${(primary?.first || '').toUpperCase()} ${typeLabel} ${docLabel} ${form.prop_street || ''}`
+    ? `${(primary?.entityName || '').toUpperCase()} ${type} ${docLabel} ${form.prop_street || ''}`
+    : `${(primary?.last || '').toUpperCase()}, ${(primary?.first || '').toUpperCase()} ${type} ${docLabel} ${form.prop_street || ''}`
   return tidy(base)
 }
 
