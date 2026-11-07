@@ -91,6 +91,9 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
   .amount-wrap { position: relative; display: flex; justify-content: center; }
   .amounts td { min-width: 1.15in; text-align: right; }
 
+  /* Payment block: the most important text on the page — boxed, light fill, bold */
+  .payment { border: 1px solid #000; background: #f2f2f2; padding: var(--pad); font-weight: 700; }
+
   .closing { font-weight: 700; }
 
   /* Red rubber stamp: double border, slight tilt, warped edges and ink gaps (SVG filter) */
@@ -139,7 +142,7 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
     <tr><td>${[prop.street, prop.cityStateZip].filter(Boolean).map(esc).join(', ')}</td></tr>
   </table>
 
-  <div class="section">${payment}</div>
+  <div class="payment section">${payment}</div>
 
   <div class="amount-wrap section">
     <table class="amounts">
