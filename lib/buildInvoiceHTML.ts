@@ -123,7 +123,7 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
       <img src="${logoUrl}" alt="Robinson &amp; Associates" onerror="this.style.display='none'" />
       <div>Robinson &amp; Associates Ins., Inc.</div>
       <div>5 Retreat Pl, St Simons Island, GA 31522</div>
-      <div>Phone (912) 638-9717</div>
+      <div>(912) 638-9717</div>
       <div>${deLinkifyEmail('scteam@robinsoninsures.com')}</div>
     </div>
     <div class="doc">
