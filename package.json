@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:policy": "node --no-warnings scripts/test-policy-numbers.mjs"
+    "test:policy": "node --no-warnings scripts/test-policy-numbers.mjs",
+    "env:pull": "node scripts/env-pull.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.98.0",
