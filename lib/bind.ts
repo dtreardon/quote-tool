@@ -152,8 +152,11 @@ export function invoiceTitle(form: FormState, kind: BindKind): string {
 // ── File names ───────────────────────────────────────────────────────────
 
 // Same structure as the quote sheet's auto name (never its custom file name box),
-// with "INVOICE" for "QUOTE SHEET" and "FLOOD" as the type on the flood invoice
+// with "INVOICE" for "QUOTE SHEET" and "FLOOD" as the type on the flood invoice.
+// A Paid in Full invoice (per policy's own toggle) ends in " PAID IN FULL", so it
+// saves alongside — never over — an earlier Due invoice.
 export function invoiceFileName(form: FormState, kind: BindKind): string {
   const typeLabel = kind === 'flood' ? 'FLOOD' : (form.policy_type || 'HO')
-  return saveFileName(undefined, autoFileNameHO(form, typeLabel, 'INVOICE'))
+  const paid = form[bindKey(kind)].status === 'paid' ? ' PAID IN FULL' : ''
+  return saveFileName(undefined, autoFileNameHO(form, typeLabel, 'INVOICE') + paid)
 }
