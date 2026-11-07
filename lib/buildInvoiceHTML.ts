@@ -2,13 +2,14 @@ import type { FormState } from '@/app/types/form'
 import { printMoney } from './formatters'
 import { APP_VERSION } from './version'
 import {
-  bindKey, expirationDate, formatMDY, insuredNames, insuredPhone, invoiceTitle, mailingAddress,
-  mortgageeAddress, propertyAddress, type Address, type BindKind,
+  bindKey, expirationDate, formatMDY, insuredNames, invoiceTitle, mailingAddress,
+  mortgageeAddress, propertyAddress, type BindKind,
 } from './bind'
 
 // Invoice PDF (Invoice panel), rendered through /api/pdf like the quote sheet.
 // Modeled on the top half of a carrier-issued policy invoice: plain, office-made —
 // Arial, black text, #d9d9d9 label cells, 1px black borders, square corners.
+// All text is 11pt (title 18pt); one cell padding and one section gap throughout.
 // Letter portrait, one page. HO and flood always get separate invoices.
 
 const esc = (v: string) =>
@@ -17,10 +18,7 @@ const esc = (v: string) =>
 // Stop PDF viewers turning the email into a mailto: link (same trick as the quote sheet)
 const deLinkifyEmail = (v: string) => v.replace('@', '@‌')
 
-const addressLines = (a: Address) => [a.street, a.cityStateZip].filter(Boolean).map(esc).join('<br>')
-
-// Mortgagee header carries ISAOA/ATIMA unless the stored name already has it
-const mortgageeHeader = (name: string) => /ISAOA/i.test(name) ? name : `${name} ISAOA/ATIMA`
+const lines = (...l: string[]) => l.map(v => v.trim()).filter(Boolean).map(esc).join('<br>')
 
 export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: string, title: string): string {
   const b         = form[bindKey(kind)]
@@ -28,7 +26,6 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
   const paid      = b.status === 'paid'
   const isNew     = form.new_purchase === 'yes'
   const effective = esc(b.effective_date)
-  const insured   = esc(insuredNames(form))
   const prop      = propertyAddress(form)
   const mortgagee = form.mortgagee_name.trim()
 
@@ -40,19 +37,23 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
     ['EXPIRATION DATE', esc(expirationDate(b.effective_date))],
   ]
 
-  const phone = insuredPhone(form)
+  // Name and address as one block per column. ISAOA/ATIMA gets its own line unless
+  // the stored mortgagee name already contains it.
+  const mAddr = mortgageeAddress(form)
+  const loan  = form.loan_number.trim()
+  const mortgageeBlock = lines(mortgagee, /ISAOA/i.test(mortgagee) ? '' : 'ISAOA/ATIMA', mAddr.street, mAddr.cityStateZip, loan ? `Loan #: ${loan}` : '')
+  const iAddr = mailingAddress(form)
+  const insuredBlock = lines(insuredNames(form), iAddr.street, iAddr.cityStateZip)
   const partiesRows = mortgagee
-    ? `<tr><th>MORTGAGEE: ${esc(mortgageeHeader(mortgagee))}</th><th>INSURED: ${insured}</th></tr>
-       <tr><td>${addressLines(mortgageeAddress(form))}</td><td>${addressLines(mailingAddress(form))}</td></tr>
-       <tr><td>Loan #: ${esc(form.loan_number.trim())}</td><td>${phone ? `Telephone: ${esc(phone)}` : ''}</td></tr>`
-    : `<tr><th colspan="2">INSURED: ${insured}</th></tr>
-       <tr><td colspan="2">${addressLines(mailingAddress(form))}</td></tr>
-       ${phone ? `<tr><td colspan="2">Telephone: ${esc(phone)}</td></tr>` : ''}`
+    ? `<tr><th>MORTGAGEE</th><th>INSURED</th></tr>
+       <tr><td>${mortgageeBlock}</td><td>${insuredBlock}</td></tr>`
+    : `<tr><th colspan="2">INSURED</th></tr>
+       <tr><td colspan="2">${insuredBlock}</td></tr>`
 
   const payment = paid
     ? `<p>Annual premium of ${premium} has been paid in full.</p>`
     : `<p>Annual premium of ${premium} is due in full on ${effective}. Please make check payable to and mail to:</p>
-       <p class="remit">Robinson &amp; Associates<br>5 Retreat Pl<br>St Simons Island, GA 31522</p>`
+       <p>Robinson &amp; Associates<br>5 Retreat Pl<br>St Simons Island, GA 31522</p>`
 
   const amounts: [string, string][] = paid
     ? [['Annual Premium', premium], ['Amount Paid', premium], ['Balance Due', '$0.00']]
@@ -65,46 +66,40 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
 <title>${esc(title)}</title>
 <style>
   @page { size: letter portrait; margin: 0.25in 0.25in 0.2in 0.25in; }
+  /* One font everywhere — nothing may inherit an app/web font */
+  html, body, body * { font-family: Arial, Helvetica, sans-serif; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
-  body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #000; background: white; }
-  .page { min-height: 100%; display: flex; flex-direction: column; padding: 0.2in 0.3in 0; }
+  body { font-size: 11pt; line-height: 1.3; color: #000; background: white; }
+  :root { --gap: 16px; --pad: 4px 8px; }
+  .page { min-height: 100%; display: flex; flex-direction: column; padding: 0.15in 0.25in 0; }
+  .section { margin-top: var(--gap); }
 
-  table { border-collapse: collapse; }
-  th, td { border: 1px solid #000; padding: 4px 7px; text-align: left; vertical-align: top; }
+  table { border-collapse: collapse; font-size: 11pt; line-height: 1.3; }
+  th, td { border: 1px solid #000; padding: var(--pad); text-align: left; vertical-align: top; font-weight: 400; }
   th { background: #d9d9d9; font-weight: 700; }
 
   .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
-  .agency img { height: 50px; width: auto; display: block; margin-bottom: 6px; }
-  .agency div { font-size: 8pt; line-height: 1.35; }
-  .agency .name { font-weight: 700; }
+  .agency img { width: 2.5in; height: auto; display: block; margin-bottom: 8px; }
   .doc { text-align: right; }
-  .doc-title { font-size: 14pt; font-weight: 700; letter-spacing: 0.02em; }
-  .issued { font-weight: 700; margin: 6px 0 8px; }
-  .info { margin-left: auto; font-size: 8.5pt; }
-  .info th { width: 1.35in; }
-  .info td { min-width: 1.9in; text-align: left; }
+  .doc-title { font-size: 18pt; line-height: 1.2; font-weight: 700; }
+  .issued { font-weight: 700; margin: 8px 0; }
+  .info { margin-left: auto; }
 
-  .parties { width: 100%; margin-top: 20px; table-layout: fixed; }
-  .parties td { height: 1.4em; line-height: 1.35; }
+  .full { width: 100%; table-layout: fixed; }
 
-  .payment { margin-top: 18px; line-height: 1.45; }
-  .payment p + p { margin-top: 6px; }
-  .remit { padding-left: 18px; }
+  .amount-wrap { position: relative; display: flex; justify-content: center; }
+  .amounts td { min-width: 1.4in; text-align: right; }
 
-  .amount-wrap { position: relative; margin-top: 18px; display: flex; justify-content: center; }
-  .amounts th { width: 1.6in; }
-  .amounts td { width: 1.4in; font-weight: 700; text-align: right; }
-
-  .closing { margin-top: 18px; font-weight: 700; }
+  .closing { font-weight: 700; }
 
   /* Red rubber stamp: double border, slight tilt, warped edges and ink gaps (SVG filter) */
   .stamp { position: absolute; left: calc(50% + 1.6in); top: 4px; transform: rotate(-9deg);
-           color: #c4161c; border: 5px double #c4161c; padding: 4px 10px 2px; font-size: 17pt; font-weight: 900;
+           color: #c4161c; border: 5px double #c4161c; padding: 4px 10px 2px; font-size: 16pt; font-weight: 900;
            letter-spacing: 0.06em; white-space: nowrap; opacity: 0.85; mix-blend-mode: multiply; filter: url(#rubber); }
 
   .spacer { flex: 1; }
-  .footer { margin-top: 16px; padding: 3px 0 2px; display: flex; justify-content: space-between; font-size: 6.5pt; color: #888; }
+  .footer { margin-top: var(--gap); padding: 3px 0 2px; display: flex; justify-content: space-between; font-size: 6.5pt; color: #888; }
 </style>
 </head>
 <body>
@@ -121,9 +116,9 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
   <div class="top">
     <div class="agency">
       <img src="${logoUrl}" alt="Robinson &amp; Associates" onerror="this.style.display='none'" />
-      <div class="name">Robinson &amp; Associates Ins., Inc.</div>
+      <div>Robinson &amp; Associates Ins., Inc.</div>
       <div>5 Retreat Pl, St Simons Island, GA 31522</div>
-      <div>Phone (912) 638-9717 | Fax (912) 638-6868</div>
+      <div>Phone (912) 638-9717</div>
       <div>${deLinkifyEmail('scteam@robinsoninsures.com')}</div>
     </div>
     <div class="doc">
@@ -135,22 +130,25 @@ export function buildInvoiceHTML(form: FormState, kind: BindKind, logoUrl: strin
     </div>
   </div>
 
-  <table class="parties">
+  <table class="full section">
     ${partiesRows}
-    <tr><th colspan="2">LOCATION OF PROPERTY INSURED:</th></tr>
-    <tr><td colspan="2">${[prop.street, prop.cityStateZip].filter(Boolean).map(esc).join(', ')}</td></tr>
   </table>
 
-  <div class="payment">${payment}</div>
+  <table class="full section">
+    <tr><th>LOCATION OF PROPERTY INSURED:</th></tr>
+    <tr><td>${[prop.street, prop.cityStateZip].filter(Boolean).map(esc).join(', ')}</td></tr>
+  </table>
 
-  <div class="amount-wrap">
+  <div class="section">${payment}</div>
+
+  <div class="amount-wrap section">
     <table class="amounts">
       ${amounts.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}
     </table>
     ${paid ? '<div class="stamp">PAID IN FULL</div>' : ''}
   </div>
 
-  ${isNew ? '<p class="closing">A SIGNED COPY OF THE CLOSING DISCLOSURE IS REQUIRED TO MAINTAIN COVERAGE. PLEASE SEND WITH PAYMENT.</p>' : ''}
+  ${isNew ? '<p class="closing section">A SIGNED COPY OF THE CLOSING DISCLOSURE IS REQUIRED TO MAINTAIN COVERAGE. PLEASE SEND WITH PAYMENT.</p>' : ''}
 
   <div class="spacer"></div>
   <div class="footer">

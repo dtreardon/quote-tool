@@ -130,8 +130,6 @@ export function propertyAddress(form: FormState): Address {
   return { street: form.prop_street.trim(), cityStateZip: cityStateZip(form.prop_city, form.prop_state, form.prop_zip) }
 }
 
-// Phone of the first insured that has one ('' when none)
-export const insuredPhone = (form: FormState) => form.insureds.find(i => i.phone.trim())?.phone.trim() ?? ''
 
 // Mailing address, or the subject property when mailing is "same as subject" / blank
 export function mailingAddress(form: FormState): Address {
