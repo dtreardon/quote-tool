@@ -6,6 +6,7 @@ import { buildAutoPrintHTML } from '@/lib/buildAutoPrintHTML'
 import { useSaveFolder } from '@/lib/useSaveFolder'
 import { autoFileNameAuto, saveFileName } from '@/lib/fileName'
 import { FileNameInput } from '../ui/FileNameInput'
+import { FolderSaveNotice } from '../ui/FolderSaveNotice'
 import { APP_VERSION } from '@/lib/version'
 import { embedSheetData } from '@/lib/sheetData'
 
@@ -36,20 +37,28 @@ function printFallback(html: string) {
 export function AutoActionBar({ onClear }: AutoActionBarProps) {
   const { form, update } = useAutoForm()
   const autoName = autoFileNameAuto(form)
-  const { isSupported, folderName, pickFolder, clearFolder, saveFile } = useSaveFolder()
+  const {
+    isSupported, folderName, folderError, pickFolder, clearFolder, prepareFolder, saveFile, dismissFolderError,
+  } = useSaveFolder()
   const [saving, setSaving] = useState(false)
 
   async function handleSave() {
     setSaving(true)
-    const logoUrl = `${window.location.origin}/logo-white.png`
-    const filename = saveFileName(form.file_name, autoName)
-    const html = buildAutoPrintHTML(form, logoUrl, filename.replace(/.pdf$/, ''))
+    let html = ''
 
     try {
+      // First await of the click, before the PDF is built, so Chrome can still show its allow prompt
+      const folderOk = await prepareFolder()
+
+      const logoUrl = `${window.location.origin}/logo-white.png`
+      const filename = saveFileName(form.file_name, autoName)
+      html = buildAutoPrintHTML(form, logoUrl, filename.replace(/.pdf$/, ''))
+
       const res = await fetch('/api/pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html, filename }),
+        signal: AbortSignal.timeout(60_000), // a stuck server must not leave the button spinning
       })
 
       if (!res.ok) throw new Error(await res.text())
@@ -63,15 +72,11 @@ export function AutoActionBar({ onClear }: AutoActionBarProps) {
         return pdf
       })
 
-      if (isSupported) {
-        const result = await saveFile(filename, buffer)
-        if (result === 'failed') downloadPDF(buffer, filename)
-      } else {
-        downloadPDF(buffer, filename)
-      }
+      // Folder when possible; otherwise (no folder, no permission, failure or timeout) download
+      if ((await saveFile(filename, buffer, folderOk)) !== 'saved') downloadPDF(buffer, filename)
     } catch (err) {
       console.warn('[AutoActionBar] PDF server failed, falling back to print:', err)
-      printFallback(html)
+      if (html) printFallback(html)
     } finally {
       setSaving(false)
     }
@@ -83,6 +88,15 @@ export function AutoActionBar({ onClear }: AutoActionBarProps) {
 
   return (
     <div className="sticky bottom-0 bg-navy flex items-center justify-between px-6 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-50 print:hidden">
+      {folderError && (
+        <FolderSaveNotice
+          kind={folderError}
+          folderName={folderName}
+          onPickFolder={pickFolder}
+          onDismiss={dismissFolderError}
+          className="absolute bottom-full right-6 mb-2 max-w-xl"
+        />
+      )}
       <div className="flex flex-col gap-0.5">
         <span className="text-white/60 text-xs">
           Robinson &amp; Associates — Auto Quote Sheet{' '}

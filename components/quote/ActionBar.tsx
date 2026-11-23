@@ -10,6 +10,7 @@ import type { FormState } from '@/app/types/form'
 import { MORTGAGEE_MEMORY_KEYS } from '@/lib/mortgageeMemory'
 import { autoFileNameHO, saveFileName } from '@/lib/fileName'
 import { FileNameInput } from '../ui/FileNameInput'
+import { FolderSaveNotice } from '../ui/FolderSaveNotice'
 import { InvoicePanel, type SaveOutcome } from './InvoicePanel'
 import { openBindPatch } from '@/lib/bind'
 
@@ -42,12 +43,14 @@ function rememberMortgagee(form: FormState) {
   }).catch(() => {})
 }
 
-// Server-side render through headless Chrome (/api/pdf)
+// Server-side render through headless Chrome (/api/pdf).
+// Time-limited so a stuck server can't leave the button spinning forever.
 async function renderPDF(html: string, filename: string): Promise<ArrayBuffer> {
   const res = await fetch('/api/pdf', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ html, filename }),
+    signal: AbortSignal.timeout(60_000),
   })
   if (!res.ok) throw new Error(await res.text())
   return res.arrayBuffer()
@@ -64,17 +67,17 @@ function printFallback(html: string) {
 export function ActionBar({ onClear }: ActionBarProps) {
   const { form, update } = useQuoteForm()
   const autoName = autoFileNameHO(form)
-  const { isSupported, folderName, pickFolder, clearFolder, saveFile } = useSaveFolder()
+  const {
+    isSupported, folderName, folderError, pickFolder, clearFolder, prepareFolder, saveFile, dismissFolderError,
+  } = useSaveFolder()
   const [saving, setSaving] = useState(false)
   const [showInvoice, setShowInvoice] = useState(false)
 
-  async function writePDF(buffer: ArrayBuffer, filename: string): Promise<'saved' | 'downloaded'> {
-    if (isSupported) {
-      // FS API available — save to folder; fall back to download if user cancels picker
-      const result = await saveFile(filename, buffer)
-      if (result === 'saved') return 'saved'
-    }
-    // FS API not available (or picker cancelled) — direct browser download
+  // folderOk: prepareFolder() result from the same click. Saves to the folder when
+  // possible; otherwise (no folder, no permission, failure or timeout) downloads so
+  // no work is lost. Never throws, never hangs.
+  async function writePDF(buffer: ArrayBuffer, filename: string, folderOk: boolean): Promise<'saved' | 'downloaded'> {
+    if ((await saveFile(filename, buffer, folderOk)) === 'saved') return 'saved'
     downloadPDF(buffer, filename)
     return 'downloaded'
   }
@@ -88,7 +91,7 @@ export function ActionBar({ onClear }: ActionBarProps) {
   // Renders and saves the quote sheet with the full sheet embedded as qsp-data.json
   // so Recall can restore it later. Pages are untouched; if embedding fails the
   // plain PDF is still saved. Throws if the PDF server fails.
-  async function saveSheet(f: FormState): Promise<SaveOutcome> {
+  async function saveSheet(f: FormState, folderOk: boolean): Promise<SaveOutcome> {
     const { html, filename } = sheetHTML(f)
     const pdf = await renderPDF(html, filename)
     rememberMortgagee(f)
@@ -96,13 +99,15 @@ export function ActionBar({ onClear }: ActionBarProps) {
       console.warn('[ActionBar] Could not embed sheet data for Recall:', err)
       return pdf
     })
-    return { filename, result: await writePDF(buffer, filename) }
+    return { filename, result: await writePDF(buffer, filename, folderOk) }
   }
 
   async function handleSave() {
     setSaving(true)
     try {
-      await saveSheet(form)
+      // First await of the click, before the PDF is built, so Chrome can still show its allow prompt
+      const folderOk = await prepareFolder()
+      await saveSheet(form, folderOk)
     } catch (err) {
       // Server PDF unavailable — last-resort print dialog
       console.warn('[ActionBar] PDF server failed, falling back to print:', err)
@@ -119,6 +124,15 @@ export function ActionBar({ onClear }: ActionBarProps) {
   return (
     <>
     <div className="sticky bottom-0 bg-navy flex items-center justify-between px-6 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-50 print:hidden">
+      {folderError && (
+        <FolderSaveNotice
+          kind={folderError}
+          folderName={folderName}
+          onPickFolder={pickFolder}
+          onDismiss={dismissFolderError}
+          className="absolute bottom-full right-6 mb-2 max-w-xl"
+        />
+      )}
       <div className="flex flex-col gap-0.5">
         <span className="text-white/60 text-xs">
           Robinson &amp; Associates — Homeowners &amp; Flood Quote Sheet{' '}
@@ -204,8 +218,12 @@ export function ActionBar({ onClear }: ActionBarProps) {
     {showInvoice && (
       <InvoicePanel
         onClose={() => setShowInvoice(false)}
-        savePDF={async (html, filename) => ({ filename, result: await writePDF(await renderPDF(html, filename), filename) })}
+        prepareFolder={prepareFolder}
+        savePDF={async (html, filename, folderOk) => ({ filename, result: await writePDF(await renderPDF(html, filename), filename, folderOk) })}
         resaveSheet={saveSheet}
+        folderNotice={folderError && (
+          <FolderSaveNotice kind={folderError} folderName={folderName} onPickFolder={pickFolder} onDismiss={dismissFolderError} />
+        )}
       />
     )}
     </>

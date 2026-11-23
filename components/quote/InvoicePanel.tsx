@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { useQuoteForm } from './QuoteFormContext'
 import { Field, inputCls, selectCls } from '../ui/Field'
 import { DollarInput } from '../ui/DollarInput'
@@ -20,11 +20,16 @@ export interface SaveOutcome {
 
 interface InvoicePanelProps {
   onClose: () => void
+  // Checks (and if needed requests) save-folder permission. Must be the click's first await.
+  // Never throws; resolves true if saving to the folder may proceed.
+  prepareFolder: () => Promise<boolean>
   // Renders HTML through /api/pdf and saves it to the sheet's save folder (or downloads).
   // Throws if the PDF can't be rendered.
-  savePDF: (html: string, filename: string) => Promise<SaveOutcome>
+  savePDF: (html: string, filename: string, folderOk: boolean) => Promise<SaveOutcome>
   // Re-saves the quote sheet so its embedded qsp-data.json carries the invoice data for Recall
-  resaveSheet: (form: FormState) => Promise<SaveOutcome>
+  resaveSheet: (form: FormState, folderOk: boolean) => Promise<SaveOutcome>
+  // "No save folder set" / "Couldn't save to your folder" notice, when a save fell back to a download
+  folderNotice?: ReactNode
 }
 
 const LABELS: Record<BindKind, string> = { ho: 'Homeowners', flood: 'Flood' }
@@ -59,6 +64,7 @@ async function fetchInvoiceNumber(): Promise<string> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ year: new Date().getFullYear() }),
+      signal: AbortSignal.timeout(15_000), // a stuck server must not leave the button spinning
     })
   } catch {
     throw new Error('Could not reach the invoice number service. Check your connection and try again.')
@@ -84,7 +90,7 @@ function problems(form: FormState, kind: BindKind): string[] {
 const outcomeLine = (o: SaveOutcome, note = '') =>
   `${o.result === 'saved' ? 'Saved' : 'Downloaded'}: ${o.filename}${note}`
 
-export function InvoicePanel({ onClose, savePDF, resaveSheet }: InvoicePanelProps) {
+export function InvoicePanel({ onClose, prepareFolder, savePDF, resaveSheet, folderNotice }: InvoicePanelProps) {
   const { form, update } = useQuoteForm()
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false) // blocks a second click before the re-render disables the button
@@ -122,6 +128,9 @@ export function InvoicePanel({ onClose, savePDF, resaveSheet }: InvoicePanelProp
     busyRef.current = true
     setBusy(true)
     try {
+      // First await of the click, before any PDF work, so Chrome can still show its allow prompt
+      let folderOk = await prepareFolder()
+
       // Work on a local copy so every step sees the latest values; write back as we go
       let f: FormState = form
       try {
@@ -144,7 +153,10 @@ export function InvoicePanel({ onClose, savePDF, resaveSheet }: InvoicePanelProp
       for (const k of kinds) {
         const filename = invoiceFileName(f, k)
         try {
-          lines.push(outcomeLine(await savePDF(buildInvoiceHTML(f, k, logoUrl, filename.replace(/\.pdf$/, '')), filename)))
+          const outcome = await savePDF(buildInvoiceHTML(f, k, logoUrl, filename.replace(/\.pdf$/, '')), filename, folderOk)
+          // Once the folder fails, download the rest straight away instead of waiting on it again
+          if (outcome.result === 'downloaded') folderOk = false
+          lines.push(outcomeLine(outcome))
           setDone([...lines])
         } catch (err) {
           setError(`Could not create ${filename}: ${err instanceof Error ? err.message : 'the PDF service failed'}`)
@@ -153,7 +165,7 @@ export function InvoicePanel({ onClose, savePDF, resaveSheet }: InvoicePanelProp
       }
 
       try {
-        lines.push(outcomeLine(await resaveSheet(f), ' (quote sheet, invoice info kept for Recall)'))
+        lines.push(outcomeLine(await resaveSheet(f, folderOk), ' (quote sheet, invoice info kept for Recall)'))
         setDone([...lines])
       } catch {
         setError('The invoice was saved, but the quote sheet could not be re-saved. Click Print / Save PDF to keep the invoice info for Recall.')
@@ -303,6 +315,7 @@ export function InvoicePanel({ onClose, savePDF, resaveSheet }: InvoicePanelProp
 
         <div className="px-6 py-4 border-t border-[#ede9e3] space-y-3">
           {error && <div className="text-[13px] text-[#b42318] bg-[#fef3f2] border border-[#fecdca] rounded px-3 py-2">{error}</div>}
+          {folderNotice}
           {done.length > 0 && (
             <div className="text-[13px] text-[#1a7f37] bg-[#f0fdf4] border border-[#bbf7d0] rounded px-3 py-2 space-y-0.5">
               {done.map(line => <div key={line} className="break-all">✓ {line}</div>)}
