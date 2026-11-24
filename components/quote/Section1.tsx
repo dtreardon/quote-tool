@@ -9,10 +9,13 @@ import { DollarInput } from '../ui/DollarInput'
 import { formatDate } from '@/lib/formatters'
 import { closingDatePatch } from '@/lib/bind'
 import { AGENTS, saveAgent } from '@/lib/agentMemory'
+import { clauseIdOfForm } from '@/lib/mortgageeMemory'
+import { MortgageeNameInput } from './MortgageeNameInput'
 
 export function Section1() {
-  const { form, update, autofilledFields, lookupMortgagee } = useQuoteForm()
+  const { form, update, autofilledFields, lookupMortgagee, mortgageeChips, mortgageeLibrary, applyMortgageeClause } = useQuoteForm()
   const a = (key: string) => autofilledFields.has(key)
+  const currentClauseId = mortgageeChips.length ? clauseIdOfForm(form) : ''
 
   return (
     <SectionCard number={1} title="File & Referral Info">
@@ -95,9 +98,41 @@ export function Section1() {
               − hide
             </button>
           </div>
+          {/* Clauses this referring company has used, most used first. Screen only; not tab stops. */}
+          {mortgageeChips.length > 1 && (
+            <div className="flex flex-wrap gap-1.5 mb-2.5 print:hidden">
+              {mortgageeChips.map(c => {
+                const current = c.id === currentClauseId
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => applyMortgageeClause(c)}
+                    title={[c.name, c.street, [c.city, c.state].filter(Boolean).join(', '), c.zip].filter(Boolean).join(' · ')}
+                    aria-pressed={current}
+                    className={`max-w-full truncate rounded-full border px-2.5 py-[3px] text-[11px] transition-colors ${
+                      current
+                        ? 'border-gold bg-gold text-white font-semibold'
+                        : 'border-[#d0cdc8] bg-white text-navy hover:border-gold'
+                    }`}
+                  >
+                    {c.name}{c.city || c.state ? ` — ${[c.city, c.state].filter(Boolean).join(', ')}` : ''} ({c.count})
+                  </button>
+                )
+              })}
+            </div>
+          )}
           <div className="flex gap-3.5 flex-wrap mb-2">
             <Field label="Mortgagee Name" className="flex-[3] min-w-60" autofilled={a('mortgagee_name')}>
-              <input value={form.mortgagee_name} onChange={e => update({ mortgagee_name: e.target.value })} placeholder="e.g. First National Bank ISAOA/ATIMA" className={inputCls(a('mortgagee_name'))} />
+              <MortgageeNameInput
+                value={form.mortgagee_name}
+                onChange={v => update({ mortgagee_name: v })}
+                onPick={applyMortgageeClause}
+                library={mortgageeLibrary}
+                placeholder="e.g. First National Bank ISAOA/ATIMA"
+                className={inputCls(a('mortgagee_name'))}
+              />
             </Field>
           </div>
           <div className="flex gap-3.5 flex-wrap mb-2">

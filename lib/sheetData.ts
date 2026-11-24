@@ -15,6 +15,9 @@ export interface SheetPayload<T = unknown> {
   sheet: SheetType
   savedAt: string
   form: T
+  // HO only, optional (added in 3.6 without a schema bump): identifies the sheet across
+  // re-saves so mortgagee memory counts it once. Older sheets have none. Never printed.
+  sheetId?: string
 }
 
 // Cross-sheet hand-off: an HO file recalled on the Auto sheet (or vice versa)
@@ -23,10 +26,10 @@ export const RECALL_HANDOFF_KEY = 'qspRecall'
 
 export const SHEET_PATHS: Record<SheetType, string> = { HO: '/', Auto: '/auto' }
 
-export async function embedSheetData(pdf: ArrayBuffer, sheet: SheetType, form: unknown): Promise<ArrayBuffer> {
+export async function embedSheetData(pdf: ArrayBuffer, sheet: SheetType, form: unknown, sheetId?: string): Promise<ArrayBuffer> {
   const { PDFDocument } = await import('pdf-lib')
   const doc = await PDFDocument.load(pdf, { updateMetadata: false })
-  const payload: SheetPayload = { schema: SHEET_DATA_SCHEMA, sheet, savedAt: new Date().toISOString(), form }
+  const payload: SheetPayload = { schema: SHEET_DATA_SCHEMA, sheet, savedAt: new Date().toISOString(), form, ...(sheetId ? { sheetId } : {}) }
   const now = new Date()
   await doc.attach(new TextEncoder().encode(JSON.stringify(payload)), SHEET_DATA_FILENAME, {
     mimeType: 'application/json',
@@ -99,4 +102,19 @@ export async function readSheetData(file: File): Promise<ReadResult> {
 // with the per-section uid counters (which restart at small numbers on page load).
 export function freshUids<T extends { uid: number }>(items: T[] | undefined, base: number): T[] {
   return (items ?? []).map((it, i) => ({ ...it, uid: base + i }))
+}
+
+// New HO sheet id (sheet created, cleared, or recalled without one)
+export function newSheetId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  const h = Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16))
+  h[12] = '4'; h[16] = ((parseInt(h[16], 16) & 3) | 8).toString(16)
+  const s = h.join('')
+  return `${s.slice(0, 8)}-${s.slice(8, 12)}-${s.slice(12, 16)}-${s.slice(16, 20)}-${s.slice(20)}`
+}
+
+// The recalled sheet's id, or a new one for sheets saved before ids existed
+export function restoredSheetId(payload: SheetPayload): string {
+  const id = payload.sheetId
+  return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? id : newSheetId()
 }

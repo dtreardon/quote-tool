@@ -30,11 +30,12 @@ function downloadPDF(bytes: ArrayBuffer, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-// Agency-wide mortgagee memory: latest saved clause wins for this referring company.
-// Fire-and-forget — never blocks or fails the save. Loan number is never sent.
-function rememberMortgagee(form: FormState) {
+// Agency-wide mortgagee memory: adds the clause to the library and counts it once per
+// sheet for this referring company. Fire-and-forget — never blocks, fails or changes
+// the save. Loan number is never sent.
+function rememberMortgagee(form: FormState, sheetId: string) {
   if (!form.referred_by_company.trim() || !form.mortgagee_name.trim()) return
-  const body: Record<string, string> = { company: form.referred_by_company }
+  const body: Record<string, string> = { company: form.referred_by_company, sheetId }
   for (const k of MORTGAGEE_MEMORY_KEYS) body[k] = form[k]
   fetch('/api/mortgagee-memory', {
     method: 'POST',
@@ -65,7 +66,7 @@ function printFallback(html: string) {
 }
 
 export function ActionBar({ onClear }: ActionBarProps) {
-  const { form, update } = useQuoteForm()
+  const { form, update, getSheetId } = useQuoteForm()
   const autoName = autoFileNameHO(form)
   const {
     isSupported, folderName, folderError, pickFolder, clearFolder, prepareFolder, saveFile, dismissFolderError,
@@ -94,8 +95,9 @@ export function ActionBar({ onClear }: ActionBarProps) {
   async function saveSheet(f: FormState, folderOk: boolean): Promise<SaveOutcome> {
     const { html, filename } = sheetHTML(f)
     const pdf = await renderPDF(html, filename)
-    rememberMortgagee(f)
-    const buffer = await embedSheetData(pdf, 'HO', f).catch(err => {
+    const sheetId = getSheetId()
+    try { rememberMortgagee(f, sheetId) } catch { /* memory must never affect the save */ }
+    const buffer = await embedSheetData(pdf, 'HO', f, sheetId).catch(err => {
       console.warn('[ActionBar] Could not embed sheet data for Recall:', err)
       return pdf
     })

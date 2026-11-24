@@ -71,7 +71,7 @@ export function AutofillPanel({ onAutofill, autofillEnabled = false, recall }: A
         update(updates)
       }
       if (flashKeys.length > 0) onAutofill(flashKeys)
-      if (updates.referred_by_company) lookupMortgagee(updates.referred_by_company)
+      if (updates.referred_by_company) lookupMortgagee(updates.referred_by_company, updates)
 
       setStatus(`Auto-filled ${flashKeys.length} field${flashKeys.length !== 1 ? 's' : ''}.`)
       setStatusType('ok')

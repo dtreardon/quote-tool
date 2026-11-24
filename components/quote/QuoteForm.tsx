@@ -7,11 +7,15 @@ import { INITIAL_FORM } from '@/app/types/form'
 import type { FormState } from '@/app/types/form'
 import { applyExtractedData } from '@/lib/applyAutofill'
 import { loadSavedAgent } from '@/lib/agentMemory'
-import { MORTGAGEE_MEMORY_KEYS, normalizeCompany, type MortgageeMemory } from '@/lib/mortgageeMemory'
+import {
+  MORTGAGEE_MEMORY_KEYS, byCountThenRecent, byUsesThenRecent, clauseToForm, companyKey,
+  type CompanyClause, type LibraryClause, type MortgageeMemory,
+} from '@/lib/mortgageeMemory'
+import type { MortgageeChip } from './QuoteFormContext'
 import { loadGoogleMaps, type GoogleWindow } from '@/lib/googleMaps'
 import { calcMilesToCoast, runPropertyLookups, cancelPendingLookups, currentLookupGeneration } from '@/lib/addressEnrichment'
 import { restoreHOForm } from '@/lib/restoreSheet'
-import type { SheetPayload } from '@/lib/sheetData'
+import { newSheetId, restoredSheetId, type SheetPayload } from '@/lib/sheetData'
 import { RecallButton, takeRecallHandoff } from '../ui/RecallButton'
 import { Banner } from './Banner'
 import { NotesSection } from './NotesSection'
@@ -91,44 +95,115 @@ export default function QuoteForm({
   // carries over from the previous sheet. Restored values get no check circles.
   const [restoreCount, setRestoreCount] = useState(0)
   const restoreCountRef = useRef(0)
+
+  // Internal id of this HO sheet (never shown or printed): new when the sheet is
+  // created or cleared, kept from the file on Recall. Lets mortgagee memory count
+  // a sheet once no matter how often it is saved.
+  const sheetIdRef = useRef('')
+  const getSheetId = useCallback(() => {
+    if (!sheetIdRef.current) sheetIdRef.current = newSheetId()
+    return sheetIdRef.current
+  }, [])
+
+  // Mortgagee memory UI state (screen only): clause chips for the referring company,
+  // and what memory last filled automatically (so a company change can undo it).
+  const [mortgageeChips, setMortgageeChips] = useState<MortgageeChip[]>([])
+  const memoryFillRef = useRef<{ ck: string; values: MortgageeMemory } | null>(null)
+  const lookupSeqRef = useRef(0)
+  const resetMortgageeMemoryUI = useCallback(() => {
+    lookupSeqRef.current++ // drop any lookup still in flight
+    memoryFillRef.current = null
+    setMortgageeChips([])
+  }, [])
+
   const restoreSheet = useCallback((payload: SheetPayload) => {
     cancelPendingLookups()
     restoreCountRef.current++
+    sheetIdRef.current = restoredSheetId(payload)
+    resetMortgageeMemoryUI()
     setForm(restoreHOForm(payload.form as Partial<FormState>))
     setAutofilledFields(new Set())
     setRestoreCount(restoreCountRef.current)
-  }, [])
+  }, [resetMortgageeMemoryUI])
 
   const isDirty = useCallback(() =>
     JSON.stringify(formRef.current) !== JSON.stringify({ ...INITIAL_FORM, agent: formRef.current.agent }),
   [])
 
-  // Mortgagee memory: when Referred By Company is populated and the clause is
-  // completely empty, fill it from the last saved sheet for that company.
-  // Only empty fields are filled; failures are silent.
-  const lookupMortgagee = useCallback((company: string) => {
-    if (!normalizeCompany(company)) return
-    if (MORTGAGEE_MEMORY_KEYS.some(k => formRef.current[k])) return
+  // Mortgagee memory, on Referred By Company blur or auto-fill:
+  // - an empty clause is filled with the company's most used clause (empty fields only)
+  // - companies with 2+ clauses show chips to switch clause (never auto-overwrites)
+  // - if the company changed and the clause still holds exactly what memory filled,
+  //   that fill is undone first
+  // Failures are silent; Recall never calls this.
+  // `pending`: updates the caller just applied that formRef can't see yet (auto-fill).
+  const lookupMortgagee = useCallback((company: string, pending?: Partial<FormState>) => {
+    const ck = companyKey(company)
+    const seq = ++lookupSeqRef.current
     const sheetGen = restoreCountRef.current
+
+    const filled = memoryFillRef.current
+    if (filled && filled.ck !== ck) {
+      memoryFillRef.current = null
+      const current = { ...formRef.current, ...pending }
+      if (MORTGAGEE_MEMORY_KEYS.every(k => current[k] === filled.values[k])) {
+        update(Object.fromEntries(MORTGAGEE_MEMORY_KEYS.map(k => [k, ''])) as Partial<FormState>)
+      }
+    }
+    setMortgageeChips(prev => (prev.length && prev[0].ck !== ck ? [] : prev))
+    if (!ck) return
+
     fetch(`/api/mortgagee-memory?${new URLSearchParams({ company })}`)
       .then(r => r.ok ? r.json() : {})
-      .then((m: Partial<MortgageeMemory>) => {
-        if (!m.mortgagee_name) return
-        if (sheetGen !== restoreCountRef.current) return // a different sheet was recalled meanwhile
+      .then((m: { clauses?: CompanyClause[]; legacy?: boolean }) => {
+        if (seq !== lookupSeqRef.current) return            // a newer lookup (or Recall/Clear) superseded this one
+        if (sheetGen !== restoreCountRef.current) return    // a different sheet was recalled meanwhile
+        if (companyKey(formRef.current.referred_by_company) !== ck) return
+        const clauses = (Array.isArray(m.clauses) ? m.clauses : [])
+          .filter(c => c && typeof c.name === 'string' && c.name)
+          .sort(byCountThenRecent)
+        setMortgageeChips(!m.legacy && clauses.length >= 2 ? clauses.map(c => ({ ...c, ck })) : [])
+        const top = clauses[0]
+        if (!top) return
         // Re-check: the agent or auto-fill may have started the clause meanwhile
         if (MORTGAGEE_MEMORY_KEYS.some(k => formRef.current[k])) return
+        const values = clauseToForm(top)
         const patch: Partial<FormState> = {}
-        for (const k of MORTGAGEE_MEMORY_KEYS) if (m[k]) patch[k] = m[k]
+        for (const k of MORTGAGEE_MEMORY_KEYS) if (values[k]) patch[k] = values[k]
         updateIfEmpty(patch)
         setForm(prev => ({ ...prev, mortgagee_open: true }))
         markAutofilled(Object.keys(patch))
+        memoryFillRef.current = { ck, values }
       })
       .catch(() => {})
-  }, [updateIfEmpty, markAutofilled])
+  }, [update, updateIfEmpty, markAutofilled])
+
+  // Chip click / typeahead pick: replaces the whole clause (loan number untouched)
+  const applyMortgageeClause = useCallback((c: { name: string; street: string; city: string; state: string; zip: string }) => {
+    const values = clauseToForm(c)
+    memoryFillRef.current = null // the agent chose this one — a company change won't undo it
+    update({ ...values, mortgagee_open: true })
+    markAutofilled(MORTGAGEE_MEMORY_KEYS.filter(k => values[k]))
+  }, [update, markAutofilled])
+
+  // Clause library for the Mortgagee Name typeahead — fetched once per page load
+  const [mortgageeLibrary, setMortgageeLibrary] = useState<LibraryClause[]>([])
+  useEffect(() => {
+    let live = true
+    fetch('/api/mortgagee-memory?library=1')
+      .then(r => r.ok ? r.json() : {})
+      .then((m: { clauses?: LibraryClause[] }) => {
+        if (!live || !Array.isArray(m.clauses)) return
+        setMortgageeLibrary(m.clauses.filter(c => c && typeof c.name === 'string' && c.name).sort(byUsesThenRecent))
+      })
+      .catch(() => {})
+    return () => { live = false }
+  }, [])
 
   // New blank sheet — default the Agent to the last one picked on this browser.
   // Runs after mount (localStorage isn't available during SSR).
   useEffect(() => {
+    if (!sheetIdRef.current) sheetIdRef.current = newSheetId()
     const saved = loadSavedAgent()
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage after hydration
     if (saved) setForm(prev => prev.agent ? prev : { ...prev, agent: saved })
@@ -155,7 +230,7 @@ export default function QuoteForm({
           update(updates)
           markAutofilled(flashKeys)
         }
-        if (updates.referred_by_company) lookupMortgagee(updates.referred_by_company)
+        if (updates.referred_by_company) lookupMortgagee(updates.referred_by_company, updates)
 
         // Geocode the subject address and run property lookups
         const street = x.subject_address as string | null
@@ -212,6 +287,8 @@ export default function QuoteForm({
     if (!window.confirm('Clear all fields and start over?')) return
     setForm({ ...INITIAL_FORM, insureds: [{ ...INITIAL_FORM.insureds[0] }], agent: loadSavedAgent() })
     setAutofilledFields(new Set())
+    sheetIdRef.current = newSheetId()
+    resetMortgageeMemoryUI()
   }
 
   function copyToAuto() {
@@ -258,7 +335,10 @@ export default function QuoteForm({
   }
 
   return (
-    <QuoteFormContext.Provider value={{ form, update, updateIfEmpty, autofilledFields, markAutofilled, clearAutofilled, lookupMortgagee }}>
+    <QuoteFormContext.Provider value={{
+      form, update, updateIfEmpty, autofilledFields, markAutofilled, clearAutofilled, lookupMortgagee,
+      getSheetId, mortgageeChips, mortgageeLibrary, applyMortgageeClause,
+    }}>
       {/* Screen layout mirrors the PDF on wide screens: everything else on the left,
           Rating / Coverage / Quotes in a sticky right panel. Below xl the column wrappers
           are display:contents and the order-* classes stack sections in number order
